@@ -12,14 +12,18 @@ class ScheduleConfigScreen extends ConsumerStatefulWidget {
 
 class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
   bool _isLoading = true;
+  bool _isSaving = false;
   List<int> _standardWorkingDays = [1, 2, 3, 4, 5, 6];
-  int _simultaneousPanelCapacity = 1;
-  int _guaranteedSlotsPerDay = 2;
+  int _simultaneousPanelCapacity = 18;
+  int _guaranteedSlotsPerDay = 6;
+  bool _fastTrackEnabled = false;
   List<DateTime> _blacklistedDates = [];
-  
+
   final Map<int, String> _weekdays = {
     1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 7: 'Sun'
   };
+
+  DateTime _currentMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
 
   @override
   void initState() {
@@ -41,9 +45,9 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
       if (response != null && mounted) {
         setState(() {
           _standardWorkingDays = List<int>.from(response['standard_working_days'] ?? [1,2,3,4,5,6]);
-          _simultaneousPanelCapacity = response['simultaneous_panel_capacity'] ?? 1;
-          _guaranteedSlotsPerDay = response['guaranteed_slots_per_day'] ?? 2;
-          
+          _simultaneousPanelCapacity = response['simultaneous_panel_capacity'] ?? 18;
+          _guaranteedSlotsPerDay = response['guaranteed_slots_per_day'] ?? 6;
+          _fastTrackEnabled = response['fast_track_enabled'] ?? false;
           if (response['blacklisted_dates'] != null) {
             _blacklistedDates = (response['blacklisted_dates'] as List)
                 .map((d) => DateTime.parse(d.toString()))
@@ -63,152 +67,264 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
   }
 
   Future<void> _saveConfig() async {
-    setState(() => _isLoading = true);
+    setState(() => _isSaving = true);
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) throw Exception('Not authenticated');
 
-      final payload = {
-        'partner_id': user.id,
-        'standard_working_days': _standardWorkingDays,
-        'simultaneous_panel_capacity': _simultaneousPanelCapacity,
-        'guaranteed_slots_per_day': _guaranteedSlotsPerDay,
-        'blacklisted_dates': _blacklistedDates.map((d) => d.toIso8601String().split('T')[0]).toList(),
-      };
-
       await Supabase.instance.client
           .from('partner_schedules')
-          .upsert(payload, onConflict: 'partner_id');
+          .upsert({
+            'partner_id': user.id,
+            'standard_working_days': _standardWorkingDays,
+            'simultaneous_panel_capacity': _simultaneousPanelCapacity,
+            'guaranteed_slots_per_day': _guaranteedSlotsPerDay,
+            'fast_track_enabled': _fastTrackEnabled,
+            'blacklisted_dates': _blacklistedDates
+                .map((d) => d.toIso8601String().split('T')[0])
+                .toList(),
+          }, onConflict: 'partner_id');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Schedule configuration saved successfully.')),
+          const SnackBar(
+            content: Text('Schedule configuration saved.'),
+            backgroundColor: AppColors.statusSuccess,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving config: $e')),
+          SnackBar(content: Text('Error saving config: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isSaving = false);
     }
   }
+
+  bool _isBlacklisted(DateTime date) =>
+      _blacklistedDates.any((d) =>
+          d.year == date.year && d.month == date.month && d.day == date.day);
+
+  void _toggleDate(DateTime date) {
+    setState(() {
+      final norm = DateTime(date.year, date.month, date.day);
+      if (_isBlacklisted(norm)) {
+        _blacklistedDates.removeWhere(
+            (d) => d.year == norm.year && d.month == norm.month && d.day == norm.day);
+      } else {
+        _blacklistedDates.add(norm);
+      }
+    });
+  }
+
+  void _nextMonth() => setState(() =>
+      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1));
+  void _prevMonth() => setState(() =>
+      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1));
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: AppColors.fireRed));
     }
+
+    final cardBg = isDark ? AppColors.surfaceContainerLow : Colors.white;
+    final cardBorder = isDark ? AppColors.outlineVariant : Colors.black12;
+    final subtitleColor = isDark ? AppColors.onSurfaceVariant : Colors.black54;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Workshop Schedule Configuration',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+          // ── Header ─────────────────────────────────────────────────
+          Row(
+            children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.fireRed.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.calendar_month, color: AppColors.fireRed, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Workshop Capacity & Operating Calendar',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.statusSuccess.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.statusSuccess.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(width: 6, height: 6,
+                                decoration: const BoxDecoration(color: AppColors.statusSuccess, shape: BoxShape.circle)),
+                              const SizedBox(width: 4),
+                              const Text('ENGINE SYNCED',
+                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.statusSuccess)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Configure simultaneous throughput and blackout dates. AI auto-dispatch respects dynamic panel ceilings and partner blackout windows.',
+                      style: TextStyle(fontSize: 12, color: subtitleColor),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Note: Automated Indonesian Public Holidays are synchronized at the database level and applied globally.',
-            style: TextStyle(color: Colors.white70),
-          ),
+          const SizedBox(height: 24),
+
+          // ── Three stat cards ────────────────────────────────────────
+          LayoutBuilder(builder: (ctx, constraints) {
+            final isWide = constraints.maxWidth > 600;
+            final cards = [
+              _buildCapacityCard(
+                isDark: isDark, cardBg: cardBg, cardBorder: cardBorder, subtitleColor: subtitleColor,
+                icon: Icons.speed, iconColor: AppColors.fireRed,
+                label: 'SIMULTANEOUS INTAKE',
+                value: _simultaneousPanelCapacity,
+                unit: 'Panels/Day',
+                stepperLabel: 'Panel Ceiling',
+                onDecrement: () => setState(() { if (_simultaneousPanelCapacity > 1) _simultaneousPanelCapacity--; }),
+                onIncrement: () => setState(() => _simultaneousPanelCapacity++),
+              ),
+              _buildCapacityCard(
+                isDark: isDark, cardBg: cardBg, cardBorder: cardBorder, subtitleColor: subtitleColor,
+                icon: Icons.verified_user_outlined, iconColor: Colors.orange,
+                label: 'INSURER GUARANTEE',
+                value: _guaranteedSlotsPerDay,
+                unit: 'Slots/Day',
+                stepperLabel: 'Panel Ceiling',
+                onDecrement: () => setState(() { if (_guaranteedSlotsPerDay > 0) _guaranteedSlotsPerDay--; }),
+                onIncrement: () => setState(() => _guaranteedSlotsPerDay++),
+              ),
+              _buildFastTrackCard(
+                isDark: isDark, cardBg: cardBg, cardBorder: cardBorder, subtitleColor: subtitleColor,
+                enabled: _fastTrackEnabled,
+                onToggle: (v) => setState(() => _fastTrackEnabled = v),
+              ),
+            ];
+
+            return isWide
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: cards[0]),
+                      const SizedBox(width: 16),
+                      Expanded(child: cards[1]),
+                      const SizedBox(width: 16),
+                      Expanded(child: cards[2]),
+                    ],
+                  )
+                : Column(children: [
+                    cards[0],
+                    const SizedBox(height: 12),
+                    cards[1],
+                    const SizedBox(height: 12),
+                    cards[2],
+                  ]);
+          }),
           const SizedBox(height: 32),
-          
-          // Working Days
-          Text('Standard Working Days', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.fireRed)),
-          const SizedBox(height: 12),
+
+          // ── Working Days Row ────────────────────────────────────────
+          Text('Standard Working Days',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold,
+                  color: AppColors.fireRed, letterSpacing: 0.5)),
+          const SizedBox(height: 10),
           Wrap(
-            spacing: 8.0,
+            spacing: 8,
             children: _weekdays.entries.map((entry) {
               final isSelected = _standardWorkingDays.contains(entry.key);
-              return FilterChip(
-                label: Text(entry.value),
-                selected: isSelected,
-                selectedColor: AppColors.fireRed,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _standardWorkingDays.add(entry.key);
-                    } else {
-                      _standardWorkingDays.remove(entry.key);
-                    }
-                  });
-                },
+              return GestureDetector(
+                onTap: () => setState(() {
+                  if (isSelected) {
+                    _standardWorkingDays.remove(entry.key);
+                  } else {
+                    _standardWorkingDays.add(entry.key);
+                  }
+                }),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.fireRed : (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade100),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? AppColors.fireRed : (isDark ? AppColors.outlineVariant : Colors.black12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isSelected) ...[
+                        const Icon(Icons.check, color: Colors.white, size: 13),
+                        const SizedBox(width: 4),
+                      ],
+                      Text(
+                        entry.value,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : (isDark ? AppColors.onSurfaceVariant : Colors.black54),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               );
             }).toList(),
           ),
           const SizedBox(height: 32),
 
-          // Capacities
-          Text('Capacity Thresholds', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.fireRed)),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStepperCard(
-                  title: 'Simultaneous Panels',
-                  subtitle: 'How many panels can you fix at the same time?',
-                  value: _simultaneousPanelCapacity,
-                  onIncrement: () => setState(() => _simultaneousPanelCapacity++),
-                  onDecrement: () => setState(() {
-                    if (_simultaneousPanelCapacity > 1) _simultaneousPanelCapacity--;
-                  }),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStepperCard(
-                  title: 'Guaranteed Daily Slots',
-                  subtitle: 'Reserved unit intake quota per day.',
-                  value: _guaranteedSlotsPerDay,
-                  onIncrement: () => setState(() => _guaranteedSlotsPerDay++),
-                  onDecrement: () => setState(() {
-                    if (_guaranteedSlotsPerDay > 0) _guaranteedSlotsPerDay--;
-                  }),
-                ),
-              ),
-            ],
-          ),
+          // ── Calendar ────────────────────────────────────────────────
+          _buildCalendar(isDark: isDark, cardBg: cardBg, cardBorder: cardBorder, subtitleColor: subtitleColor),
+
           const SizedBox(height: 32),
 
-          // Interactive Calendar
-          Text('Calendar & Exceptions', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.fireRed)),
-          const SizedBox(height: 8),
-          const Text('Tap any working day below to mark it as a day off, or tap a red day off to restore it to a working day.', style: TextStyle(color: Colors.white70)),
-          const SizedBox(height: 16),
-          _InteractiveMonthCalendar(
-            standardWorkingDays: _standardWorkingDays,
-            blacklistedDates: _blacklistedDates,
-            onToggleDate: (date) {
-              setState(() {
-                final normalized = DateTime(date.year, date.month, date.day);
-                final exists = _blacklistedDates.any((d) => d.year == normalized.year && d.month == normalized.month && d.day == normalized.day);
-                if (exists) {
-                  _blacklistedDates.removeWhere((d) => d.year == normalized.year && d.month == normalized.month && d.day == normalized.day);
-                } else {
-                  _blacklistedDates.add(normalized);
-                }
-              });
-            },
-          ),
-
-          const SizedBox(height: 48),
+          // ── Save Button ─────────────────────────────────────────────
           SizedBox(
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed: _saveConfig,
+              onPressed: _isSaving ? null : _saveConfig,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.fireRed,
                 foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: const Text('Save Schedule Configuration', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: _isSaving
+                  ? const SizedBox(width: 20, height: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Save Schedule Configuration',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -216,176 +332,398 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
     );
   }
 
-  Widget _buildStepperCard({
-    required String title,
-    required String subtitle,
+  Widget _buildCapacityCard({
+    required bool isDark,
+    required Color cardBg,
+    required Color cardBorder,
+    required Color subtitleColor,
+    required IconData icon,
+    required Color iconColor,
+    required String label,
     required int value,
-    required VoidCallback onIncrement,
+    required String unit,
+    required String stepperLabel,
     required VoidCallback onDecrement,
+    required VoidCallback onIncrement,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: cardBorder),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 4),
-          Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-          const SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                onPressed: onDecrement,
-                icon: const Icon(Icons.remove_circle_outline, color: Colors.white),
+              Icon(icon, color: iconColor, size: 16),
+              const SizedBox(width: 6),
+              Text(label,
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold,
+                      color: subtitleColor, letterSpacing: 0.6)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('$value',
+                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: AppColors.fireRed)),
+              const SizedBox(width: 6),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Text(unit,
+                    style: TextStyle(fontSize: 13, color: subtitleColor, fontWeight: FontWeight.w500)),
               ),
-              Text('$value', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
-              IconButton(
-                onPressed: onIncrement,
-                icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+            ],
+          ),
+          const SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: (value / (value + 5)).clamp(0.0, 1.0),
+            backgroundColor: AppColors.fireRed.withValues(alpha: 0.1),
+            color: AppColors.fireRed,
+            borderRadius: BorderRadius.circular(2),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _stepperBtn(Icons.remove, onDecrement, isDark),
+              Expanded(
+                child: Center(
+                  child: Text(stepperLabel,
+                      style: TextStyle(fontSize: 11, color: subtitleColor)),
+                ),
               ),
+              _stepperBtn(Icons.add, onIncrement, isDark),
             ],
           ),
         ],
       ),
     );
   }
-}
 
-class _InteractiveMonthCalendar extends StatefulWidget {
-  final List<int> standardWorkingDays;
-  final List<DateTime> blacklistedDates;
-  final Function(DateTime) onToggleDate;
-
-  const _InteractiveMonthCalendar({
-    required this.standardWorkingDays,
-    required this.blacklistedDates,
-    required this.onToggleDate,
-  });
-
-  @override
-  State<_InteractiveMonthCalendar> createState() => _InteractiveMonthCalendarState();
-}
-
-class _InteractiveMonthCalendarState extends State<_InteractiveMonthCalendar> {
-  DateTime _currentMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
-
-  void _nextMonth() => setState(() => _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1));
-  void _prevMonth() => setState(() => _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1));
-
-  @override
-  Widget build(BuildContext context) {
-    final daysInMonth = DateUtils.getDaysInMonth(_currentMonth.year, _currentMonth.month);
-    final firstDayOffset = _currentMonth.weekday % 7; // Sunday = 0
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
+  Widget _buildFastTrackCard({
+    required bool isDark,
+    required Color cardBg,
+    required Color cardBorder,
+    required Color subtitleColor,
+    required bool enabled,
+    required ValueChanged<bool> onToggle,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: enabled ? AppColors.fireRed.withValues(alpha: 0.4) : cardBorder),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              const Icon(Icons.bolt, color: AppColors.fireRed, size: 16),
+              const SizedBox(width: 6),
+              Text('FAST-TRACK MODE',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold,
+                      color: subtitleColor, letterSpacing: 0.6)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text('Express 24h',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.fireRed)),
+          const SizedBox(height: 4),
+          Text('Priority bypass for minor dent & spot cures.',
+              style: TextStyle(fontSize: 11, color: subtitleColor)),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(icon: const Icon(Icons.chevron_left, color: Colors.white), onPressed: _prevMonth),
-              Text(
-                '${_getMonthName(_currentMonth.month)} ${_currentMonth.year}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-              IconButton(icon: const Icon(Icons.chevron_right, color: Colors.white), onPressed: _nextMonth),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: weekdays.map((w) => Text(w, style: const TextStyle(color: Colors.white54, fontWeight: FontWeight.bold))).toList(),
-          ),
-          const SizedBox(height: 8),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              childAspectRatio: 1.2,
-              crossAxisSpacing: 4,
-              mainAxisSpacing: 4,
-            ),
-            itemCount: daysInMonth + firstDayOffset,
-            itemBuilder: (context, index) {
-              if (index < firstDayOffset) return const SizedBox.shrink();
-              final day = index - firstDayOffset + 1;
-              final date = DateTime(_currentMonth.year, _currentMonth.month, day);
-              
-              // 1 = Mon, 7 = Sun. Convert to match _standardWorkingDays (1-7 scale usually)
-              final isStandardWorkingDay = widget.standardWorkingDays.contains(date.weekday);
-              final isBlacklisted = widget.blacklistedDates.any((d) => d.year == date.year && d.month == date.month && d.day == date.day);
-              final isPast = date.isBefore(today);
-
-              Color bgColor = Colors.transparent;
-              Color textColor = Colors.white;
-              
-              if (isPast) {
-                textColor = Colors.white24;
-              } else if (isBlacklisted) {
-                bgColor = AppColors.fireRed.withValues(alpha: 0.2);
-                textColor = AppColors.fireRed;
-              } else if (!isStandardWorkingDay) {
-                bgColor = Colors.white10;
-                textColor = Colors.white54;
-              } else {
-                bgColor = Colors.green.withValues(alpha: 0.2);
-                textColor = Colors.green;
-              }
-
-              return InkWell(
-                onTap: isPast ? null : () => widget.onToggleDate(date),
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: bgColor,
-                    borderRadius: BorderRadius.circular(8),
-                    border: isBlacklisted ? Border.all(color: AppColors.fireRed) : null,
-                  ),
-                  child: Text(
-                    '$day',
-                    style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: enabled
+                      ? AppColors.fireRed.withValues(alpha: 0.1)
+                      : (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade100),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  enabled ? 'ACTIVE' : 'INACTIVE',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: enabled ? AppColors.fireRed : subtitleColor,
                   ),
                 ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.square, color: Colors.green, size: 12), SizedBox(width: 4), Text('Working Day', style: TextStyle(color: Colors.white70, fontSize: 12)),
-              SizedBox(width: 16),
-              Icon(Icons.square, color: AppColors.fireRed, size: 12), SizedBox(width: 4), Text('Day Off', style: TextStyle(color: Colors.white70, fontSize: 12)),
-              SizedBox(width: 16),
-              Icon(Icons.square, color: Colors.grey, size: 12), SizedBox(width: 4), Text('Standard Weekend', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ),
+              Switch(
+                value: enabled,
+                onChanged: onToggle,
+                activeColor: AppColors.fireRed,
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
   }
 
-  String _getMonthName(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[month - 1];
+  Widget _stepperBtn(IconData icon, VoidCallback onTap, bool isDark) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 28, height: 28,
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceContainerLow : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: isDark ? AppColors.outlineVariant : Colors.black12),
+        ),
+        child: Icon(icon, size: 16,
+            color: isDark ? AppColors.onSurfaceVariant : Colors.black54),
+      ),
+    );
+  }
+
+  Widget _buildCalendar({
+    required bool isDark,
+    required Color cardBg,
+    required Color cardBorder,
+    required Color subtitleColor,
+  }) {
+    final daysInMonth = DateUtils.getDaysInMonth(_currentMonth.year, _currentMonth.month);
+    // Start on Monday (weekday 1), offset = weekday-1 (Mon=0..Sun=6)
+    final firstDayOffset = (_currentMonth.weekday - 1) % 7;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final monthName = [
+      'January','February','March','April','May','June',
+      'July','August','September','October','November','December'
+    ][_currentMonth.month - 1];
+
+    // Detect if it's a "peak" month (Jun-Aug in this context)
+    final isPeakMonth = [6, 7, 8].contains(_currentMonth.month);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cardBorder),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        children: [
+          // Calendar header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today, color: AppColors.fireRed, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  '$monthName ${_currentMonth.year}',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.onSurface : Colors.black87,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (isPeakMonth)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentWarning.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppColors.accentWarning.withValues(alpha: 0.4)),
+                    ),
+                    child: const Text('Peak Cycle',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentWarning)),
+                  ),
+                const Spacer(),
+                // Legend
+                _calLegend(Colors.green, 'Working Day'),
+                const SizedBox(width: 12),
+                _calLegend(AppColors.fireRed, 'Day Off / Closed'),
+                const SizedBox(width: 12),
+                _calLegend(Colors.orange, 'National Holiday'),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  iconSize: 20,
+                  color: isDark ? AppColors.onSurface : Colors.black54,
+                  onPressed: _prevMonth,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  iconSize: 20,
+                  color: isDark ? AppColors.onSurface : Colors.black54,
+                  onPressed: _nextMonth,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: cardBorder),
+
+          // Weekday headers (Mon–Sun)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) {
+                return Expanded(
+                  child: Center(
+                    child: Text(w,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: (w == 'Sun')
+                              ? AppColors.fireRed.withValues(alpha: 0.8)
+                              : subtitleColor,
+                        )),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
+          // Calendar grid
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                childAspectRatio: 1.05,
+                crossAxisSpacing: 4,
+                mainAxisSpacing: 4,
+              ),
+              itemCount: daysInMonth + firstDayOffset,
+              itemBuilder: (context, index) {
+                if (index < firstDayOffset) return const SizedBox.shrink();
+                final day = index - firstDayOffset + 1;
+                final date = DateTime(_currentMonth.year, _currentMonth.month, day);
+                final isToday = date == today;
+                final isPast = date.isBefore(today);
+                final isBlacklisted = _isBlacklisted(date);
+                final isStandardWorkingDay = _standardWorkingDays.contains(date.weekday);
+                final isSunday = date.weekday == 7;
+
+                Color bgColor;
+                Color textColor;
+                Color? dotColor;
+                String? statusLabel;
+
+                if (isBlacklisted) {
+                  bgColor = AppColors.fireRed.withValues(alpha: 0.12);
+                  textColor = AppColors.fireRed;
+                  dotColor = AppColors.fireRed;
+                  statusLabel = 'OFF';
+                } else if (!isStandardWorkingDay) {
+                  bgColor = (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100);
+                  textColor = isSunday ? AppColors.fireRed.withValues(alpha: 0.5) : subtitleColor;
+                  dotColor = null;
+                } else {
+                  bgColor = Colors.green.withValues(alpha: isDark ? 0.12 : 0.08);
+                  textColor = isPast
+                      ? (isDark ? Colors.white24 : Colors.black26)
+                      : (isDark ? AppColors.onSurface : Colors.black87);
+                  dotColor = Colors.green;
+                }
+
+                return GestureDetector(
+                  onTap: isPast ? null : () => _toggleDate(date),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(6),
+                      border: isToday
+                          ? Border.all(color: AppColors.fireRed, width: 1.5)
+                          : (isBlacklisted
+                              ? Border.all(color: AppColors.fireRed.withValues(alpha: 0.4))
+                              : null),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (dotColor != null)
+                              Container(
+                                width: 5, height: 5,
+                                margin: const EdgeInsets.only(right: 3),
+                                decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+                              ),
+                            Text(
+                              '$day',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
+                                color: textColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (statusLabel != null)
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: AppColors.fireRed,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: Text(
+                              statusLabel,
+                              style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                          )
+                        else if (isStandardWorkingDay && !isPast && dotColor != null)
+                          Text(
+                            '${_guaranteedSlotsPerDay}/${_simultaneousPanelCapacity}',
+                            style: TextStyle(fontSize: 8, color: subtitleColor),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Tap hint
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Text(
+              'Tap any working day to mark as day-off, or tap a red day to restore.',
+              style: TextStyle(fontSize: 11, color: subtitleColor),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _calLegend(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 8, height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+      ],
+    );
   }
 }

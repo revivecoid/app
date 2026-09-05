@@ -55,7 +55,7 @@ class PartnerDashboardMobile extends ConsumerWidget {
             ),
           ),
           if (state.isOfflineSyncing)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: Icon(Icons.sync, color: Colors.greenAccent),
             ),
@@ -89,7 +89,7 @@ class PartnerDashboardMobile extends ConsumerWidget {
                               '${job.carMake} ${job.carModel}', 
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: textColor),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(

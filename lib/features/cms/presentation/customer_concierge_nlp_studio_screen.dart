@@ -26,13 +26,13 @@ class CustomerConciergeNlpStudioScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Customer Concierge AI NLP Intent Studio', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: textColor)),
-                    const SizedBox(height: 8),
-                    const Text('Manage NLP intents, training phrases, and chatbot routing rules.', style: TextStyle(color: AppColors.daysGray)),
+                    SizedBox(height: 8),
+                    Text('Manage NLP intents, training phrases, and chatbot routing rules.', style: TextStyle(color: AppColors.daysGray)),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(

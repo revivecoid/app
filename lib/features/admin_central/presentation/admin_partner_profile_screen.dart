@@ -164,7 +164,7 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text('No active jobs.', style: TextStyle(color: textColor.withValues(alpha: 0.5))),
                     ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   _buildSectionHeader('Job History (${state.pastJobs.length})', textColor),
                   ...state.pastJobs.map((j) => _buildJobCard(j, surfaceColor, textColor)),
                   if (state.pastJobs.isEmpty)
@@ -219,7 +219,7 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
                               crossAxisAlignment: m.isAdmin ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                               children: [
                                 Text(m.content, style: TextStyle(color: m.isAdmin ? Colors.white : textColor, fontSize: 13)),
-                                const SizedBox(height: 4),
+                                SizedBox(height: 4),
                                 Text(
                                   DateFormat('HH:mm').format(m.createdAt),
                                   style: TextStyle(fontSize: 10, color: m.isAdmin ? Colors.white60 : Colors.grey),

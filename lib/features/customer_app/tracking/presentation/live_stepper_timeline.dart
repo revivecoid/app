@@ -50,15 +50,15 @@ class LiveStepperTimeline extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final streamState = ref.watch(jobStreamProvider(jobId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF1D1C1D) : const Color(0xFFF8F9FA);
-    final cardColor = isDark ? const Color(0xFF2C2B2C) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1D1C1D);
+    final bg = isDark ? Color(0xFF1D1C1D) : Color(0xFFF8F9FA);
+    final cardColor = isDark ? Color(0xFF2C2B2C) : Colors.white;
+    final textColor = isDark ? Colors.white : Color(0xFF1D1C1D);
     final mutedColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
 
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1D1C1D) : Colors.white,
+        backgroundColor: isDark ? Color(0xFF1D1C1D) : Colors.white,
         elevation: 1,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: textColor),
@@ -107,7 +107,7 @@ class LiveStepperTimeline extends ConsumerWidget {
               ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
             },
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
         ],
       ),
       body: streamState.isLoading
@@ -167,12 +167,12 @@ class _TrackerBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Service Progress', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   'Step ${currentStepIndex + 1} of ${_statusSteps.length}',
                   style: TextStyle(fontSize: 12, color: AppColors.fireRed, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 ...List.generate(_statusSteps.length, (i) {
                   final stepStatus = i < currentStepIndex
                       ? _StepState.completed
@@ -192,7 +192,7 @@ class _TrackerBody extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // ─── Live Photo Stream ───
           _card(
@@ -202,12 +202,12 @@ class _TrackerBody extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.camera_alt, color: AppColors.fireRed, size: 18),
-                    const SizedBox(width: 8),
+                    Icon(Icons.camera_alt, color: AppColors.fireRed, size: 18),
+                    SizedBox(width: 8),
                     Text('Workshop Photo Stream', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 if (progressPhotos.isEmpty)
                   Container(
                     width: double.infinity,
@@ -351,11 +351,11 @@ class _StatusBanner extends StatelessWidget {
       child: Row(
         children: [
           const Icon(Icons.sync, color: AppColors.fireRed, size: 18),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('CURRENT STATUS', style: TextStyle(fontSize: 10, color: AppColors.fireRed, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+              Text('CURRENT STATUS', style: TextStyle(fontSize: 10, color: AppColors.fireRed, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
               Text(label, style: const TextStyle(fontSize: 14, color: AppColors.fireRed, fontWeight: FontWeight.bold)),
             ],
           ),

@@ -29,7 +29,6 @@ class _PanelDurationConfigScreenState extends ConsumerState<PanelDurationConfigS
   void initState() {
     super.initState();
     for (final panel in _standardPanels) {
-      // Default to 2.0 hours
       _controllers[panel] = TextEditingController(text: '2.0');
     }
     _loadDurations();
@@ -85,12 +84,10 @@ class _PanelDurationConfigScreenState extends ConsumerState<PanelDurationConfigS
       for (final panel in _standardPanels) {
         final text = _controllers[panel]!.text;
         final duration = double.tryParse(text) ?? 2.0;
-        
         payload.add({
           'partner_id': user.id,
           'panel_name': panel,
           'repair_duration_hours': duration,
-          
         });
       }
 
@@ -116,6 +113,9 @@ class _PanelDurationConfigScreenState extends ConsumerState<PanelDurationConfigS
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -129,16 +129,16 @@ class _PanelDurationConfigScreenState extends ConsumerState<PanelDurationConfigS
             'Panel Repair Duration Matrix',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: cs.onSurface,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Configure the standard labor hours required for each specific panel repair. This drives the availability estimator.',
-            style: TextStyle(color: Colors.white70),
+            style: TextStyle(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 32),
-          
+
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -154,15 +154,23 @@ class _PanelDurationConfigScreenState extends ConsumerState<PanelDurationConfigS
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: isDark ? AppColors.surfaceContainerLow : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white10),
+                  border: Border.all(
+                    color: isDark ? Colors.white10 : Colors.black12,
+                  ),
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       flex: 2,
-                      child: Text(panel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                      child: Text(
+                        panel,
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                     Expanded(
                       flex: 1,
@@ -172,14 +180,20 @@ class _PanelDurationConfigScreenState extends ConsumerState<PanelDurationConfigS
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}')),
                         ],
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
+                        style: TextStyle(color: cs.onSurface),
+                        decoration: InputDecoration(
                           suffixText: 'hrs',
-                          suffixStyle: TextStyle(color: Colors.white54),
+                          suffixStyle: TextStyle(color: cs.onSurfaceVariant),
                           isDense: true,
-                          contentPadding: EdgeInsets.all(8),
-                          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.fireRed)),
+                          contentPadding: const EdgeInsets.all(8),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: isDark ? Colors.white24 : Colors.black26,
+                            ),
+                          ),
+                          focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.fireRed),
+                          ),
                         ),
                       ),
                     ),
@@ -188,7 +202,7 @@ class _PanelDurationConfigScreenState extends ConsumerState<PanelDurationConfigS
               );
             },
           ),
-          
+
           const SizedBox(height: 48),
           SizedBox(
             width: double.infinity,

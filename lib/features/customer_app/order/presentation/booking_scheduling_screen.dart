@@ -48,9 +48,9 @@ class BookingSchedulingScreen extends ConsumerWidget {
                     }).toList(),
 
                     if (state.selectedWorkshop != null) ...[
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32),
                       Text('Select Date', style: Theme.of(context).textTheme.titleLarge),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       SizedBox(
                         height: 90,
                         child: ListView.builder(
@@ -84,7 +84,7 @@ class BookingSchedulingScreen extends ConsumerWidget {
                                         color: isWeekend ? AppColors.daysGray : (isSelected ? Colors.white : AppColors.daysGray),
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: 4),
                                     Text(
                                       '${date.day}',
                                       style: TextStyle(
@@ -102,9 +102,9 @@ class BookingSchedulingScreen extends ConsumerWidget {
                       ),
 
                       if (state.selectedDate != null) ...[
-                        const SizedBox(height: 32),
+                        SizedBox(height: 32),
                         Text('Select Time Slot', style: Theme.of(context).textTheme.titleLarge),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         Wrap(
                           spacing: 12,
                           runSpacing: 12,
@@ -127,7 +127,7 @@ class BookingSchedulingScreen extends ConsumerWidget {
                         ),
                       ],
                     ],
-                    const SizedBox(height: 100), // padding for bottom bar
+                    SizedBox(height: 100), // padding for bottom bar
                   ],
                 ),
               ),
@@ -136,7 +136,7 @@ class BookingSchedulingScreen extends ConsumerWidget {
         ? Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1c1b1c) : Colors.white,
+              color: isDark ? Color(0xFF1c1b1c) : Colors.white,
               boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, -5))],
             ),
             child: ElevatedButton(

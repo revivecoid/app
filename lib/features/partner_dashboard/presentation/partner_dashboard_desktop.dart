@@ -461,12 +461,12 @@ class _Header extends ConsumerWidget {
                 child: Row(
                   children: [
                     Container(width: 8, height: 8, decoration: BoxDecoration(color: isLive ? _emerald500 : Colors.orange, shape: BoxShape.circle)),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(isLive ? 'LIVE SYNC' : 'RECONNECTING', style: TextStyle(color: _onSurface, fontSize: 12, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               IconButton(
                 icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: _onSurfaceVariant),
                 tooltip: 'Toggle Theme',

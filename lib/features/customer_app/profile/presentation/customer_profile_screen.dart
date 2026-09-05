@@ -220,13 +220,13 @@ class CustomerProfileScreen extends ConsumerWidget {
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: AppColors.sleekBlack)),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       _buildAccountTiles(context, ref),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
 
                       // ── Logout ────────────────────────────────────────────
                       _buildLogout(context),
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32),
                     ],
                   ),
                 ),
