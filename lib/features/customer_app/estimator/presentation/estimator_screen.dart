@@ -183,7 +183,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (ctx) => const Center(child: CircularProgressIndicator(color: AppColors.fireRed)),
+        builder: (ctx) => Center(child: CircularProgressIndicator(color: AppColors.fireRed)),
       );
 
       try {
@@ -225,7 +225,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       decoration: BoxDecoration(
         color: (isDark ? AppColors.surfaceContainerLowest : Colors.white),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -235,11 +235,11 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.lens, color: AppColors.fireRed, size: 15),
-                  const SizedBox(width: 4),
+                  Icon(Icons.lens, color: AppColors.fireRed, size: 15),
+                  SizedBox(width: 4),
                   Text(
                     'STEP ${_currentStep + 1} OF 4: ${_getStepTitle()}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.fireRed,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -250,7 +250,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               ),
               Text(
                 '${((_currentStep + 1) * 25).toInt()}%',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.fireRed,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -258,7 +258,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Row(
             children: List.generate(4, (index) {
               return Expanded(
@@ -273,7 +273,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               );
             }),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Row(
             children: [
               _buildStepLabel('Damage', 'Active', 0),
@@ -336,7 +336,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
         borderRadius: BorderRadius.circular(12),
       ),
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -347,10 +347,10 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               color: AppColors.fireRed.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.info, color: AppColors.fireRed, size: 18),
+            child: Icon(Icons.info, color: AppColors.fireRed, size: 18),
           ),
-          const SizedBox(width: 12),
-          const Expanded(
+          SizedBox(width: 12),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -377,16 +377,16 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       decoration: BoxDecoration(
         color: (isDark ? AppColors.surfaceContainerLowest : Colors.white),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
       ),
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'INTAKE IMAGERY',
                 style: TextStyle(
                   fontSize: 12,
@@ -402,18 +402,18 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                     color: AppColors.fireRed.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text(
+                  child: Text(
                     'AI Verified',
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.fireRed),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: _captureImage,
-            icon: const Icon(Icons.photo_camera, size: 20),
-            label: const Text('Capture Damage Photo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            icon: Icon(Icons.photo_camera, size: 20),
+            label: Text('Capture Damage Photo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.fireRed,
               foregroundColor: Colors.white,
@@ -423,7 +423,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             ),
           ),
           if (_selectedImage != null) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
                 color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
@@ -440,34 +440,34 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.black12),
                     ),
-                    child: const Center(child: Icon(Icons.image, color: Colors.grey)),
+                    child: Center(child: Icon(Icons.image, color: Colors.grey)),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.check_circle, color: Colors.green, size: 16),
-                            const SizedBox(width: 4),
+                            Icon(Icons.check_circle, color: Colors.green, size: 16),
+                            SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 _selectedImage!.name,
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
-                        const Text('High-res inspection • Selected', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
+                        SizedBox(height: 4),
+                        Text('High-res inspection • Selected', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.sync, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54)),
+                    icon: Icon(Icons.sync, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54)),
                     onPressed: _captureImage,
                   )
                 ],
@@ -485,7 +485,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       decoration: BoxDecoration(
         color: (isDark ? AppColors.surfaceContainerLowest : Colors.white),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -494,7 +494,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Digital Twin Analysis', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
@@ -509,15 +509,15 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 ),
                 child: Row(
                   children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.fireRed, shape: BoxShape.circle)),
-                    const SizedBox(width: 4),
-                    const Text('Live Twin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
+                    Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.fireRed, shape: BoxShape.circle)),
+                    SizedBox(width: 4),
+                    Text('Live Twin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
               color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
@@ -534,7 +534,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -544,14 +544,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 decoration: BoxDecoration(
                   color: (isDark ? AppColors.surfaceContainer : Colors.grey.shade100),
                   borderRadius: BorderRadius.circular(8),
-                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
+                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.check, color: AppColors.fireRed, size: 16),
-                    const SizedBox(width: 4),
-                    Text(panel.label, style: const TextStyle(color: AppColors.fireRed, fontWeight: FontWeight.bold, fontSize: 12)),
+                    Icon(Icons.check, color: AppColors.fireRed, size: 16),
+                    SizedBox(width: 4),
+                    Text(panel.label, style: TextStyle(color: AppColors.fireRed, fontWeight: FontWeight.bold, fontSize: 12)),
                   ],
                 ),
               );
@@ -575,13 +575,13 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       decoration: BoxDecoration(
         color: (isDark ? AppColors.surfaceContainerLowest : Colors.white),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
               color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
@@ -597,10 +597,10 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                         color: AppColors.fireRed,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.assignment_turned_in, color: Colors.white, size: 20),
+                      child: Icon(Icons.assignment_turned_in, color: Colors.white, size: 20),
                     ),
-                    const SizedBox(width: 8),
-                    const Column(
+                    SizedBox(width: 8),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Damage Assessment Report', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
@@ -615,7 +615,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                     color: (isDark ? AppColors.surfaceContainer : Colors.grey.shade100),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text('${panels.length} Items', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
+                  child: Text('${panels.length} Items', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
                 ),
               ],
             ),
@@ -625,7 +625,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             child: Column(
               children: [
                 if (panels.isEmpty)
-                  Text('Assessment:\n$_aiResult', style: const TextStyle(color: (isDark ? AppColors.onSurface : Colors.black87))),
+                  Text('Assessment:\n$_aiResult', style: TextStyle(color: (isDark ? AppColors.onSurface : Colors.black87))),
                 ...panels.map((panel) {
                   final severity = (panel['panel_severity']?.toString() ?? 'ringan').toUpperCase();
                   return Container(
@@ -641,15 +641,15 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(panel['panel_name']?.toString() ?? '-', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
-                            Text('Rp ${_formatCurrency(panel['calculated_cost'] ?? 0)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
+                            Text(panel['panel_name']?.toString() ?? '-', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
+                            Text('Rp ${_formatCurrency(panel['calculated_cost'] ?? 0)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Observasi: ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
+                            Text('Observasi: ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
                             Expanded(
                               child: Wrap(
                                 spacing: 4,
@@ -658,22 +658,22 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                   if ((panel['scratches_found'] as num? ?? 0) > 0)
                                     Text('⚡ Gores', style: TextStyle(fontSize: 12, color: Colors.orange[700], fontWeight: FontWeight.bold)),
                                   if ((panel['scratches_found'] as num? ?? 0) > 0 && (panel['dents_found'] as num? ?? 0) > 0)
-                                    const Text(' • ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
+                                    Text(' • ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
                                   if ((panel['dents_found'] as num? ?? 0) > 0)
                                     Text('🔨 Penyok', style: TextStyle(fontSize: 12, color: Colors.blue[700], fontWeight: FontWeight.bold)),
                                   if ((panel['scratches_found'] as num? ?? 0) == 0 && (panel['dents_found'] as num? ?? 0) == 0)
-                                    const Text('Kerusakan Umum', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
+                                    Text('Kerusakan Umum', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: AppColors.fireRed.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Text('Severity: $severity', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
+                              child: Text('Severity: $severity', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
                             ),
                           ],
                         ),
@@ -681,7 +681,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                     ),
                   );
                 }).toList(),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -691,14 +691,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Column(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('TOTAL ESTIMATION', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
                           Text('Includes Color Matching & Clear Coat', style: TextStyle(fontSize: 11, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
                         ],
                       ),
-                      Text('Rp ${_formatCurrency(totalCost)}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
+                      Text('Rp ${_formatCurrency(totalCost)}', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
                     ],
                   ),
                 ),
@@ -739,7 +739,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateBrand(val),
             ),
           ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         if (_selectedMake != null && _selectedMake != 'Other')
           DropdownButtonFormField<String>(
             value: _selectedModel,
@@ -764,14 +764,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateModel(val),
             ),
           ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         TextFormField(
           controller: _yearController,
           decoration: const InputDecoration(labelText: 'Year of Production'),
           keyboardType: TextInputType.number,
           onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateYear(val),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         TextFormField(
           controller: _licensePlateController,
           decoration: const InputDecoration(labelText: 'License Plate (e.g. B 1234 XYZ)'),
@@ -793,16 +793,16 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             decoration: const InputDecoration(labelText: 'Full Name'),
             onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateName(val),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           TextFormField(
             controller: _phoneController,
             decoration: const InputDecoration(labelText: 'WhatsApp Number'),
             keyboardType: TextInputType.phone,
             onChanged: (val) => ref.read(customerIntakeProvider.notifier).updatePhone(val),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: 'Select Service Area'),
+            decoration: InputDecoration(labelText: 'Select Service Area'),
             value: ref.watch(customerIntakeProvider).location.isEmpty ? null : ref.watch(customerIntakeProvider).location,
             items: [
               'Bandung', 'Cimahi', 'Soreang', 
@@ -834,7 +834,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       children: [
         // Header notice
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppColors.fireRed.withValues(alpha: 0.07),
             borderRadius: BorderRadius.circular(12),
@@ -842,9 +842,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.verified_outlined, color: AppColors.fireRed, size: 20),
-              const SizedBox(width: 10),
-              const Expanded(
+              Icon(Icons.verified_outlined, color: AppColors.fireRed, size: 20),
+              SizedBox(width: 10),
+              Expanded(
                 child: Text(
                   'Review your details before confirming. Go back to edit anything.',
                   style: TextStyle(fontSize: 13, color: (isDark ? AppColors.onSurface : Colors.black87)),
@@ -853,7 +853,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // ── Section 1: Contact ──────────────────────────────────────
         _buildReviewSection(
@@ -865,7 +865,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             _ReviewRow('Service Area', intake.location.isEmpty ? '—' : intake.location),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
 
         // ── Section 2: Vehicle ──────────────────────────────────────
         _buildReviewSection(
@@ -878,29 +878,29 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             _ReviewRow('License Plate', intake.licensePlate.isEmpty ? '—' : intake.licensePlate),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
 
         // ── Section 3: Damage Assessment ────────────────────────────
         Container(
           decoration: BoxDecoration(
             color: (isDark ? AppColors.surfaceContainerLowest : Colors.white),
             borderRadius: BorderRadius.circular(12),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
           ),
           child: Column(
             children: [
               // section header
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: const BoxDecoration(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
                   color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.assignment_turned_in_outlined, size: 18, color: AppColors.fireRed),
-                    const SizedBox(width: 8),
-                    const Expanded(
+                    Icon(Icons.assignment_turned_in_outlined, size: 18, color: AppColors.fireRed),
+                    SizedBox(width: 8),
+                    Expanded(
                       child: Text(
                         'Damage Assessment',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
@@ -915,7 +915,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                         ),
                         child: Text(
                           'Overall: ${overallSeverity.toString().toUpperCase()}',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.fireRed),
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.fireRed),
                         ),
                       ),
                   ],
@@ -923,11 +923,11 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               ),
               // panel rows
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(12),
                 child: Column(
                   children: [
                     if (panels.isEmpty)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.symmetric(vertical: 8),
                         child: Text('No AI damage data available.', style: TextStyle(color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
                       ),
@@ -951,16 +951,16 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                 children: [
                                   Text(
                                     panel['panel_name']?.toString() ?? '-',
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
                                   ),
-                                  const SizedBox(height: 3),
+                                  SizedBox(height: 3),
                                   Text(
                                     [
                                       if (hasGores) '⚡ Gores',
                                       if (hasPenyok) '🔨 Penyok',
                                       if (!hasGores && !hasPenyok) 'Kerusakan Umum',
                                     ].join('  '),
-                                    style: const TextStyle(fontSize: 11, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54)),
+                                    style: TextStyle(fontSize: 11, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54)),
                                   ),
                                 ],
                               ),
@@ -970,9 +970,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                               children: [
                                 Text(
                                   'Rp ${_formatCurrency(cost)}',
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
                                 ),
-                                const SizedBox(height: 2),
+                                SizedBox(height: 2),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                                   decoration: BoxDecoration(
@@ -981,7 +981,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                   ),
                                   child: Text(
                                     severity,
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.fireRed),
+                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.fireRed),
                                   ),
                                 ),
                               ],
@@ -996,7 +996,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Column(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('ESTIMATED TOTAL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54), letterSpacing: 0.8)),
@@ -1005,7 +1005,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                           ),
                           Text(
                             'Rp ${_formatCurrency(totalCost)}',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.fireRed),
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.fireRed),
                           ),
                         ],
                       ),
@@ -1016,7 +1016,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // Consent line
         Container(
@@ -1025,7 +1025,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.info_outline, size: 16, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54)),
@@ -1053,21 +1053,21 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       decoration: BoxDecoration(
         color: (isDark ? AppColors.surfaceContainerLowest : Colors.white),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: const BoxDecoration(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
               color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: [
                 Icon(icon, size: 18, color: AppColors.fireRed),
-                const SizedBox(width: 8),
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
+                SizedBox(width: 8),
+                Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
               ],
             ),
           ),
@@ -1079,8 +1079,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(row.label, style: const TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
-                    Text(row.value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: (isDark ? AppColors.onSurface : Colors.black87))),
+                    Text(row.label, style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
+                    Text(row.value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: (isDark ? AppColors.onSurface : Colors.black87))),
                   ],
                 ),
               )).toList(),
@@ -1097,14 +1097,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildProgressSteps(),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         if (_currentStep == 0) ...[
           _buildInstructionBanner(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _buildPhotoUpload(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _buildDigitalTwin(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _buildDamageAssessmentReport(),
         ] else if (_currentStep == 1) ...[
           _buildStep2(),
@@ -1175,7 +1175,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.arrow_back),
+                          icon: Icon(Icons.arrow_back),
                           onPressed: () {
                             setState(() => _currentStep -= 1);
                           },
@@ -1198,11 +1198,11 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(ctaTitle.toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                              const SizedBox(height: 2),
+                              Text(ctaTitle.toUpperCase(), style: TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                              SizedBox(height: 2),
                               _isAnalyzing 
-                                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                  : Text(ctaSubtitle, style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                  : Text(ctaSubtitle, style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           Container(
@@ -1212,7 +1212,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                               color: Colors.white.withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+                            child: Icon(Icons.arrow_forward, color: Colors.white, size: 18),
                           ),
                         ],
                       ),
