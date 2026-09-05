@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -48,8 +49,16 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
   late TextEditingController _yearController;
   late TextEditingController _licensePlateController;
 
-  // Visual Intake
-  XFile? _selectedImage;
+  // Visual Intake – up to 5 photos: front, back, left, right, detail
+  static const List<String> _photoSlotLabels = ['Depan', 'Belakang', 'Kiri', 'Kanan', 'Detail Utama'];
+  static const List<IconData> _photoSlotIcons = [
+    Icons.arrow_upward,
+    Icons.arrow_downward,
+    Icons.arrow_back,
+    Icons.arrow_forward,
+    Icons.center_focus_strong,
+  ];
+  final List<XFile?> _selectedImages = List.filled(5, null, growable: false);
   bool _isAnalyzing = false;
   String? _aiResult;
   Map<String, dynamic>? _structuredData;
@@ -86,16 +95,58 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     super.dispose();
   }
 
-  Future<void> _captureImage() async {
+  Future<void> _captureImage(int slotIndex) async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.camera);
-    if (image != null) {
-      setState(() => _selectedImage = image);
-    }
+    // Allow gallery as fallback so users can pick existing photos too
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.photo_camera, color: AppColors.fireRed),
+              title: const Text('Ambil Foto (Kamera)', style: TextStyle(fontWeight: FontWeight.w600)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 90);
+                if (image != null) setState(() => _selectedImages[slotIndex] = image);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppColors.fireRed),
+              title: const Text('Pilih dari Galeri', style: TextStyle(fontWeight: FontWeight.w600)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+                if (image != null) setState(() => _selectedImages[slotIndex] = image);
+              },
+            ),
+            if (_selectedImages[slotIndex] != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Hapus Foto', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  setState(() => _selectedImages[slotIndex] = null);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _submitToVisionAi() async {
-    if (_selectedImage == null) return;
+    final filledImages = _selectedImages.where((img) => img != null).toList();
+    if (filledImages.isEmpty) return;
     
     setState(() {
       _isAnalyzing = true;
@@ -103,14 +154,26 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     });
 
     try {
-      final compressedBytes = await ImageCompressor.compressImage(_selectedImage!);
-      
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-      await Supabase.instance.client.storage
-          .from('revive-photos')
-          .uploadBinary(fileName, compressedBytes);
-          
-      final publicUrl = Supabase.instance.client.storage.from('revive-photos').getPublicUrl(fileName);
+      // Upload all filled slots in parallel
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final uploadFutures = <Future<String>>[];
+      for (int i = 0; i < _selectedImages.length; i++) {
+        final img = _selectedImages[i];
+        if (img == null) continue;
+        uploadFutures.add(() async {
+          final compressedBytes = await ImageCompressor.compressImage(img);
+          final slotLabel = _photoSlotLabels[i].toLowerCase().replaceAll(' ', '_');
+          final fileName = '${ts}_${slotLabel}_$i.jpg';
+          await Supabase.instance.client.storage
+              .from('revive-photos')
+              .uploadBinary(fileName, compressedBytes);
+          return Supabase.instance.client.storage
+              .from('revive-photos')
+              .getPublicUrl(fileName);
+        }());
+      }
+
+      final photoUrls = await Future.wait(uploadFutures);
       
       final selectedPanels = ref.read(selectedPanelsProvider);
       final selectedPanelLabels = selectedPanels.map((p) => p.label).toList();
@@ -118,9 +181,10 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       final res = await Supabase.instance.client.functions.invoke(
         'vision-estimation',
         body: {
-          'photoUrl': publicUrl, 
-          'damageDescription': 'User uploaded car damage',
-          'selectedPanels': selectedPanelLabels
+          'photoUrl': photoUrls.first,      // backward-compat: primary URL
+          'photoUrls': photoUrls,           // all photo URLs for richer context
+          'damageDescription': 'User uploaded car damage photos (${photoUrls.length} angles)',
+          'selectedPanels': selectedPanelLabels,
         },
       );
 
@@ -160,11 +224,11 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
   void _onNextStep() async {
     if (_currentStep == 0) {
       if (_aiResult == null) {
-        if (_selectedImage != null && ref.read(selectedPanelsProvider).isNotEmpty) {
+        if (_selectedImages.any((img) => img != null) && ref.read(selectedPanelsProvider).isNotEmpty) {
           _submitToVisionAi();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please capture an image and select panels before continuing.')),
+            const SnackBar(content: Text('Please capture at least 1 photo and select damaged panels before continuing.')),
           );
         }
       } else {
@@ -258,7 +322,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Row(
             children: List.generate(4, (index) {
               return Expanded(
@@ -349,8 +413,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             ),
             child: const Icon(Icons.info, color: AppColors.fireRed, size: 18),
           ),
-          const SizedBox(width: 12),
-          const Expanded(
+          SizedBox(width: 12),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -360,7 +424,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Provide a photo of the damage and select affected panels on the digital twin.\nNote: Make sure to clearly capture any scratches (gores) or dents (penyok).',
+                  'Upload up to 5 photos from different angles for the best AI estimate. At minimum, 1 photo is required.\nCapture scratches (gores) and dents (penyok) clearly.',
                   style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54), height: 1.3),
                 ),
               ],
@@ -371,8 +435,126 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     );
   }
 
+  /// Builds a single photo slot card for one camera angle.
+  Widget _buildPhotoSlot(int index, bool isDark) {
+    final img = _selectedImages[index];
+    final label = _photoSlotLabels[index];
+    final icon = _photoSlotIcons[index];
+    final filled = img != null;
+
+    return GestureDetector(
+      onTap: () => _captureImage(index),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // ── Background / thumbnail ───────────────────────────────
+            if (filled)
+              FutureBuilder<Uint8List>(
+                future: img!.readAsBytes(),
+                builder: (ctx, snap) {
+                  if (snap.connectionState == ConnectionState.done && snap.hasData) {
+                    return Image.memory(snap.data!, fit: BoxFit.cover);
+                  }
+                  // While loading, show a shimmer-ish grey box
+                  return Container(
+                    color: isDark ? AppColors.surfaceContainerLow : Colors.grey.shade200,
+                    child: const Center(
+                      child: SizedBox(
+                        width: 18, height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.fireRed),
+                      ),
+                    ),
+                  );
+                },
+              )
+            else
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.surfaceContainerLow : Colors.grey.shade100,
+                  border: Border.all(color: Colors.black12),
+                ),
+              ),
+
+            // ── Empty-state centre label ─────────────────────────────
+            if (!filled)
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 22, color: isDark ? AppColors.onSurfaceVariant : Colors.black38),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.onSurfaceVariant : Colors.black54,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  Text(
+                    'Ketuk untuk foto',
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: isDark ? AppColors.onSurfaceVariant : Colors.black38,
+                    ),
+                  ),
+                ],
+              ),
+
+            // ── Filled: dark gradient + label bar at bottom ──────────
+            if (filled) ...[
+              // Gradient scrim so the label is readable over any photo
+              Positioned(
+                left: 0, right: 0, bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black.withValues(alpha: 0.62)],
+                    ),
+                  ),
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              // Remove / retake button – top-right corner
+              Positioned(
+                top: 4, right: 4,
+                child: GestureDetector(
+                  onTap: () => _captureImage(index),
+                  child: Container(
+                    width: 22, height: 22,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.edit, color: Colors.white, size: 13),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPhotoUpload() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final filledCount = _selectedImages.where((img) => img != null).length;
+
     return Container(
       decoration: BoxDecoration(
         color: (isDark ? AppColors.surfaceContainerLowest : Colors.white),
@@ -383,10 +565,11 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ── Header ──────────────────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'INTAKE IMAGERY',
                 style: TextStyle(
                   fontSize: 12,
@@ -395,85 +578,75 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                   color: (isDark ? AppColors.onSurfaceVariant : Colors.black54),
                 ),
               ),
-              if (_aiResult != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.fireRed.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+              Row(
+                children: [
+                  Text(
+                    '$filledCount / 5 Foto',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: filledCount > 0 ? AppColors.fireRed : (isDark ? AppColors.onSurfaceVariant : Colors.black38),
+                    ),
                   ),
-                  child: const Text(
-                    'AI Verified',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.fireRed),
-                  ),
-                ),
+                  if (_aiResult != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.fireRed.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'AI Verified',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.fireRed),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: _captureImage,
-            icon: const Icon(Icons.photo_camera, size: 20),
-            label: const Text('Capture Damage Photo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.fireRed,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              elevation: 1,
-            ),
+
+          // ── 2×2 top row (Depan, Belakang, Kiri, Kanan) ───────────────
+          Row(
+            children: [
+              Expanded(child: AspectRatio(aspectRatio: 1, child: _buildPhotoSlot(0, isDark))),
+              const SizedBox(width: 8),
+              Expanded(child: AspectRatio(aspectRatio: 1, child: _buildPhotoSlot(1, isDark))),
+              const SizedBox(width: 8),
+              Expanded(child: AspectRatio(aspectRatio: 1, child: _buildPhotoSlot(2, isDark))),
+              const SizedBox(width: 8),
+              Expanded(child: AspectRatio(aspectRatio: 1, child: _buildPhotoSlot(3, isDark))),
+            ],
           ),
-          if (_selectedImage != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
-                borderRadius: BorderRadius.circular(8),
+          const SizedBox(height: 8),
+
+          // ── Bottom centered slot: Detail Utama ───────────────────────
+          Row(
+            children: [
+              const Spacer(),
+              Expanded(
+                flex: 2,
+                child: AspectRatio(
+                  aspectRatio: 2.0,
+                  child: _buildPhotoSlot(4, isDark),
+                ),
               ),
-              padding: const EdgeInsets.all(10),
-              child: Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: (isDark ? AppColors.surfaceContainer : Colors.grey.shade100),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.black12),
-                    ),
-                    child: const Center(child: Icon(Icons.image, color: Colors.grey)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.check_circle, color: Colors.green, size: 16),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                _selectedImage!.name,
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        const Text('High-res inspection • Selected', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.sync, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54)),
-                    onPressed: _captureImage,
-                  )
-                ],
-              ),
+              const Spacer(),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+          // ── Helper text ─────────────────────────────────────────────
+          Text(
+            'Min. 1 foto wajib diisi • Lebih banyak foto = estimasi lebih akurat',
+            style: TextStyle(
+              fontSize: 10,
+              color: (isDark ? AppColors.onSurfaceVariant : Colors.black38),
             ),
-          ]
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
@@ -494,7 +667,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Digital Twin Analysis', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
@@ -510,14 +683,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 child: Row(
                   children: [
                     Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.fireRed, shape: BoxShape.circle)),
-                    const SizedBox(width: 4),
-                    const Text('Live Twin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
+                    SizedBox(width: 4),
+                    Text('Live Twin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
               color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
@@ -534,7 +707,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -549,8 +722,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.check, color: AppColors.fireRed, size: 16),
-                    const SizedBox(width: 4),
+                    Icon(Icons.check, color: AppColors.fireRed, size: 16),
+                    SizedBox(width: 4),
                     Text(panel.label, style: const TextStyle(color: AppColors.fireRed, fontWeight: FontWeight.bold, fontSize: 12)),
                   ],
                 ),
@@ -581,7 +754,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
@@ -599,8 +772,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                       ),
                       child: const Icon(Icons.assignment_turned_in, color: Colors.white, size: 20),
                     ),
-                    const SizedBox(width: 8),
-                    const Column(
+                    SizedBox(width: 8),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Damage Assessment Report', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
@@ -625,7 +798,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             child: Column(
               children: [
                 if (panels.isEmpty)
-                  Text('Assessment:\n$_aiResult', style: const TextStyle(color: (isDark ? AppColors.onSurface : Colors.black87))),
+                  Text('Assessment:\n$_aiResult', style: TextStyle(color: (isDark ? AppColors.onSurface : Colors.black87))),
                 ...panels.map((panel) {
                   final severity = (panel['panel_severity']?.toString() ?? 'ringan').toUpperCase();
                   return Container(
@@ -641,15 +814,15 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(panel['panel_name']?.toString() ?? '-', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
-                            Text('Rp ${_formatCurrency(panel['calculated_cost'] ?? 0)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
+                            Text(panel['panel_name']?.toString() ?? '-', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
+                            Text('Rp ${_formatCurrency(panel['calculated_cost'] ?? 0)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Observasi: ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
+                            Text('Observasi: ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
                             Expanded(
                               child: Wrap(
                                 spacing: 4,
@@ -658,15 +831,15 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                   if ((panel['scratches_found'] as num? ?? 0) > 0)
                                     Text('⚡ Gores', style: TextStyle(fontSize: 12, color: Colors.orange[700], fontWeight: FontWeight.bold)),
                                   if ((panel['scratches_found'] as num? ?? 0) > 0 && (panel['dents_found'] as num? ?? 0) > 0)
-                                    const Text(' • ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
+                                    Text(' • ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
                                   if ((panel['dents_found'] as num? ?? 0) > 0)
                                     Text('🔨 Penyok', style: TextStyle(fontSize: 12, color: Colors.blue[700], fontWeight: FontWeight.bold)),
                                   if ((panel['scratches_found'] as num? ?? 0) == 0 && (panel['dents_found'] as num? ?? 0) == 0)
-                                    const Text('Kerusakan Umum', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
+                                    Text('Kerusakan Umum', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
@@ -681,7 +854,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                     ),
                   );
                 }).toList(),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -691,7 +864,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Column(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('TOTAL ESTIMATION', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
@@ -764,14 +937,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateModel(val),
             ),
           ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         TextFormField(
           controller: _yearController,
           decoration: const InputDecoration(labelText: 'Year of Production'),
           keyboardType: TextInputType.number,
           onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateYear(val),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         TextFormField(
           controller: _licensePlateController,
           decoration: const InputDecoration(labelText: 'License Plate (e.g. B 1234 XYZ)'),
@@ -800,7 +973,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             keyboardType: TextInputType.phone,
             onChanged: (val) => ref.read(customerIntakeProvider.notifier).updatePhone(val),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           DropdownButtonFormField<String>(
             decoration: const InputDecoration(labelText: 'Select Service Area'),
             value: ref.watch(customerIntakeProvider).location.isEmpty ? null : ref.watch(customerIntakeProvider).location,
@@ -842,9 +1015,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.verified_outlined, color: AppColors.fireRed, size: 20),
-              const SizedBox(width: 10),
-              const Expanded(
+              Icon(Icons.verified_outlined, color: AppColors.fireRed, size: 20),
+              SizedBox(width: 10),
+              Expanded(
                 child: Text(
                   'Review your details before confirming. Go back to edit anything.',
                   style: TextStyle(fontSize: 13, color: (isDark ? AppColors.onSurface : Colors.black87)),
@@ -865,7 +1038,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             _ReviewRow('Service Area', intake.location.isEmpty ? '—' : intake.location),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
 
         // ── Section 2: Vehicle ──────────────────────────────────────
         _buildReviewSection(
@@ -878,7 +1051,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             _ReviewRow('License Plate', intake.licensePlate.isEmpty ? '—' : intake.licensePlate),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
 
         // ── Section 3: Damage Assessment ────────────────────────────
         Container(
@@ -892,15 +1065,15 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               // section header
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.assignment_turned_in_outlined, size: 18, color: AppColors.fireRed),
-                    const SizedBox(width: 8),
-                    const Expanded(
+                    Icon(Icons.assignment_turned_in_outlined, size: 18, color: AppColors.fireRed),
+                    SizedBox(width: 8),
+                    Expanded(
                       child: Text(
                         'Damage Assessment',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
@@ -927,8 +1100,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 child: Column(
                   children: [
                     if (panels.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text('No AI damage data available.', style: TextStyle(color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
                       ),
                     ...panels.map((panel) {
@@ -951,16 +1124,16 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                 children: [
                                   Text(
                                     panel['panel_name']?.toString() ?? '-',
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
                                   ),
-                                  const SizedBox(height: 3),
+                                  SizedBox(height: 3),
                                   Text(
                                     [
                                       if (hasGores) '⚡ Gores',
                                       if (hasPenyok) '🔨 Penyok',
                                       if (!hasGores && !hasPenyok) 'Kerusakan Umum',
                                     ].join('  '),
-                                    style: const TextStyle(fontSize: 11, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54)),
+                                    style: TextStyle(fontSize: 11, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54)),
                                   ),
                                 ],
                               ),
@@ -970,7 +1143,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                               children: [
                                 Text(
                                   'Rp ${_formatCurrency(cost)}',
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87)),
                                 ),
                                 const SizedBox(height: 2),
                                 Container(
@@ -992,11 +1165,11 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                     }).toList(),
                     // Total cost row
                     if (panels.isNotEmpty) ...[
-                      const Divider(height: 20),
+                      Divider(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Column(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('ESTIMATED TOTAL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54), letterSpacing: 0.8)),
@@ -1016,7 +1189,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // Consent line
         Container(
@@ -1025,7 +1198,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.info_outline, size: 16, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54)),
@@ -1059,15 +1232,15 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: (isDark ? AppColors.surfaceContainerLow : Colors.grey.shade50),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: [
                 Icon(icon, size: 18, color: AppColors.fireRed),
-                const SizedBox(width: 8),
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
+                SizedBox(width: 8),
+                Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Colors.black87))),
               ],
             ),
           ),
@@ -1079,8 +1252,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(row.label, style: const TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
-                    Text(row.value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: (isDark ? AppColors.onSurface : Colors.black87))),
+                    Text(row.label, style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Colors.black54))),
+                    Text(row.value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: (isDark ? AppColors.onSurface : Colors.black87))),
                   ],
                 ),
               )).toList(),
@@ -1097,14 +1270,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildProgressSteps(),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         if (_currentStep == 0) ...[
           _buildInstructionBanner(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _buildPhotoUpload(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _buildDigitalTwin(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _buildDamageAssessmentReport(),
         ] else if (_currentStep == 1) ...[
           _buildStep2(),
