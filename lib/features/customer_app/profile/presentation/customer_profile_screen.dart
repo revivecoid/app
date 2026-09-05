@@ -1487,57 +1487,12 @@ class CustomerProfileScreen extends ConsumerWidget {
             ),
           ),
           _divider(),
-          // WhatsApp toggle — actually toggles with Riverpod state
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.chat,
-                      color: Colors.green, size: 20),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('WhatsApp Live Alerts',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.sleekBlack)),
-                      Text('Real-time photos on stage changes',
-                          style: TextStyle(
-                              fontSize: 12, color: AppColors.daysGray)),
-                    ],
-                  ),
-                ),
-                Switch(
-                  value: alertsOn,
-                  onChanged: (v) {
-                    ref
-                        .read(whatsappAlertsProvider.notifier)
-                        .state = v;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(v
-                            ? 'WhatsApp alerts enabled'
-                            : 'WhatsApp alerts disabled'),
-                        behavior: SnackBarBehavior.floating,
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: Colors.green,
-                ),
-              ],
-            ),
+          _tile(
+            icon: Icons.notifications_active_outlined,
+            iconColor: AppColors.fireRed,
+            title: 'Pengaturan Notifikasi',
+            subtitle: 'In-app, Email & WhatsApp booking updates',
+            onTap: () => context.push('/notification-settings'),
           ),
           _divider(),
           _tile(
