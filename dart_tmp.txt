@@ -1,0 +1,93 @@
+class CarPathData {
+  static Map<CarPanel, Path> getPaths() {
+    Path poly(List<double> coords) {
+      final path = Path();
+      for (int i = 0; i < coords.length; i += 2) {
+        if (i == 0) path.moveTo(coords[i], coords[i+1]);
+        else path.lineTo(coords[i], coords[i+1]);
+      }
+      path.close();
+      return path;
+    }
+
+    Path symTop(List<double> topHalfX, List<double> topHalfY) {
+      final path = Path();
+      for (int i = 0; i < topHalfX.length; i++) {
+        if (i == 0) path.moveTo(topHalfX[i], topHalfY[i]);
+        else path.lineTo(topHalfX[i], topHalfY[i]);
+      }
+      for (int i = topHalfX.length - 1; i >= 0; i--) {
+        path.lineTo(topHalfX[i], 305 + (305 - topHalfY[i]));
+      }
+      path.close();
+      return path;
+    }
+    
+    // Bottom side view is exactly a vertical mirror of the Top side view
+    // Top center is roughly Y=100. Bottom center is roughly Y=510.
+    // Total height is 610. Center is 305.
+    // 610 - Y works perfectly to mirror top to bottom.
+    Path mirrorBottom(List<double> topCoords) {
+      final path = Path();
+      for (int i = 0; i < topCoords.length; i += 2) {
+        if (i == 0) path.moveTo(topCoords[i], 610 - topCoords[i+1]);
+        else path.lineTo(topCoords[i], 610 - topCoords[i+1]);
+      }
+      path.close();
+      return path;
+    }
+
+    // Right Side View (Top)
+    final rhFender = [200,105, 230,85, 305,80, 305,165, 200,165];
+    final rhPintuDepan = [310,75, 455,75, 455,165, 310,165];
+    final rhPintuBelakang = [460,75, 570,75, 570,165, 460,165];
+    final rhQuarter = [575,75, 680,85, 730,105, 730,165, 575,165];
+    final rhTrisplang = [310,170, 570,170, 570,185, 310,185];
+    final rhSideRoof = [355,25, 515,25, 555,70, 320,70];
+    final rhSpion = [305,75, 330,75, 330,95, 305,95];
+
+    // Left Side View (Bottom - Mirrored exactly)
+    final lhFender = mirrorBottom(rhFender);
+    final lhPintuDepan = mirrorBottom(rhPintuDepan);
+    final lhPintuBelakang = mirrorBottom(rhPintuBelakang);
+    final lhQuarter = mirrorBottom(rhQuarter);
+    final lhTrisplang = mirrorBottom(rhTrisplang);
+    final lhSideRoof = mirrorBottom(rhSideRoof);
+    final lhSpion = mirrorBottom(rhSpion);
+
+    return {
+      // 1. Center (Top-Down View)
+      CarPanel.kapMesin: symTop([210, 310, 360, 390], [250, 245, 235, 230]),
+      CarPanel.roof:     symTop([395, 460, 560, 570], [230, 225, 225, 230]),
+      CarPanel.bagasi:   symTop([575, 620, 700, 755], [230, 235, 245, 250]),
+      CarPanel.cover:    symTop([200, 755], [220, 220]), // Fallback
+
+      // 2. Top (Right Side View)
+      CarPanel.fenderRH:             poly(rhFender),
+      CarPanel.pintuDepanRH:         poly(rhPintuDepan),
+      CarPanel.pintuBelakangRH:      poly(rhPintuBelakang),
+      CarPanel.quarterRH:            poly(rhQuarter),
+      CarPanel.trisplangRH:          poly(rhTrisplang),
+      CarPanel.sideRoofRH:           poly(rhSideRoof),
+      CarPanel.spionRH:              poly(rhSpion),
+
+      // 3. Bottom (Left Side View - Now perfectly symmetric)
+      CarPanel.fenderLH:             lhFender,
+      CarPanel.pintuDepanLH:         lhPintuDepan,
+      CarPanel.pintuBelakangLH:      lhPintuBelakang,
+      CarPanel.quarterLH:            lhQuarter,
+      CarPanel.trisplangLH:          lhTrisplang,
+      CarPanel.sideRoofLH:           lhSideRoof,
+      CarPanel.spionLH:              lhSpion,
+
+      // 4. Left (Front View)
+      CarPanel.bumperDepan:          poly([25,255, 65,245, 95,255, 95,355, 65,365, 25,355]),
+      CarPanel.spoilerBumperDepan:   poly([10,265, 20,265, 20,345, 10,345]),
+
+      // 5. Right (Rear View)
+      CarPanel.bumperBelakang:       poly([845,255, 875,245, 915,255, 915,355, 875,365, 845,355]),
+      CarPanel.spoilerBumperBelakang:poly([920,265, 930,265, 930,345, 920,345]),
+      CarPanel.spoilerBagasi:        poly([830,265, 840,265, 840,345, 830,345]),
+    };
+  }
+}
