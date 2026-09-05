@@ -100,6 +100,14 @@ class LiveStepperTimeline extends ConsumerWidget {
                 padding: EdgeInsets.zero,
               ),
             ),
+          IconButton(
+            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: mutedColor),
+            tooltip: 'Toggle Theme',
+            onPressed: () {
+              ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
+            },
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: streamState.isLoading

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/theme/app_theme.dart';
 import 'partner_dashboard_controller.dart';
 
 // ─── Color tokens (keep consistent with the original design) ─────────────────
@@ -395,7 +396,7 @@ class _SidebarNavItem extends StatelessWidget {
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────
-class _Header extends StatelessWidget {
+class _Header extends ConsumerWidget {
   final TextEditingController searchController;
   final ValueChanged<String> onSearch;
   final String userName;
@@ -411,7 +412,10 @@ class _Header extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -461,6 +465,14 @@ class _Header extends StatelessWidget {
                     Text(isLive ? 'LIVE SYNC' : 'RECONNECTING', style: TextStyle(color: _onSurface, fontSize: 12, fontWeight: FontWeight.bold)),
                   ],
                 ),
+              ),
+              const SizedBox(width: 16),
+              IconButton(
+                icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: _onSurfaceVariant),
+                tooltip: 'Toggle Theme',
+                onPressed: () {
+                  ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
+                },
               ),
               const SizedBox(width: 16),
               Column(

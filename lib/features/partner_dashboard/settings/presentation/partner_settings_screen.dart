@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/theme/app_theme.dart';
 
 // Helper for exact colors matching the design system
 class _DesignColors {
@@ -148,13 +149,29 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _DesignColors.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text('OPS CORE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.primary, letterSpacing: 1.2)),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Theme.of(context).brightness == Brightness.dark ? Icons.light_mode : Icons.dark_mode, 
+                        color: _DesignColors.onSurfaceVariant
+                      ),
+                      tooltip: 'Toggle Theme',
+                      onPressed: () {
+                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _DesignColors.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text('OPS CORE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.primary, letterSpacing: 1.2)),
+                    ),
+                  ],
                 ),
               ],
             ),

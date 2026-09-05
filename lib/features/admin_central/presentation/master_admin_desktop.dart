@@ -85,6 +85,13 @@ class _MasterAdminDesktopState extends ConsumerState<MasterAdminDesktop> {
                       if (state.isLoading)
                         const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                       const SizedBox(width: 16),
+                      IconButton(
+                        icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: textColor),
+                        tooltip: 'Toggle Theme',
+                        onPressed: () {
+                          ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
+                        },
+                      ),
                       IconButton(icon: const Icon(Icons.refresh), onPressed: () => ref.invalidate(adminDashboardProvider), color: textColor),
                     ],
                   ),

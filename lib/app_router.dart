@@ -18,6 +18,7 @@ import 'features/customer_app/tracking/presentation/live_stepper_timeline.dart';
 import 'features/customer_app/profile/presentation/customer_profile_screen.dart';
 import 'features/customer_app/support/presentation/customer_support_screen.dart';
 import 'features/customer_app/notifications/presentation/customer_notifications_screen.dart';
+import 'features/customer_app/notifications/presentation/notification_preferences_screen.dart';
 import 'features/customer_app/profile/presentation/update_password_screen.dart';
 import 'features/admin_central/presentation/master_admin_desktop.dart';
 import 'features/admin_central/presentation/admin_partner_profile_screen.dart';
@@ -260,6 +261,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const CustomerNotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/notification-settings',
+        builder: (context, state) => const NotificationPreferencesScreen(),
       ),
 
       // --- MASTER ADMIN DOMAIN ---

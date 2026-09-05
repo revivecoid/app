@@ -244,7 +244,7 @@ class CustomerProfileScreen extends ConsumerWidget {
   // ─────────────────────────────────────────────────────────────────────────
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
-    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = Supabase.instance.client.auth.currentUser;
     final userName = user?.userMetadata?['full_name']?.toString() ??
         user?.userMetadata?['name']?.toString() ?? '';

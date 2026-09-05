@@ -69,7 +69,7 @@ class _AdminJobAssignmentScreenState extends ConsumerState<AdminJobAssignmentScr
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
-    final isDark = themeMode == ThemeMode.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppColors.background : Colors.grey[50];
     final surfaceColor = isDark ? AppColors.surface : Colors.white;
     final textColor = isDark ? Colors.white : AppColors.sleekBlack;

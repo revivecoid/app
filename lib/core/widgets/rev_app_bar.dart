@@ -24,8 +24,8 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-    final isDark = themeMode == ThemeMode.dark;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     
     final themeToggleBtn = IconButton(
       icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: theme.colorScheme.onSurfaceVariant),
