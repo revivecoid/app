@@ -44,10 +44,10 @@ class CustomerNotificationsScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 12),
+                  Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  SizedBox(height: 12),
                   Text('Gagal memuat notifikasi', style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   TextButton(
                     onPressed: () =>
                         ref.invalidate(notificationsProvider),
@@ -96,13 +96,13 @@ class CustomerNotificationsScreen extends ConsumerWidget {
           size: 64,
           color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Text(
           'Belum ada notifikasi',
           style: theme.textTheme.titleLarge
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Text(
           'Update status booking akan muncul di sini.',
           style: TextStyle(color: theme.colorScheme.onSurfaceVariant),

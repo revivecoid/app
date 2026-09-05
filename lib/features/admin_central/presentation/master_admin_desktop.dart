@@ -31,7 +31,7 @@ class _MasterAdminDesktopState extends ConsumerState<MasterAdminDesktop> {
           // Sidebar
           Container(
             width: 280,
-            color: isDark ? const Color(0xFF1c1b1c) : Colors.white,
+            color: isDark ? Color(0xFF1c1b1c) : Colors.white,
             child: Column(
               children: [
                 Container(
@@ -83,8 +83,8 @@ class _MasterAdminDesktopState extends ConsumerState<MasterAdminDesktop> {
                       ),
                       const Spacer(),
                       if (state.isLoading)
-                        const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                      const SizedBox(width: 16),
+                        SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                      SizedBox(width: 16),
                       IconButton(
                         icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: textColor),
                         tooltip: 'Toggle Theme',

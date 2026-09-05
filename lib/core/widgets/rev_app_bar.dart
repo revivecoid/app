@@ -167,7 +167,7 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
           fit: BoxFit.contain,
           color: isDark ? Colors.white : AppColors.fireRed,
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Text(
           're-V',
           style: theme.textTheme.titleLarge?.copyWith(

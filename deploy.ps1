@@ -20,8 +20,9 @@ git config user.email "bot@antigravity.dev"
 git config user.name "Antigravity"
 git add .
 git commit -m "Deploy: Live Update"
-# It relies on the global credential helper to push to the real repo!
-git remote add origin "https://github.com/revivecoid/app.git"
+# It relies on the parent's credential helper/token to push to the real repo!
+$originUrl = (git -C ..\.. config --get remote.origin.url)
+git remote add origin $originUrl
 git push origin gh-pages --force
 Set-Location ..\..
 Write-Host "Deploy successful!"

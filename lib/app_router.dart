@@ -519,7 +519,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                           height: 40,
                           color: isDark ? Colors.white : AppColors.fireRed,
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Text(
                           're-V',
                           style: TextStyle(
@@ -637,7 +637,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                       child: Text('Back to Login', style: TextStyle(color: textColor.withValues(alpha: 0.8))),
                     ),
                   ],
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Row(
                     children: const [
                       Expanded(child: Divider()),
@@ -648,7 +648,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                       Expanded(child: Divider()),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     height: 48,

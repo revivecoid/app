@@ -39,13 +39,13 @@ class CustomerSupportScreen extends StatelessWidget {
                   style: theme.textTheme.headlineMedium
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   'Find answers to common questions or reach out to our team.',
                   style: theme.textTheme.titleMedium
                       ?.copyWith(color: AppColors.daysGray),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
 
                 // ── Contact Cards ───────────────────────────────────────────
                 Row(
@@ -66,7 +66,7 @@ class CustomerSupportScreen extends StatelessWidget {
                         isDark: isDark,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: _buildContactCard(
                         context,
@@ -79,7 +79,7 @@ class CustomerSupportScreen extends StatelessWidget {
                         isDark: isDark,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: _buildContactCard(
                         context,
@@ -143,7 +143,7 @@ class CustomerSupportScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
 
                 // ── FAQ ─────────────────────────────────────────────────────
                 Text(
@@ -151,7 +151,7 @@ class CustomerSupportScreen extends StatelessWidget {
                   style: theme.textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 _buildFaqItem(
                   context,
@@ -215,7 +215,7 @@ class CustomerSupportScreen extends StatelessWidget {
                         foregroundColor: AppColors.primaryContainer),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
               ],
             ),
           ),
@@ -267,7 +267,7 @@ class CustomerSupportScreen extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(

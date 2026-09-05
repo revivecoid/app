@@ -57,8 +57,7 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) throw Exception('Not authenticated');
-      _partnerId = user.userMetadata?['partner_id'] as String? ?? '';
-      if (_partnerId.isEmpty) throw Exception('No partner_id in user metadata');
+      _partnerId = user.id; // partner row is keyed by auth UID
       await Future.wait([_fetchProfile(), _fetchKpis(), _fetchFacilityPhotos()]);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
@@ -66,7 +65,8 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
   }
 
   Future<void> _fetchProfile() async {
-    final data = await _supabase.from('partners').select().eq('id', _partnerId).single();
+    // Use maybeSingle() so we get null instead of PGRST116 if no row exists yet
+    final data = await _supabase.from('partners').select().eq('id', _partnerId).maybeSingle();
     state = state.copyWith(isLoading: false, partnerData: data);
   }
 

@@ -26,13 +26,13 @@ class DigitalAssetManagerScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Digital Asset Manager & Edge CDN', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: textColor)),
-                    const SizedBox(height: 8),
-                    const Text('Manage media assets, upload interfaces, and edge caching telemetry.', style: TextStyle(color: AppColors.daysGray)),
+                    SizedBox(height: 8),
+                    Text('Manage media assets, upload interfaces, and edge caching telemetry.', style: TextStyle(color: AppColors.daysGray)),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(

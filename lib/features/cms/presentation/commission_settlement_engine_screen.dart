@@ -26,13 +26,13 @@ class CommissionSettlementEngineScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Workshop Commission Settlement Engine', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: textColor)),
-                    const SizedBox(height: 8),
-                    const Text('Financial dashboards, settlement batches, and workshop margin/commission adjustment tools.', style: TextStyle(color: AppColors.daysGray)),
+                    SizedBox(height: 8),
+                    Text('Financial dashboards, settlement batches, and workshop margin/commission adjustment tools.', style: TextStyle(color: AppColors.daysGray)),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
