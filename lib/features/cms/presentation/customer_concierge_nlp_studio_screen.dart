@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/rev_app_bar.dart';
 import '../../../core/widgets/responsive_layout_guard.dart';
 
@@ -40,7 +39,6 @@ class _CustomerConciergeNlpStudioScreenState extends State<CustomerConciergeNlpS
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textColor = theme.colorScheme.onSurface;
     
     Widget content = SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
@@ -105,7 +103,7 @@ class _CustomerConciergeNlpStudioScreenState extends State<CustomerConciergeNlpS
                     trailing: Switch(
                       value: intent['is_active'] ?? true,
                       onChanged: (val) {},
-                      activeColor: theme.colorScheme.primary,
+                      activeThumbColor: theme.colorScheme.primary,
                     ),
                   );
                 },
@@ -116,7 +114,7 @@ class _CustomerConciergeNlpStudioScreenState extends State<CustomerConciergeNlpS
     );
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.colorScheme.surface,
       appBar: const ReVAppBar(),
       body: ResponsiveLayoutGuard(
         mobileWidget: content,
