@@ -6,7 +6,7 @@ import '../application/notifications_provider.dart';
 import '../domain/app_notification.dart';
 
 class CustomerNotificationsScreen extends ConsumerWidget {
-  const CustomerNotificationsScreen({super.key});
+  CustomerNotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -14,9 +14,11 @@ class CustomerNotificationsScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
     final notifState = ref.watch(notificationsProvider);
 
-    return Scaffold(
+    return LayoutBuilder(builder: (context, constraints) {
+      final isDesktop = constraints.maxWidth > 900;
+      Widget inner = Scaffold(
       appBar: ReVAppBar(
-        title: const Text('Notifikasi'),
+        title: Text('Notifikasi'),
         showBackButton: true,
         actions: [
           TextButton(
@@ -25,33 +27,33 @@ class CustomerNotificationsScreen extends ConsumerWidget {
             child: Text(
               'Tandai Semua Dibaca',
               style: TextStyle(
-                color: isDark ? Colors.white : AppColors.primaryContainer,
+                color: isDark ? Theme.of(context).colorScheme.surface : AppColors.primaryContainer,
                 fontSize: 12,
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
         ],
       ),
       body: Center(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
+          constraints: BoxConstraints(maxWidth: 600),
           child: notifState.when(
-            loading: () => const Center(
+            loading: () => Center(
               child: CircularProgressIndicator(color: AppColors.fireRed),
             ),
             error: (e, _) => Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+                  Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
                   SizedBox(height: 12),
                   Text('Gagal memuat notifikasi', style: theme.textTheme.titleMedium),
                   SizedBox(height: 8),
                   TextButton(
                     onPressed: () =>
                         ref.invalidate(notificationsProvider),
-                    child: const Text('Coba lagi'),
+                    child: Text('Coba lagi'),
                   ),
                 ],
               ),
@@ -85,6 +87,8 @@ class CustomerNotificationsScreen extends ConsumerWidget {
         ),
       ),
     );
+      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+    });
   }
 
   Widget _buildEmptyState(ThemeData theme) {
@@ -137,12 +141,12 @@ class _NotificationTile extends StatelessWidget {
       background: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: theme.colorScheme.error,
+          color: Theme.of(context).colorScheme.error,
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: theme.colorScheme.onPrimaryContainer),
+        child: Icon(Icons.delete, color: Theme.of(context).colorScheme.surface),
       ),
       onDismissed: (_) => onDismiss(),
       child: GestureDetector(
@@ -153,14 +157,14 @@ class _NotificationTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDark
                 ? theme.colorScheme.surfaceContainerHighest
-                : Colors.white,
+                : Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               if (!isDark)
                 BoxShadow(
-                  color: theme.colorScheme.shadow,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                   blurRadius: 4,
-                  offset: const Offset(0, 2),
+                  offset: Offset(0, 2),
                 ),
             ],
             border: notif.isRead
@@ -181,7 +185,7 @@ class _NotificationTile extends StatelessWidget {
                 ),
                 child: Icon(notif.icon, color: notif.color, size: 22),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,7 +207,7 @@ class _NotificationTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(
                           _formatTimestamp(notif.timestamp),
                           style: TextStyle(
@@ -213,7 +217,7 @@ class _NotificationTile extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       notif.body,
                       style: TextStyle(
@@ -226,12 +230,12 @@ class _NotificationTile extends StatelessWidget {
                 ),
               ),
               if (!notif.isRead) ...[
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Container(
                   width: 8,
                   height: 8,
                   margin: const EdgeInsets.only(top: 4),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.primaryContainer,
                     shape: BoxShape.circle,
                   ),

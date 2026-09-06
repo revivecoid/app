@@ -3,17 +3,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/responsive_layout_guard.dart';
 import 'partner_profile_controller.dart';
 
+// ─── Design tokens (match partner_dashboard_desktop) ────────────────────────
+const _surface = Color(0xFFfdf8f9);
+const _surfaceLowest = Color(0xFFffffff);
+const _surfaceLow = Color(0xFFf7f2f3);
+const _surfaceHigh = Color(0xFFebe7e8);
+const _primary = Color(0xFFa40016);
+const _primaryContainer = Color(0xFFd10721);
+const _onPrimary = Color(0xFFffffff);
+const _onSurface = Color(0xFF1c1b1c);
+const _onSurfaceVariant = Color(0xFF5d3f3d);
 const _emerald500 = Color(0xFF10B981);
 const _amber500 = Color(0xFFF59E0B);
 const _blue500 = Color(0xFF3B82F6);
+const _errorRed = Color(0xFF93000a);
 
-const _kSidebarWidth = 240.0;
+const _kSidebarWidth = 260.0;
 
 class PartnerProfileScreen extends ConsumerStatefulWidget {
-  const PartnerProfileScreen({super.key});
+  PartnerProfileScreen({super.key});
   @override
   ConsumerState<PartnerProfileScreen> createState() => _PartnerProfileScreenState();
 }
@@ -52,8 +62,6 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cs = Theme.of(context).colorScheme;
     final state = ref.watch(partnerProfileProvider);
     final controller = ref.read(partnerProfileProvider.notifier);
 
@@ -67,39 +75,41 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       }
       if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.errorMessage!), backgroundColor: _DesignColors.primaryContainer),
+          SnackBar(content: Text(next.errorMessage!), backgroundColor: _errorRed),
         );
       }
     });
 
-    return Scaffold(
-      backgroundColor: cs.surface,
+    return LayoutBuilder(builder: (context, constraints) {
+      final isDesktop = constraints.maxWidth > 900;
+      Widget inner = Scaffold(
+      backgroundColor: _surface,
       body: Row(
         children: [
-          _buildSidebar(context, isDark, cs),
+          _buildSidebar(context),
           Expanded(
             child: Column(
               children: [
-                _buildTopBar(context, isDark, cs, state, controller),
+                _buildTopBar(context, state, controller),
                 Expanded(
                   child: state.isLoading
-                      ? const Center(child: CircularProgressIndicator(color: AppColors.fireRed))
+                      ? Center(child: CircularProgressIndicator(color: _primaryContainer))
                       : state.partnerData == null
-                          ? _buildEmptyOrError(isDark, cs, state.errorMessage)
-                          : _buildBody(isDark, cs, state, controller),
+                          ? _buildError(state.errorMessage)
+                          : _buildBody(state, controller),
                 ),
               ],
             ),
           ),
         ],
-      );
-        return isDesktop ? Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: innerContent)) : innerContent;
-      }),
+      ),
     );
+      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+    });
   }
 
-  // â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  Widget _buildSidebar(BuildContext context, bool isDark, ColorScheme cs) {
+  // ── Sidebar ──────────────────────────────────────────────────────────────
+  Widget _buildSidebar(BuildContext context) {
     final items = [
       (Icons.dashboard_outlined, 'Dashboard', '/partner-dashboard'),
       (Icons.storefront_outlined, 'My Profile', '/partner-dashboard/profile'),
@@ -107,12 +117,9 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       (Icons.calendar_month_outlined, 'Schedule', '/partner-dashboard/schedule'),
       (Icons.timer_outlined, 'Panel Durations', '/partner-dashboard/quota'),
     ];
-    final sidebarBg = isDark ? AppColors.surfaceContainerLowest : Colors.white;
-    final dividerColor = isDark ? AppColors.outlineVariant : _DesignColors.onSurface12;
-
     return Container(
       width: _kSidebarWidth,
-      color: sidebarBg,
+      color: _surfaceLowest,
       child: Column(
         children: [
           Container(
@@ -120,40 +127,33 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: dividerColor)),
+              border: Border(bottom: BorderSide(color: _surfaceHigh)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.directions_car, color: AppColors.fireRed, size: 22),
-                const SizedBox(width: 10),
-                Text('Partner Portal',
-                    style: TextStyle(
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    )),
+                Icon(Icons.directions_car, color: _primaryContainer, size: 22),
+                SizedBox(width: 10),
+                Text('Partner Portal', style: TextStyle(color: _onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 12),
           ...items.map((item) {
             final isActive = item.$3 == '/partner-dashboard/profile';
             return InkWell(
               onTap: () => context.go(item.$3),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-                color: isActive ? AppColors.fireRed.withValues(alpha: 0.08) : Colors.transparent,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                color: isActive ? _primaryContainer.withValues(alpha: 0.08) : Colors.transparent,
                 child: Row(
                   children: [
-                    Icon(item.$1, size: 18,
-                        color: isActive ? AppColors.fireRed : cs.onSurfaceVariant),
-                    const SizedBox(width: 12),
-                    Text(item.$2,
-                        style: TextStyle(
-                          color: isActive ? AppColors.fireRed : cs.onSurface,
-                          fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                          fontSize: 14,
-                        )),
+                    Icon(item.$1, size: 20, color: isActive ? _primaryContainer : _onSurfaceVariant),
+                    SizedBox(width: 12),
+                    Text(item.$2, style: TextStyle(
+                      color: isActive ? _primaryContainer : _onSurface,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                      fontSize: 14,
+                    )),
                   ],
                 ),
               ),
@@ -164,35 +164,19 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
     );
   }
 
-  // â”€â”€ Top Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  Widget _buildTopBar(BuildContext context, bool isDark, ColorScheme cs,
-      PartnerProfileState state, PartnerProfileController controller) {
-    final dividerColor = isDark ? AppColors.outlineVariant : _DesignColors.onSurface12;
-    final barBg = isDark ? AppColors.surfaceContainerLowest : Colors.white;
-
+  // ── Top Bar ──────────────────────────────────────────────────────────────
+  Widget _buildTopBar(BuildContext context, PartnerProfileState state, PartnerProfileController controller) {
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: barBg,
-        border: Border(bottom: BorderSide(color: dividerColor)),
+        color: _surfaceLowest,
+        border: Border(bottom: BorderSide(color: _surfaceHigh)),
       ),
       child: Row(
         children: [
-          Text('My Workshop Profile',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface)),
-          const Spacer(),
-          // â”€â”€ Theme toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode,
-                color: cs.onSurfaceVariant),
-            tooltip: 'Toggle Theme',
-            onPressed: () {
-              ref.read(themeModeProvider.notifier).state =
-                  isDark ? ThemeMode.light : ThemeMode.dark;
-            },
-          ),
-          const SizedBox(width: 4),
+          Text('My Workshop Profile', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _onSurface)),
+          Spacer(),
           if (state.partnerData != null) ...[
             // Online / Offline toggle
             Row(
@@ -200,48 +184,40 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
                 Container(
                   width: 8, height: 8,
                   decoration: BoxDecoration(
-                    color: state.partnerData!['is_active'] == true
-                        ? _emerald500
-                        : cs.onSurfaceVariant,
+                    color: state.partnerData!['is_active'] == true ? _emerald500 : _onSurfaceVariant,
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Text(
                   state.partnerData!['is_active'] == true ? 'Online' : 'Offline',
                   style: TextStyle(
-                    color: state.partnerData!['is_active'] == true
-                        ? _emerald500 : cs.onSurfaceVariant,
+                    color: state.partnerData!['is_active'] == true ? _emerald500 : _onSurfaceVariant,
                     fontWeight: FontWeight.w500, fontSize: 13,
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Switch(
                   value: state.partnerData!['is_active'] == true,
-                  activeThumbColor: _emerald500,
+                  activeColor: _emerald500,
                   onChanged: (val) => controller.toggleOnlineStatus(val),
                 ),
               ],
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
             if (_isEditing) ...[
               OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                    foregroundColor: cs.onSurfaceVariant,
-                    side: BorderSide(color: dividerColor)),
+                style: OutlinedButton.styleFrom(foregroundColor: _onSurfaceVariant, side: BorderSide(color: _surfaceHigh)),
                 onPressed: () => setState(() => _isEditing = false),
-                child: const Text('Cancel'),
+                child: Text('Cancel'),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.fireRed,
-                    foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: _primaryContainer, foregroundColor: _onPrimary),
                 icon: state.isSaving
-                    ? const SizedBox(width: 14, height: 14,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Icon(Icons.save_outlined, size: 16),
-                label: const Text('Save Changes'),
+                    ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.surface, strokeWidth: 2))
+                    : Icon(Icons.save_outlined, size: 16),
+                label: Text('Save Changes'),
                 onPressed: state.isSaving ? null : () {
                   controller.updateProfile(
                     address: _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text.trim(),
@@ -253,11 +229,9 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
               ),
             ] else
               ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.fireRed,
-                    foregroundColor: Colors.white),
-                icon: const Icon(Icons.edit_outlined, size: 16),
-                label: const Text('Edit Profile'),
+                style: ElevatedButton.styleFrom(backgroundColor: _primary, foregroundColor: _onPrimary),
+                icon: Icon(Icons.edit_outlined, size: 16),
+                label: Text('Edit Profile'),
                 onPressed: () {
                   _populateControllers(state.partnerData!);
                   setState(() => _isEditing = true);
@@ -269,211 +243,217 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
     );
   }
 
-  // â”€â”€ Body â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  Widget _buildBody(bool isDark, ColorScheme cs, PartnerProfileState state, PartnerProfileController controller) {
+  // ── Body ─────────────────────────────────────────────────────────────────
+  Widget _buildBody(PartnerProfileState state, PartnerProfileController controller) {
     final p = state.partnerData!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeroCard(isDark, cs, p),
-          const SizedBox(height: 20),
+          // Hero header
+          _buildHeroCard(p),
+          SizedBox(height: 20),
+          // Two-column row: Contact & KPIs
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 3, child: _buildContactCard(isDark, cs, p)),
-              const SizedBox(width: 16),
-              Expanded(flex: 2, child: _buildKpiCard(isDark, cs, state)),
+              Expanded(flex: 3, child: _buildContactCard(p)),
+              SizedBox(width: 16),
+              Expanded(flex: 2, child: _buildKpiCard(state)),
             ],
           ),
-          const SizedBox(height: 20),
-          _buildFacilityPhotosCard(isDark, cs, state),
-          const SizedBox(height: 20),
-          _buildDocumentStatusCard(isDark, cs, p),
+          SizedBox(height: 20),
+          _buildFacilityPhotosCard(state),
+          SizedBox(height: 20),
+          _buildDocumentStatusCard(p),
         ],
       ),
     );
   }
 
-  Widget _card(bool isDark, ColorScheme cs, Widget child, {EdgeInsets padding = const EdgeInsets.all(20)}) {
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceContainerLow : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12),
-        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
-      ),
-      child: child,
-    );
-  }
-
-  Widget _buildHeroCard(bool isDark, ColorScheme cs, Map<String, dynamic> p) {
+  Widget _buildHeroCard(Map<String, dynamic> p) {
     final tier = p['tier']?.toString() ?? 'standard';
     final tierColor = switch (tier.toLowerCase()) {
       'premium' => _amber500,
-      'elite'   => AppColors.fireRed,
+      'elite'   => _primaryContainer,
       _         => _blue500,
     };
     final statusPending = p['status']?.toString() == 'pending';
-    return _card(isDark, cs, padding: const EdgeInsets.all(24), Row(
-      children: [
-        Container(
-          width: 72, height: 72,
-          decoration: BoxDecoration(
-            color: AppColors.fireRed.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: _surfaceLowest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _surfaceHigh),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 72, height: 72,
+            decoration: BoxDecoration(
+              color: _primaryContainer.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.storefront, size: 36, color: _primaryContainer),
           ),
-          child: const Icon(Icons.storefront, size: 36, color: AppColors.fireRed),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      p['entity_name']?.toString() ?? p['shop_name']?.toString() ?? 'Workshop Name',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: cs.onSurface),
-                      overflow: TextOverflow.ellipsis,
+          SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        p['entity_name']?.toString() ?? p['shop_name']?.toString() ?? 'Workshop Name',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _onSurface),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: tierColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: tierColor.withValues(alpha: 0.4)),
-                    ),
-                    child: Text(tier.toUpperCase(),
-                        style: TextStyle(color: tierColor, fontSize: 11, fontWeight: FontWeight.bold)),
-                  ),
-                  if (statusPending) ...[
-                    const SizedBox(width: 8),
+                    SizedBox(width: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
-                        color: _amber500.withValues(alpha: 0.1),
+                        color: tierColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _amber500.withValues(alpha: 0.4)),
+                        border: Border.all(color: tierColor.withValues(alpha: 0.4)),
                       ),
-                      child: const Text('PENDING REVIEW',
-                          style: TextStyle(color: _amber500, fontSize: 11, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        tier.toUpperCase(),
+                        style: TextStyle(color: tierColor, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
                     ),
+                    if (statusPending) ...[
+                      SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _amber500.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: _amber500.withValues(alpha: 0.4)),
+                        ),
+                        child: Text('PENDING REVIEW', style: TextStyle(color: _amber500, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                p['address']?.toString() ?? 'No address on file',
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-                maxLines: 2, overflow: TextOverflow.ellipsis,
-              ),
-              if (p['submitted_at'] != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Member since ${DateFormat.yMMMd().format(DateTime.parse(p['submitted_at'].toString()))}',
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
                 ),
+                SizedBox(height: 4),
+                Text(
+                  p['address']?.toString() ?? 'No address on file',
+                  style: TextStyle(color: _onSurfaceVariant, fontSize: 13),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (p['submitted_at'] != null) ...[
+                  SizedBox(height: 4),
+                  Text(
+                    'Member since ${DateFormat.yMMMd().format(DateTime.parse(p['submitted_at'].toString()))}',
+                    style: TextStyle(color: _onSurfaceVariant, fontSize: 12),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-      ],
-    ));
-  }
-
-  Widget _buildContactCard(bool isDark, ColorScheme cs, Map<String, dynamic> p) {
-    return _card(isDark, cs, Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Contact & Operations',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
-        const SizedBox(height: 16),
-        Divider(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12),
-        const SizedBox(height: 12),
-        if (_isEditing) ...[
-          _editField(isDark, cs, 'Address', _addressCtrl, Icons.location_on_outlined),
-          const SizedBox(height: 12),
-          _editField(isDark, cs, 'Paint Brand Partner', _paintBrandCtrl, Icons.palette_outlined),
-          const SizedBox(height: 12),
-          _editField(isDark, cs, 'Daily Throughput Capacity', _throughputCtrl, Icons.speed_outlined, keyboardType: TextInputType.number),
-          const SizedBox(height: 12),
-          _editField(isDark, cs, 'Service Radius (km)', _radiusCtrl, Icons.radar_outlined, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
-        ] else ...[
-          _infoRow(cs, Icons.location_on_outlined, 'Address', p['address']?.toString() ?? 'â€”'),
-          _infoRow(cs, Icons.palette_outlined, 'Paint Brand', p['paint_brand']?.toString() ?? 'â€”'),
-          _infoRow(cs, Icons.speed_outlined, 'Daily Capacity', '${p['throughput_capacity'] ?? 'â€”'} panels/day'),
-          _infoRow(cs, Icons.radar_outlined, 'Service Radius', '${p['service_radius_km'] ?? 'â€”'} km'),
         ],
-      ],
-    ));
-  }
-
-  Widget _editField(bool isDark, ColorScheme cs, String label, TextEditingController ctrl, IconData icon,
-      {TextInputType? keyboardType}) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: keyboardType,
-      style: TextStyle(fontSize: 14, color: cs.onSurface),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, size: 18, color: cs.onSurfaceVariant),
-        filled: true,
-        fillColor: isDark ? AppColors.surfaceContainerLowest : Colors.grey.shade50,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.fireRed, width: 2)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        labelStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
       ),
     );
   }
 
-  Widget _infoRow(ColorScheme cs, IconData icon, String label, String value) {
+  Widget _buildContactCard(Map<String, dynamic> p) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _surfaceLowest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _surfaceHigh),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Contact & Operations', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _onSurface)),
+          SizedBox(height: 16),
+          Divider(color: _surfaceHigh),
+          SizedBox(height: 12),
+          if (_isEditing) ...[
+            _editField('Address', _addressCtrl, Icons.location_on_outlined),
+            SizedBox(height: 12),
+            _editField('Paint Brand Partner', _paintBrandCtrl, Icons.palette_outlined),
+            SizedBox(height: 12),
+            _editField('Daily Throughput Capacity', _throughputCtrl, Icons.speed_outlined, keyboardType: TextInputType.number),
+            SizedBox(height: 12),
+            _editField('Service Radius (km)', _radiusCtrl, Icons.radar_outlined, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+          ] else ...[
+            _infoRow(Icons.location_on_outlined, 'Address', p['address']?.toString() ?? '—'),
+            _infoRow(Icons.palette_outlined, 'Paint Brand', p['paint_brand']?.toString() ?? '—'),
+            _infoRow(Icons.speed_outlined, 'Daily Capacity', '${p['throughput_capacity'] ?? '—'} panels/day'),
+            _infoRow(Icons.radar_outlined, 'Service Radius', '${p['service_radius_km'] ?? '—'} km'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _editField(String label, TextEditingController ctrl, IconData icon, {TextInputType? keyboardType}) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      style: TextStyle(fontSize: 14, color: _onSurface),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 18, color: _onSurfaceVariant),
+        filled: true,
+        fillColor: _surfaceLow,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: _surfaceHigh)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: _surfaceHigh)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: _primaryContainer, width: 2)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        labelStyle: TextStyle(fontSize: 13, color: _onSurfaceVariant),
+      ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: cs.onSurfaceVariant),
-          const SizedBox(width: 10),
-          SizedBox(width: 140,
-              child: Text(label, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant))),
-          Expanded(
-              child: Text(value,
-                  style: TextStyle(fontSize: 13, color: cs.onSurface, fontWeight: FontWeight.w500))),
+          Icon(icon, size: 16, color: _onSurfaceVariant),
+          SizedBox(width: 10),
+          SizedBox(width: 140, child: Text(label, style: TextStyle(fontSize: 13, color: _onSurfaceVariant))),
+          Expanded(child: Text(value, style: TextStyle(fontSize: 13, color: _onSurface, fontWeight: FontWeight.w500))),
         ],
       ),
     );
   }
 
-  Widget _buildKpiCard(bool isDark, ColorScheme cs, PartnerProfileState state) {
-    return _card(isDark, cs, Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Performance KPIs',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
-        const SizedBox(height: 16),
-        Divider(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12),
-        const SizedBox(height: 12),
-        _kpiTile(cs, 'Total Jobs Completed', '${state.totalJobsDone}', Icons.check_circle_outline, _emerald500),
-        const SizedBox(height: 12),
-        _kpiTile(cs, 'Avg. Repair Duration', '${state.avgRepairDays.toStringAsFixed(1)} days', Icons.schedule_outlined, _blue500),
-        const SizedBox(height: 12),
-        _kpiTile(cs, 'Daily Capacity', '${state.partnerData?['throughput_capacity'] ?? 'â€”'} panels', Icons.speed_outlined, _amber500),
-      ],
-    ));
+  Widget _buildKpiCard(PartnerProfileState state) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _surfaceLowest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _surfaceHigh),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Performance KPIs', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _onSurface)),
+          SizedBox(height: 16),
+          Divider(color: _surfaceHigh),
+          SizedBox(height: 12),
+          _kpiTile('Total Jobs Completed', '${state.totalJobsDone}', Icons.check_circle_outline, _emerald500),
+          SizedBox(height: 12),
+          _kpiTile('Avg. Repair Duration', '${state.avgRepairDays.toStringAsFixed(1)} days', Icons.schedule_outlined, _blue500),
+          SizedBox(height: 12),
+          _kpiTile('Daily Capacity', '${state.partnerData?['throughput_capacity'] ?? '—'} panels', Icons.speed_outlined, _amber500),
+        ],
+      ),
+    );
   }
 
-  Widget _kpiTile(ColorScheme cs, String label, String value, IconData icon, Color color) {
+  Widget _kpiTile(String label, String value, IconData icon, Color color) {
     return Row(
       children: [
         Container(
@@ -481,13 +461,13 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
           decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
           child: Icon(icon, size: 18, color: color),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface)),
+              Text(label, style: TextStyle(fontSize: 11, color: _onSurfaceVariant)),
+              Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _onSurface)),
             ],
           ),
         ),
@@ -495,121 +475,115 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
     );
   }
 
-  Widget _buildFacilityPhotosCard(bool isDark, ColorScheme cs, PartnerProfileState state) {
-    return _card(isDark, cs, Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Facility Photos',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
-        const SizedBox(height: 14),
-        state.facilityPhotoUrls.isEmpty
-            ? Container(
-                height: 100,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.surfaceContainerLowest : Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12),
-                ),
-                child: Text('No facility photos uploaded yet.',
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
-              )
-            : SizedBox(
-                height: 120,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: state.facilityPhotoUrls.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
-                  itemBuilder: (context, i) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        state.facilityPhotoUrls[i],
-                        width: 160, height: 120, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+  Widget _buildFacilityPhotosCard(PartnerProfileState state) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _surfaceLowest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _surfaceHigh),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Facility Photos', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _onSurface)),
+          SizedBox(height: 14),
+          state.facilityPhotoUrls.isEmpty
+              ? Container(
+                  height: 100,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _surfaceLow,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: _surfaceHigh, style: BorderStyle.solid),
+                  ),
+                  child: Text('No facility photos uploaded yet.', style: TextStyle(color: _onSurfaceVariant, fontSize: 13)),
+                )
+              : SizedBox(
+                  height: 120,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: state.facilityPhotoUrls.length,
+                    separatorBuilder: (_, __) => SizedBox(width: 10),
+                    itemBuilder: (context, i) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          state.facilityPhotoUrls[i],
                           width: 160, height: 120,
-                          color: isDark ? AppColors.surfaceContainerLowest : Colors.grey.shade100,
-                          child: Icon(Icons.broken_image_outlined, color: cs.onSurfaceVariant),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 160, height: 120,
+                            color: _surfaceLow,
+                            child: Icon(Icons.broken_image_outlined, color: _onSurfaceVariant),
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
-      ],
-    ));
+        ],
+      ),
+    );
   }
 
-  Widget _buildDocumentStatusCard(bool isDark, ColorScheme cs, Map<String, dynamic> p) {
+  Widget _buildDocumentStatusCard(Map<String, dynamic> p) {
     final docs = [
       ('NIB', 'nib_file_key', Icons.article_outlined),
       ('NPWP', 'npwp_file_key', Icons.receipt_long_outlined),
       ('SIUP', 'siup_file_key', Icons.business_center_outlined),
       ('KTP', 'ktp_file_key', Icons.badge_outlined),
     ];
-    return _card(isDark, cs, Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Document Status',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
-        const SizedBox(height: 14),
-        ...docs.map((doc) {
-          final hasDoc = p[doc.$2] != null && p[doc.$2].toString().isNotEmpty;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              children: [
-                Icon(doc.$3, size: 18, color: hasDoc ? _emerald500 : cs.onSurfaceVariant),
-                const SizedBox(width: 12),
-                SizedBox(width: 60,
-                    child: Text(doc.$1,
-                        style: TextStyle(fontSize: 13, color: cs.onSurface, fontWeight: FontWeight.w500))),
-                const SizedBox(width: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: hasDoc ? _emerald500.withValues(alpha: 0.1) : _amber500.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _surfaceLowest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _surfaceHigh),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Document Status', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _onSurface)),
+          SizedBox(height: 14),
+          ...docs.map((doc) {
+            final hasDoc = p[doc.$2] != null && p[doc.$2].toString().isNotEmpty;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Icon(doc.$3, size: 18, color: hasDoc ? _emerald500 : _onSurfaceVariant),
+                  SizedBox(width: 12),
+                  SizedBox(width: 60, child: Text(doc.$1, style: TextStyle(fontSize: 13, color: _onSurface, fontWeight: FontWeight.w500))),
+                  SizedBox(width: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: hasDoc ? _emerald500.withValues(alpha: 0.1) : _amber500.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      hasDoc ? 'Uploaded' : 'Pending Upload',
+                      style: TextStyle(color: hasDoc ? _emerald500 : _amber500, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                  child: Text(
-                    hasDoc ? 'Uploaded' : 'Pending Upload',
-                    style: TextStyle(
-                        color: hasDoc ? _emerald500 : _amber500,
-                        fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    ));
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
   }
 
-  Widget _buildEmptyOrError(bool isDark, ColorScheme cs, String? msg) {
-    final isError = msg != null && msg.isNotEmpty;
+  Widget _buildError(String? msg) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isError ? Icons.error_outline : Icons.storefront_outlined,
-            size: 56,
-            color: isError ? AppColors.fireRed : cs.onSurfaceVariant,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            isError ? 'Failed to load profile' : 'No Workshop Profile Yet',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isError
-                ? msg
-                : 'Your workshop profile hasn\'t been created yet.\nContact support to get started.',
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-            textAlign: TextAlign.center,
-          ),
+          Icon(Icons.error_outline, size: 48, color: _errorRed),
+          SizedBox(height: 12),
+          Text(msg ?? 'Failed to load profile.', style: TextStyle(color: _onSurfaceVariant)),
         ],
       ),
     );
