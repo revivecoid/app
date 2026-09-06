@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/rev_app_bar.dart';
 import '../../../core/widgets/responsive_layout_guard.dart';
 
@@ -120,7 +119,7 @@ class _CommissionSettlementEngineScreenState extends State<CommissionSettlementE
     );
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.colorScheme.surface,
       appBar: const ReVAppBar(),
       body: ResponsiveLayoutGuard(
         mobileWidget: content,
