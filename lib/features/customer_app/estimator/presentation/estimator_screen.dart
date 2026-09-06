@@ -48,8 +48,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
   late TextEditingController _yearController;
   late TextEditingController _licensePlateController;
 
-  // Visual Intake
-  XFile? _selectedImage;
+  // Visual Intake — up to 5 damage photos
+  final List<XFile> _selectedImages = [];
+  static const int _maxImages = 5;
   bool _isAnalyzing = false;
   String? _aiResult;
   Map<String, dynamic>? _structuredData;
@@ -86,16 +87,29 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     super.dispose();
   }
 
-  Future<void> _captureImage() async {
+  Future<void> _addImage(ImageSource source) async {
+    if (_selectedImages.length >= _maxImages) return;
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.camera);
+    final XFile? image = await picker.pickImage(
+      source: source,
+      imageQuality: 85,
+      maxWidth: 1920,
+    );
     if (image != null) {
-      setState(() => _selectedImage = image);
+      setState(() => _selectedImages.add(image));
     }
   }
 
+  void _removeImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+      _aiResult = null;
+      _structuredData = null;
+    });
+  }
+
   Future<void> _submitToVisionAi() async {
-    if (_selectedImage == null) return;
+    if (_selectedImages.isEmpty) return;
     
     setState(() {
       _isAnalyzing = true;
@@ -103,7 +117,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     });
 
     try {
-      final compressedBytes = await ImageCompressor.compressImage(_selectedImage!);
+      final compressedBytes = await ImageCompressor.compressImage(_selectedImages.first);
       
       final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
       await Supabase.instance.client.storage
@@ -160,7 +174,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
   void _onNextStep() async {
     if (_currentStep == 0) {
       if (_aiResult == null) {
-        if (_selectedImage != null && ref.read(selectedPanelsProvider).isNotEmpty) {
+        if (_selectedImages.isNotEmpty && ref.read(selectedPanelsProvider).isNotEmpty) {
           _submitToVisionAi();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -372,108 +386,177 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
   }
 
   Widget _buildPhotoUpload() {
+    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final count = _selectedImages.length;
+    final atMax = count >= _maxImages;
+
     return Container(
       decoration: BoxDecoration(
-        color: (isDark ? AppColors.surfaceContainerLowest : Theme.of(context).colorScheme.surface),
+        color: isDark ? AppColors.surfaceContainerLowest : cs.surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: [BoxShadow(color: cs.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: const Offset(0, 1))],
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ── Header ──────────────────────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'INTAKE IMAGERY',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                  color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-              ),
-              if (_aiResult != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.fireRed.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'AI Verified',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.fireRed),
-                  ),
-                ),
-            ],
-          ),
-          SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: _captureImage,
-            icon: Icon(Icons.photo_camera, size: 20),
-            label: Text('Capture Damage Photo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.fireRed,
-              foregroundColor: Theme.of(context).colorScheme.surface,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              elevation: 1,
-            ),
-          ),
-          if (_selectedImage != null) ...[
-            SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: (isDark ? AppColors.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.all(10),
-              child: Row(
+              Text('INTAKE IMAGERY',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.0, color: cs.onSurfaceVariant)),
+              Row(
                 children: [
+                  if (_aiResult != null)
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: cs.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                      child: Text('AI Verified', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cs.error)),
+                    ),
                   Container(
-                    width: 56,
-                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: (isDark ? AppColors.surfaceContainer : Theme.of(context).colorScheme.surfaceContainer),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
+                      color: atMax ? cs.error.withValues(alpha: 0.1) : cs.surfaceContainer,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Center(child: Icon(Icons.image, color: Theme.of(context).colorScheme.outline)),
+                    child: Text('$count / $_maxImages',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: atMax ? cs.error : cs.onSurfaceVariant)),
                   ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary, size: 16),
-                            SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                _selectedImage!.name,
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface)),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 4),
-                        Text('High-res inspection • Selected', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.sync, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
-                    onPressed: _captureImage,
-                  )
                 ],
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // ── Thumbnail strip ─────────────────────────────────────────────
+          if (_selectedImages.isNotEmpty) ...[
+            SizedBox(
+              height: 96,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _selectedImages.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final img = _selectedImages[index];
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: cs.outlineVariant),
+                          color: cs.surfaceContainerLow,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.network(img.path, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Center(child: Icon(Icons.broken_image_outlined, color: cs.onSurfaceVariant))),
+                      ),
+                      Positioned(
+                        top: -6,
+                        right: -6,
+                        child: GestureDetector(
+                          onTap: () => _removeImage(index),
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(color: cs.error, shape: BoxShape.circle, border: Border.all(color: cs.surface, width: 1.5)),
+                            child: Icon(Icons.close, color: cs.onError, size: 12),
+                          ),
+                        ),
+                      ),
+                      if (index == 0)
+                        Positioned(
+                          bottom: 4,
+                          left: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(color: cs.primary.withValues(alpha: 0.85), borderRadius: BorderRadius.circular(4)),
+                            child: Text('Primary', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: cs.onPrimary)),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
             ),
-          ]
+            const SizedBox(height: 12),
+          ],
+
+          // ── Add photo buttons ───────────────────────────────────────────
+          if (!atMax) ...[
+            if (_selectedImages.isEmpty)
+              ElevatedButton.icon(
+                onPressed: () => _addImage(ImageSource.camera),
+                icon: const Icon(Icons.photo_camera, size: 20),
+                label: const Text('Capture Damage Photo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: cs.error,
+                  foregroundColor: cs.onError,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  elevation: 1,
+                ),
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _addImage(ImageSource.camera),
+                      icon: Icon(Icons.add_a_photo_outlined, size: 16, color: cs.error),
+                      label: Text('Add Photo', style: TextStyle(fontSize: 13, color: cs.onSurface)),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: cs.outline),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _addImage(ImageSource.gallery),
+                      icon: Icon(Icons.photo_library_outlined, size: 16, color: cs.onSurfaceVariant),
+                      label: Text('From Gallery', style: TextStyle(fontSize: 13, color: cs.onSurface)),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: cs.outline),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ] else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.check_circle_outline, size: 16, color: cs.error),
+                const SizedBox(width: 6),
+                Text('5 photos uploaded — maximum reached', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              ],
+            ),
+
+          if (_selectedImages.isEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.info_outline, size: 13, color: cs.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Add up to 5 photos. Clearly capture scratches (gores) and dents (penyok). First photo is used for AI analysis.',
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, height: 1.3),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
