@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/responsive_layout_guard.dart';
 
 // Helper for exact colors matching the design system
 class _DesignColors {
@@ -26,7 +25,7 @@ class _DesignColors {
 }
 
 class PartnerSettingsScreen extends ConsumerStatefulWidget {
-  const PartnerSettingsScreen({super.key});
+  PartnerSettingsScreen({super.key});
 
   @override
   ConsumerState<PartnerSettingsScreen> createState() => _PartnerSettingsScreenState();
@@ -46,7 +45,9 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return LayoutBuilder(builder: (context, constraints) {
+      final isDesktop = constraints.maxWidth > 900;
+      Widget inner = Scaffold(
       backgroundColor: _DesignColors.surface,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,19 +74,19 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildSectionHeader(),
-                              const SizedBox(height: 24),
+                              SizedBox(height: 24),
                               _buildQuotaWidgets(),
-                              const SizedBox(height: 24),
+                              SizedBox(height: 24),
                               _buildCalendar(),
-                              const SizedBox(height: 24),
+                              SizedBox(height: 24),
                               _buildBlacklist(),
-                              const SizedBox(height: 16),
+                              SizedBox(height: 16),
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: ElevatedButton.icon(
                                   onPressed: () {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text('Schedule & quota preferences updated. Dispatch matrix recalibrated.'),
                                         backgroundColor: _DesignColors.emerald500,
                                       )
@@ -97,14 +98,14 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   ),
-                                  icon: const Icon(Icons.save, size: 20),
-                                  label: const Text('Save Schedule Preferences', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                  icon: Icon(Icons.save, size: 20),
+                                  label: Text('Save Schedule Preferences', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 24),
+                        SizedBox(width: 24),
                         // RIGHT COLUMN (5/12 approx)
                         Expanded(
                           flex: 5,
@@ -118,8 +119,10 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
             ),
           ),
         ],
-      );
+      ),
     );
+      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+    });
   }
 
   Widget _buildSidebar() {
@@ -163,14 +166,14 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                         ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
                       },
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: _DesignColors.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text('OPS CORE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.primary, letterSpacing: 1.2)),
+                      child: Text('OPS CORE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.primary, letterSpacing: 1.2)),
                     ),
                   ],
                 ),
@@ -189,19 +192,19 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('ACTIVE OPERATIONAL HUB', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
-                  const SizedBox(height: 4),
+                  Text('ACTIVE OPERATIONAL HUB', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+                  SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.warehouse, color: _DesignColors.primary, size: 18),
-                          const SizedBox(width: 4),
-                          const Text('Hub #04 - Kebon Jeruk', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
+                          Icon(Icons.warehouse, color: _DesignColors.primary, size: 18),
+                          SizedBox(width: 4),
+                          Text('Hub #04 - Kebon Jeruk', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
                         ],
                       ),
-                      const Icon(Icons.unfold_more, color: _DesignColors.onSurfaceVariant, size: 16),
+                      Icon(Icons.unfold_more, color: _DesignColors.onSurfaceVariant, size: 16),
                     ],
                   ),
                 ],
@@ -232,11 +235,11 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('CORE TELEMETRY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
-                    const Text('v4.18.2', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+                    Text('CORE TELEMETRY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+                    Text('v4.18.2', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
                   ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -248,12 +251,12 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                     children: [
                       Row(
                         children: [
-                          Container(width: 8, height: 8, decoration: const BoxDecoration(color: _DesignColors.emerald500, shape: BoxShape.circle)),
-                          const SizedBox(width: 4),
-                          const Text('Active Sync: OK', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _DesignColors.onSurface)),
+                          Container(width: 8, height: 8, decoration: BoxDecoration(color: _DesignColors.emerald500, shape: BoxShape.circle)),
+                          SizedBox(width: 4),
+                          Text('Active Sync: OK', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _DesignColors.onSurface)),
                         ],
                       ),
-                      const Text('34ms', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+                      Text('34ms', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -276,7 +279,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       child: Row(
         children: [
           Icon(icon, size: 20, color: isActive ? _DesignColors.onPrimaryContainer : _DesignColors.onSurfaceVariant),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Text(label, style: TextStyle(fontSize: 14, fontWeight: isActive ? FontWeight.bold : FontWeight.w600, color: isActive ? _DesignColors.onPrimaryContainer : _DesignColors.onSurfaceVariant)),
         ],
       ),
@@ -291,9 +294,9 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
         color: _DesignColors.surfaceContainerLowest.withValues(alpha: 0.9),
         boxShadow: [
           BoxShadow(
-            color: _DesignColors.onSurface.withValues(alpha: 0.04),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
             blurRadius: 8,
-            offset: const Offset(0, 1),
+            offset: Offset(0, 1),
           ),
         ],
       ),
@@ -306,8 +309,8 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
             child: TextField(
               decoration: InputDecoration(
                 hintText: "Search VIN, license plate, or order ID",
-                hintStyle: const TextStyle(color: _DesignColors.onSurfaceVariant, fontSize: 14),
-                prefixIcon: const Icon(Icons.search, color: _DesignColors.onSurfaceVariant, size: 20),
+                hintStyle: TextStyle(color: _DesignColors.onSurfaceVariant, fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: _DesignColors.onSurfaceVariant, size: 20),
                 filled: true,
                 fillColor: _DesignColors.surfaceContainerLow,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -323,14 +326,14 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                 decoration: BoxDecoration(color: _DesignColors.surfaceContainerLow, borderRadius: BorderRadius.circular(16)),
                 child: Row(
                   children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: _DesignColors.emerald500, shape: BoxShape.circle)),
-                    const SizedBox(width: 4),
-                    const Text('NODE 04: LIVE', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _DesignColors.onSurface)),
+                    Container(width: 8, height: 8, decoration: BoxDecoration(color: _DesignColors.emerald500, shape: BoxShape.circle)),
+                    SizedBox(width: 4),
+                    Text('NODE 04: LIVE', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _DesignColors.onSurface)),
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
-              const Stack(
+              SizedBox(width: 16),
+              Stack(
                 alignment: Alignment.center,
                 children: [
                   Icon(Icons.notifications, color: _DesignColors.onSurface, size: 22),
@@ -341,17 +344,17 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('Arya Pratama', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
-                  const Text('Chief Dispatcher', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+                  Text('Arya Pratama', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
+                  Text('Chief Dispatcher', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
                 ],
               ),
-              const SizedBox(width: 8),
-              const CircleAvatar(
+              SizedBox(width: 8),
+              CircleAvatar(
                 radius: 16,
                 backgroundColor: _DesignColors.primary,
                 child: Icon(Icons.person, color: _DesignColors.onPrimary, size: 18),
@@ -370,7 +373,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1)),
+          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: Offset(0, 1)),
         ],
       ),
       child: Column(
@@ -384,10 +387,10 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(color: _DesignColors.primaryContainer.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.tune, color: _DesignColors.primaryContainer, size: 20),
+                    child: Icon(Icons.tune, color: _DesignColors.primaryContainer, size: 20),
                   ),
-                  const SizedBox(width: 8),
-                  const Text('Workshop Capacity & Operating Calendar', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _DesignColors.onSurface)),
+                  SizedBox(width: 8),
+                  Text('Workshop Capacity & Operating Calendar', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _DesignColors.onSurface)),
                 ],
               ),
               Container(
@@ -395,16 +398,16 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                 decoration: BoxDecoration(color: _DesignColors.surfaceContainerLow, borderRadius: BorderRadius.circular(16)),
                 child: Row(
                   children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: _DesignColors.emerald500, shape: BoxShape.circle)),
-                    const SizedBox(width: 4),
-                    const Text('ENGINE SYNCED', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurface, letterSpacing: 1.2)),
+                    Container(width: 8, height: 8, decoration: BoxDecoration(color: _DesignColors.emerald500, shape: BoxShape.circle)),
+                    SizedBox(width: 4),
+                    Text('ENGINE SYNCED', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurface, letterSpacing: 1.2)),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          const Text(
+          SizedBox(height: 12),
+          Text(
             'Configure simultaneous throughput and blackout dates for Revive Hub Kebon Jeruk. AI auto-dispatch respects dynamic panel ceilings and partner blackout windows.',
             style: TextStyle(fontSize: 14, color: _DesignColors.onSurfaceVariant, height: 1.5),
           ),
@@ -417,9 +420,9 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
     return Row(
       children: [
         Expanded(child: _buildQuotaCard('Simultaneous Intake', Icons.speed, _DesignColors.primaryContainer, _intakeQuota, 'Panels/Day', 40, (val) => setState(() => _intakeQuota = val))),
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
         Expanded(child: _buildQuotaCard('Insurer Guarantee', Icons.verified_user, _DesignColors.secondaryContainer, _insurerQuota, 'Slots/Day', 12, (val) => setState(() => _insurerQuota = val))),
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
         Expanded(child: _buildFastTrackCard()),
       ],
     );
@@ -431,7 +434,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: Offset(0, 1))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -439,21 +442,21 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title.toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant, letterSpacing: 1.2)),
+              Text(title.toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant, letterSpacing: 1.2)),
               Icon(icon, color: color, size: 18),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text('$value', style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w800, color: _DesignColors.onSurface, height: 1)),
-              const SizedBox(width: 4),
-              Text(unit, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurfaceVariant)),
+              Text('$value', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w800, color: _DesignColors.onSurface, height: 1)),
+              SizedBox(width: 4),
+              Text(unit, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurfaceVariant)),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           LinearProgressIndicator(
             value: value / max,
             backgroundColor: _DesignColors.surfaceContainerHigh,
@@ -461,16 +464,16 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
             minHeight: 6,
             borderRadius: BorderRadius.circular(3),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: _DesignColors.surfaceContainerLow, borderRadius: BorderRadius.circular(8)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                InkWell(onTap: () => onChanged(value > 1 ? value - 1 : 1), child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: _DesignColors.surfaceContainerLowest, borderRadius: BorderRadius.circular(4)), child: const Icon(Icons.remove, size: 16, color: _DesignColors.onSurface))),
-                const Text('Panel Ceiling', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
-                InkWell(onTap: () => onChanged(value < max ? value + 1 : max), child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: _DesignColors.surfaceContainerLowest, borderRadius: BorderRadius.circular(4)), child: const Icon(Icons.add, size: 16, color: _DesignColors.onSurface))),
+                InkWell(onTap: () => onChanged(value > 1 ? value - 1 : 1), child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: _DesignColors.surfaceContainerLowest, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.remove, size: 16, color: _DesignColors.onSurface))),
+                Text('Panel Ceiling', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+                InkWell(onTap: () => onChanged(value < max ? value + 1 : max), child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: _DesignColors.surfaceContainerLowest, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.add, size: 16, color: _DesignColors.onSurface))),
               ],
             ),
           ),
@@ -485,7 +488,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: Offset(0, 1))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,15 +496,15 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('FAST-TRACK MODE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant, letterSpacing: 1.2)),
-              const Icon(Icons.bolt, color: _DesignColors.primary, size: 18),
+              Text('FAST-TRACK MODE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant, letterSpacing: 1.2)),
+              Icon(Icons.bolt, color: _DesignColors.primary, size: 18),
             ],
           ),
-          const SizedBox(height: 16),
-          const Text('Express 24h', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _DesignColors.onSurface, height: 1)),
-          const SizedBox(height: 8),
-          const Text('Priority bypass for minor dent & spot cures', style: TextStyle(fontSize: 12, color: _DesignColors.onSurfaceVariant)),
-          const Spacer(),
+          SizedBox(height: 16),
+          Text('Express 24h', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _DesignColors.onSurface, height: 1)),
+          SizedBox(height: 8),
+          Text('Priority bypass for minor dent & spot cures', style: TextStyle(fontSize: 12, color: _DesignColors.onSurfaceVariant)),
+          Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(color: _DesignColors.surfaceContainerLow, borderRadius: BorderRadius.circular(8)),
@@ -529,7 +532,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: Offset(0, 1))],
       ),
       child: Column(
         children: [
@@ -538,31 +541,31 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.calendar_month, color: _DesignColors.primary, size: 22),
-                  const SizedBox(width: 8),
-                  const Text('September 2026', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
-                  const SizedBox(width: 8),
+                  Icon(Icons.calendar_month, color: _DesignColors.primary, size: 22),
+                  SizedBox(width: 8),
+                  Text('September 2026', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
+                  SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(color: _DesignColors.surfaceContainerHigh, borderRadius: BorderRadius.circular(4)),
-                    child: const Text('Peak Cycle', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+                    child: Text('Peak Cycle', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
                   ),
                 ],
               ),
               Row(
                 children: [
                   _legendItem(_DesignColors.emerald500, 'Working Day'),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   _legendItem(_DesignColors.primaryContainer, 'Day Off / Closed'),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   _legendItem(_DesignColors.secondaryContainer, 'National Holiday'),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Table(
-            columnWidths: const {
+            columnWidths: {
               0: FlexColumnWidth(), 1: FlexColumnWidth(), 2: FlexColumnWidth(), 3: FlexColumnWidth(),
               4: FlexColumnWidth(), 5: FlexColumnWidth(), 6: FlexColumnWidth(),
             },
@@ -607,8 +610,8 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
     return Row(
       children: [
         Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 4),
-        Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+        SizedBox(width: 4),
+        Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
       ],
     );
   }
@@ -629,10 +632,10 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(color: _DesignColors.surfaceContainerLow, borderRadius: BorderRadius.circular(8)),
       child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(date, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
-          Container(width: 6, height: 6, decoration: const BoxDecoration(color: _DesignColors.emerald500, shape: BoxShape.circle)),
+          Text(date, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
+          Container(width: 6, height: 6, decoration: BoxDecoration(color: _DesignColors.emerald500, shape: BoxShape.circle)),
         ]),
-        Text(quota, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+        Text(quota, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
       ]),
     );
   }
@@ -642,10 +645,10 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(color: _DesignColors.surfaceContainerHigh, borderRadius: BorderRadius.circular(8)),
       child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(date, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _DesignColors.primary)),
-          Container(width: 6, height: 6, decoration: const BoxDecoration(color: _DesignColors.primaryContainer, shape: BoxShape.circle)),
+          Text(date, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _DesignColors.primary)),
+          Container(width: 6, height: 6, decoration: BoxDecoration(color: _DesignColors.primaryContainer, shape: BoxShape.circle)),
         ]),
-        const Text('OFF', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _DesignColors.primary, letterSpacing: 1.2)),
+        Text('OFF', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _DesignColors.primary, letterSpacing: 1.2)),
       ]),
     );
   }
@@ -655,13 +658,13 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(color: _DesignColors.primaryFixed.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(8)),
       child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(date, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _DesignColors.primary)),
-          Container(width: 8, height: 8, decoration: const BoxDecoration(color: _DesignColors.primaryContainer, shape: BoxShape.circle)),
+          Text(date, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _DesignColors.primary)),
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: _DesignColors.primaryContainer, shape: BoxShape.circle)),
         ]),
         Container(
           width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 2),
           decoration: BoxDecoration(color: _DesignColors.primaryContainer, borderRadius: BorderRadius.circular(4)),
-          child: const Text('MAINT.', textAlign: TextAlign.center, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: _DesignColors.onPrimary)),
+          child: Text('MAINT.', textAlign: TextAlign.center, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: _DesignColors.onPrimary)),
         ),
       ]),
     );
@@ -672,13 +675,13 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(color: _DesignColors.primaryFixed.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(8)),
       child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(date, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _DesignColors.primary)),
-          Container(width: 8, height: 8, decoration: const BoxDecoration(color: _DesignColors.primaryContainer, shape: BoxShape.circle)),
+          Text(date, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _DesignColors.primary)),
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: _DesignColors.primaryContainer, shape: BoxShape.circle)),
         ]),
         Container(
           width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 2),
           decoration: BoxDecoration(color: _DesignColors.primaryContainer, borderRadius: BorderRadius.circular(4)),
-          child: const Text('CLEAN', textAlign: TextAlign.center, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: _DesignColors.onPrimary)),
+          child: Text('CLEAN', textAlign: TextAlign.center, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: _DesignColors.onPrimary)),
         ),
       ]),
     );
@@ -689,13 +692,13 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(color: _DesignColors.secondaryFixed.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(8)),
       child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(date, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _DesignColors.secondary)),
-          Container(width: 8, height: 8, decoration: const BoxDecoration(color: _DesignColors.secondaryContainer, shape: BoxShape.circle)),
+          Text(date, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _DesignColors.secondary)),
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: _DesignColors.secondaryContainer, shape: BoxShape.circle)),
         ]),
         Container(
           width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 2),
           decoration: BoxDecoration(color: _DesignColors.secondary, borderRadius: BorderRadius.circular(4)),
-          child: const Text('HOLIDAY', textAlign: TextAlign.center, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: _DesignColors.onSecondary)),
+          child: Text('HOLIDAY', textAlign: TextAlign.center, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: _DesignColors.onSecondary)),
         ),
       ]),
     );
@@ -707,7 +710,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: Offset(0, 1))],
       ),
       child: Column(
         children: [
@@ -716,9 +719,9 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.event_busy, color: _DesignColors.primaryContainer, size: 20),
-                  const SizedBox(width: 8),
-                  const Text('Blacklisted & Unavailable Windows', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
+                  Icon(Icons.event_busy, color: _DesignColors.primaryContainer, size: 20),
+                  SizedBox(width: 8),
+                  Text('Blacklisted & Unavailable Windows', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
                 ],
               ),
               Container(
@@ -726,15 +729,15 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                 decoration: BoxDecoration(color: _DesignColors.surfaceContainerLow, borderRadius: BorderRadius.circular(8)),
                 child: Row(
                   children: [
-                    const Icon(Icons.add, size: 16, color: _DesignColors.onSurface),
-                    const SizedBox(width: 4),
-                    const Text('Add Blackout', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
+                    Icon(Icons.add, size: 16, color: _DesignColors.onSurface),
+                    SizedBox(width: 4),
+                    Text('Add Blackout', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _blacklistItem('Sep', '12', 'Facility Compressor Overhaul', 'Day Off', 'Scheduled air supply maintenance & bay pressure recertification', false, _DesignColors.primaryFixed, _DesignColors.primary),
           _blacklistItem('Sep', '14', 'Maulid Nabi Muhammad SAW', 'National Holiday', 'Government statutory holiday - Hub closed as per national labor matrix', true, _DesignColors.secondaryFixed, _DesignColors.secondary),
           _blacklistItem('Sep', '27', 'Quarterly Bay Deep Clean', 'Day Off', 'Intensive booth filter swap, drainage sanitization & floor scrubbing', false, _DesignColors.primaryFixed, _DesignColors.primary),
@@ -764,14 +767,14 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
-                      const SizedBox(width: 8),
+                      Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
+                      SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(4)),
@@ -779,23 +782,23 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(desc, style: const TextStyle(fontSize: 12, color: _DesignColors.onSurfaceVariant)),
+                  SizedBox(height: 4),
+                  Text(desc, style: TextStyle(fontSize: 12, color: _DesignColors.onSurfaceVariant)),
                 ],
               ),
             ],
           ),
           if (isLocked)
             Row(children: [
-              const Icon(Icons.lock, size: 16, color: _DesignColors.onSurfaceVariant),
-              const SizedBox(width: 4),
-              const Text('Locked', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurfaceVariant)),
+              Icon(Icons.lock, size: 16, color: _DesignColors.onSurfaceVariant),
+              SizedBox(width: 4),
+              Text('Locked', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurfaceVariant)),
             ])
           else
             Row(children: [
-              const Icon(Icons.delete, size: 16, color: _DesignColors.primary),
-              const SizedBox(width: 4),
-              const Text('Remove', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.primary)),
+              Icon(Icons.delete, size: 16, color: _DesignColors.primary),
+              SizedBox(width: 4),
+              Text('Remove', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.primary)),
             ]),
         ],
       ),
@@ -804,11 +807,11 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
 
   Widget _buildCommlink() {
     return Container(
-      constraints: const BoxConstraints(minHeight: 760),
+      constraints: BoxConstraints(minHeight: 760),
       decoration: BoxDecoration(
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: Offset(0, 1))],
       ),
       child: Column(
         children: [
@@ -817,7 +820,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: _DesignColors.surfaceContainerLowest,
-              boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 1))],
+              boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.02), blurRadius: 4, offset: Offset(0, 1))],
             ),
             child: Column(
               children: [
@@ -829,28 +832,28 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                         Container(
                           width: 36, height: 36,
                           decoration: BoxDecoration(color: _DesignColors.primaryContainer.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.hub, color: _DesignColors.primaryContainer, size: 22),
+                          child: Icon(Icons.hub, color: _DesignColors.primaryContainer, size: 22),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                const Text('Revive HQ Commlink', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
-                                const SizedBox(width: 8),
+                                Text('Revive HQ Commlink', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
+                                SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(color: _DesignColors.primaryContainer, borderRadius: BorderRadius.circular(4)),
-                                  child: const Text('PRIORITY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _DesignColors.onPrimary, letterSpacing: 1.2)),
+                                  child: Text('PRIORITY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _DesignColors.onPrimary, letterSpacing: 1.2)),
                                 ),
                               ],
                             ),
                             Row(
                               children: [
-                                Container(width: 8, height: 8, decoration: const BoxDecoration(color: _DesignColors.emerald500, shape: BoxShape.circle)),
-                                const SizedBox(width: 4),
-                                const Text('Master Dispatch Operations • Online', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+                                Container(width: 8, height: 8, decoration: BoxDecoration(color: _DesignColors.emerald500, shape: BoxShape.circle)),
+                                SizedBox(width: 4),
+                                Text('Master Dispatch Operations • Online', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
                               ],
                             ),
                           ],
@@ -859,20 +862,20 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                     ),
                     Row(
                       children: [
-                        const Icon(Icons.phone_in_talk, color: _DesignColors.onSurfaceVariant, size: 18),
-                        const SizedBox(width: 16),
-                        const Icon(Icons.verified, color: _DesignColors.onSurfaceVariant, size: 18),
+                        Icon(Icons.phone_in_talk, color: _DesignColors.onSurfaceVariant, size: 18),
+                        SizedBox(width: 16),
+                        Icon(Icons.verified, color: _DesignColors.onSurfaceVariant, size: 18),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   children: [
                     _quickAction(Icons.emergency, 'Emergency Override', _DesignColors.primaryContainer),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     _quickAction(Icons.inventory_2, 'Part Catalog', _DesignColors.onSurface),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     _quickAction(Icons.warning, 'Capacity Alert', _DesignColors.secondaryContainer),
                   ],
                 ),
@@ -890,21 +893,21 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                       decoration: BoxDecoration(color: _DesignColors.surfaceContainerHigh, borderRadius: BorderRadius.circular(16)),
-                      child: const Text('Today, 10:14 AM WIB', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+                      child: Text('Today, 10:14 AM WIB', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   _chatBubbleLeft('HQ Senior Dispatcher (Bayu)', '10:14 AM', 'Hub 04: Alerting on high intake for Toyota & Honda front bumper panels today. Can your paint booth take 3 additional express cures this afternoon?'),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   _chatBubbleRight('You (Arya - Hub 04 Lead)', '10:16 AM', 'Confirmed HQ, Bay #02 curing cycle finishes at 14:00 WIB. We can take 3 express panels immediately after.'),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   _chatBubbleLeft('HQ Senior Dispatcher (Bayu)', '10:18 AM', 'Approved and dispatched job JB-03537083 (Toyota Innova Zenix) to your bay. Transfer proof verified.'),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   // Bento card
                   Container(
                     margin: const EdgeInsets.only(left: 44, right: 44),
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: _DesignColors.surfaceContainerLowest, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4)]),
+                    decoration: BoxDecoration(color: _DesignColors.surfaceContainerLowest, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04), blurRadius: 4)]),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -913,14 +916,14 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                             Container(
                               width: 32, height: 32,
                               decoration: BoxDecoration(color: _DesignColors.emerald500.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                              child: const Icon(Icons.assignment_turned_in, color: _DesignColors.emerald500, size: 20),
+                              child: Icon(Icons.assignment_turned_in, color: _DesignColors.emerald500, size: 20),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Job #JB-03537083 dispatched to your queue', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
-                                const Text('2.0 V CVT • Front Bumper & Left Fender Repair', style: TextStyle(fontSize: 12, color: _DesignColors.onSurfaceVariant)),
+                                Text('Job #JB-03537083 dispatched to your queue', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
+                                Text('2.0 V CVT • Front Bumper & Left Fender Repair', style: TextStyle(fontSize: 12, color: _DesignColors.onSurfaceVariant)),
                               ],
                             ),
                           ],
@@ -928,7 +931,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(color: _DesignColors.surfaceContainerHigh, borderRadius: BorderRadius.circular(8)),
-                          child: const Text('VIEW BAY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.primary, letterSpacing: 1.2)),
+                          child: Text('VIEW BAY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.primary, letterSpacing: 1.2)),
                         ),
                       ],
                     ),
@@ -942,7 +945,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: _DesignColors.surfaceContainerLowest,
-              boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, -1))],
+              boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.02), blurRadius: 4, offset: Offset(0, -1))],
             ),
             child: Column(
               children: [
@@ -951,8 +954,8 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                   decoration: BoxDecoration(color: _DesignColors.surfaceContainerLow, borderRadius: BorderRadius.circular(8)),
                   child: Row(
                     children: [
-                      const Icon(Icons.attachment, color: _DesignColors.onSurfaceVariant, size: 20),
-                      const SizedBox(width: 8),
+                      Icon(Icons.attachment, color: _DesignColors.onSurfaceVariant, size: 20),
+                      SizedBox(width: 8),
                       Expanded(
                         child: TextField(
                           controller: _chatController,
@@ -962,28 +965,28 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                           ),
                         ),
                       ),
-                      const Icon(Icons.sentiment_satisfied, color: _DesignColors.onSurfaceVariant, size: 20),
-                      const SizedBox(width: 8),
+                      Icon(Icons.sentiment_satisfied, color: _DesignColors.onSurfaceVariant, size: 20),
+                      SizedBox(width: 8),
                       Container(
                         width: 36, height: 36,
                         decoration: BoxDecoration(color: _DesignColors.primaryContainer, borderRadius: BorderRadius.circular(8)),
-                        child: const Icon(Icons.send, color: _DesignColors.onPrimary, size: 18),
+                        child: Icon(Icons.send, color: _DesignColors.onPrimary, size: 18),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.lock, size: 14, color: _DesignColors.onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        const Text('Revive Commlink TLS 1.3', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
+                        Icon(Icons.lock, size: 14, color: _DesignColors.onSurfaceVariant),
+                        SizedBox(width: 4),
+                        Text('Revive Commlink TLS 1.3', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant)),
                       ],
                     ),
-                    const Text('Latency: 12ms', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant, fontFamily: 'monospace')),
+                    Text('Latency: 12ms', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _DesignColors.onSurfaceVariant, fontFamily: 'monospace')),
                   ],
                 ),
               ],
@@ -1001,8 +1004,8 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       child: Row(
         children: [
           Icon(icon, size: 14, color: iconColor),
-          const SizedBox(width: 4),
-          Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurface)),
+          SizedBox(width: 4),
+          Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _DesignColors.onSurface)),
         ],
       ),
     );
@@ -1014,35 +1017,35 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       children: [
         Container(
           width: 32, height: 32,
-          decoration: const BoxDecoration(color: _DesignColors.surfaceContainerHighest, shape: BoxShape.circle),
-          child: const Center(child: Text('HQ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _DesignColors.onSurface))),
+          decoration: BoxDecoration(color: _DesignColors.surfaceContainerHighest, shape: BoxShape.circle),
+          child: Center(child: Text('HQ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _DesignColors.onSurface))),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
-                  const SizedBox(width: 8),
-                  Text(time, style: const TextStyle(fontSize: 11, color: _DesignColors.onSurfaceVariant)),
+                  Text(name, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
+                  SizedBox(width: 8),
+                  Text(time, style: TextStyle(fontSize: 11, color: _DesignColors.onSurfaceVariant)),
                 ],
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: _DesignColors.surfaceContainerLowest,
                   borderRadius: BorderRadius.only(topRight: Radius.circular(12), bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
-                  boxShadow: [BoxShadow(color: Color(0x1F1C1B1C), blurRadius: 4)],
+                  boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4)],
                 ),
-                child: Text(text, style: const TextStyle(fontSize: 14, color: _DesignColors.onSurface)),
+                child: Text(text, style: TextStyle(fontSize: 14, color: _DesignColors.onSurface)),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 48), // limit width implicitly
+        SizedBox(width: 48), // limit width implicitly
       ],
     );
   }
@@ -1052,7 +1055,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        const SizedBox(width: 48), // limit width implicitly
+        SizedBox(width: 48), // limit width implicitly
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -1060,28 +1063,28 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(time, style: const TextStyle(fontSize: 11, color: _DesignColors.onSurfaceVariant)),
-                  const SizedBox(width: 8),
-                  Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
+                  Text(time, style: TextStyle(fontSize: 11, color: _DesignColors.onSurfaceVariant)),
+                  SizedBox(width: 8),
+                  Text(name, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _DesignColors.onSurface)),
                 ],
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: _DesignColors.primaryContainer,
                   borderRadius: BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
-                  boxShadow: [BoxShadow(color: Color(0x1F1C1B1C), blurRadius: 4)],
+                  boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4)],
                 ),
-                child: Text(text, style: const TextStyle(fontSize: 14, color: _DesignColors.onPrimary)),
+                child: Text(text, style: TextStyle(fontSize: 14, color: _DesignColors.onPrimary)),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const Icon(Icons.done_all, size: 14, color: _DesignColors.primary),
-                  const SizedBox(width: 4),
-                  const Text('Delivered', style: TextStyle(fontSize: 10, color: _DesignColors.primary)),
+                  Icon(Icons.done_all, size: 14, color: _DesignColors.primary),
+                  SizedBox(width: 4),
+                  Text('Delivered', style: TextStyle(fontSize: 10, color: _DesignColors.primary)),
                 ],
               ),
             ],

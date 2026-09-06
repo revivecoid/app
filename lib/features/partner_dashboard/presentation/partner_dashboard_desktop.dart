@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/responsive_layout_guard.dart';
 import 'partner_dashboard_controller.dart';
 
 // ─── Color tokens (keep consistent with the original design) ─────────────────
@@ -30,7 +29,7 @@ String _statusLabel(String raw) =>
 
 // ─── Main Widget ─────────────────────────────────────────────────────────────
 class PartnerDashboardDesktop extends ConsumerStatefulWidget {
-  const PartnerDashboardDesktop({super.key});
+  PartnerDashboardDesktop({super.key});
 
   @override
   ConsumerState<PartnerDashboardDesktop> createState() => _PartnerDashboardDesktopState();
@@ -59,7 +58,7 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
       if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(next.errorMessage!),
-          backgroundColor: next.errorMessage!.contains('successfully') ? Colors.green[800] : _primaryContainer,
+          backgroundColor: next.errorMessage!.contains('successfully') ? Theme.of(context).colorScheme.primary : _primaryContainer,
         ));
       }
     });
@@ -80,15 +79,25 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
     final inPaint = allJobs.where((j) => j.status == '7_finished').toList();
     final inQC = allJobs.where((j) => j.status == '8_awaiting_delivery').toList();
 
-    final sidebar = _Sidebar(
-      userName: userName,
-      unreadCount: state.unreadMessageCount,
-      onNavigate: (route) => context.push(route),
-    );
+    return LayoutBuilder(builder: (context, constraints) {
+      final isDesktop = constraints.maxWidth > 900;
+      Widget inner = Scaffold(
+      backgroundColor: _surface,
+      body: state.isLoading && state.activeJobs.isEmpty
+          ? Center(child: CircularProgressIndicator(color: _primaryContainer))
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ─── SIDEBAR ───────────────────────────────────────────────
+                _Sidebar(
+                  userName: userName,
+                  unreadCount: state.unreadMessageCount,
+                  onNavigate: (route) => context.push(route),
+                ),
 
-    Widget mainContent = state.isLoading && state.activeJobs.isEmpty
-        ? const Center(child: CircularProgressIndicator(color: _primaryContainer))
-        : Column(
+                // ─── MAIN CONTENT ──────────────────────────────────────────
+                Expanded(
+                  child: Column(
                     children: [
                       // HEADER
                       _Header(
@@ -113,7 +122,7 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
                                 awaiting: inQC.length,
                                 unread: state.unreadMessageCount,
                               ),
-                              const SizedBox(height: 24),
+                              SizedBox(height: 24),
 
                               // TITLE + FILTER PILLS
                               Row(
@@ -121,7 +130,7 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
                                 children: [
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: const [
+                                    children: [
                                       Text('Workshop Job Board & Active Pipeline',
                                           style: TextStyle(color: _onSurface, fontSize: 28, fontWeight: FontWeight.bold)),
                                       SizedBox(height: 4),
@@ -145,7 +154,7 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 24),
+                              SizedBox(height: 24),
 
                               // KANBAN BOARD
                               if (state.errorMessage != null && allJobs.isEmpty)
@@ -162,21 +171,21 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
                                       jobs: incoming,
                                       controller: controller,
                                     ),
-                                    const SizedBox(width: 16),
+                                    SizedBox(width: 16),
                                     _Swimlane(
                                       title: 'Body Repair / Frame',
                                       color: _primary,
                                       jobs: inBay,
                                       controller: controller,
                                     ),
-                                    const SizedBox(width: 16),
+                                    SizedBox(width: 16),
                                     _Swimlane(
                                       title: 'Heated Paint Chamber',
                                       color: _amber500,
                                       jobs: inPaint,
                                       controller: controller,
                                     ),
-                                    const SizedBox(width: 16),
+                                    SizedBox(width: 16),
                                     _Swimlane(
                                       title: 'QC Audit & Handover',
                                       color: _emerald500,
@@ -195,6 +204,8 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
               ],
             ),
     );
+      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+    });
   }
 
   String _filterCount(String filter, List<PartnerJobNode> all, List<PartnerJobNode> inBay,
@@ -220,7 +231,7 @@ class _Sidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 272,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: _surfaceLowest,
         boxShadow: [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 1), blurRadius: 8)],
       ),
@@ -233,20 +244,20 @@ class _Sidebar extends StatelessWidget {
               Container(
                 height: 64,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: _surfaceHigh))),
                 child: Row(
                   children: [
                     Container(
                       width: 32, height: 32,
-                      decoration: const BoxDecoration(color: _primaryContainer, shape: BoxShape.circle),
-                      child: const Icon(Icons.build_circle, color: _onPrimary, size: 18),
+                      decoration: BoxDecoration(color: _primaryContainer, shape: BoxShape.circle),
+                      child: Icon(Icons.build_circle, color: _onPrimary, size: 18),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text('re-V', style: TextStyle(color: _onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
                         Text('OPS CORE', style: TextStyle(color: _primary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                       ],
@@ -254,7 +265,7 @@ class _Sidebar extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               // Active Hub info
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -263,12 +274,12 @@ class _Sidebar extends StatelessWidget {
                   decoration: BoxDecoration(color: _surfaceLow, borderRadius: BorderRadius.circular(8)),
                   child: Row(
                     children: [
-                      const Icon(Icons.warehouse_outlined, color: _primary, size: 18),
-                      const SizedBox(width: 8),
+                      Icon(Icons.warehouse_outlined, color: _primary, size: 18),
+                      SizedBox(width: 8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text('ACTIVE HUB', style: TextStyle(color: _onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                             Text('Workshop Operations', style: TextStyle(color: _onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
@@ -278,7 +289,7 @@ class _Sidebar extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               // Nav
               _SidebarNavItem(icon: Icons.view_kanban_outlined, text: 'Job Board / Pipeline', isActive: true),
               _SidebarNavItem(
@@ -318,10 +329,10 @@ class _Sidebar extends StatelessWidget {
               children: [
                 Container(
                   width: 32, height: 32,
-                  decoration: const BoxDecoration(color: _primary, shape: BoxShape.circle),
-                  child: const Icon(Icons.person, color: _onPrimary, size: 18),
+                  decoration: BoxDecoration(color: _primary, shape: BoxShape.circle),
+                  child: Icon(Icons.person, color: _onPrimary, size: 18),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,7 +342,7 @@ class _Sidebar extends StatelessWidget {
                     ],
                   ),
                 ),
-                Container(width: 8, height: 8, decoration: const BoxDecoration(color: _emerald500, shape: BoxShape.circle)),
+                Container(width: 8, height: 8, decoration: BoxDecoration(color: _emerald500, shape: BoxShape.circle)),
               ],
             ),
           ),
@@ -372,13 +383,13 @@ class _SidebarNavItem extends StatelessWidget {
           child: Row(
             children: [
               Icon(icon, color: isActive ? _onPrimaryContainer : _onSurfaceVariant, size: 18),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(child: Text(text, style: TextStyle(color: isActive ? _onPrimaryContainer : _onSurfaceVariant, fontSize: 13, fontWeight: isActive ? FontWeight.bold : FontWeight.w500))),
               if (badge > 0)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(color: _primaryContainer, borderRadius: BorderRadius.circular(10)),
-                  child: Text('$badge', style: const TextStyle(color: _onPrimary, fontSize: 10, fontWeight: FontWeight.bold)),
+                  child: Text('$badge', style: TextStyle(color: _onPrimary, fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
             ],
           ),
@@ -412,7 +423,7 @@ class _Header extends ConsumerWidget {
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 32),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Color(0xE6FFFFFF),
         boxShadow: [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 1), blurRadius: 8)],
       ),
@@ -427,19 +438,19 @@ class _Header extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                const Icon(Icons.search, color: _onSurfaceVariant, size: 18),
-                const SizedBox(width: 8),
+                Icon(Icons.search, color: _onSurfaceVariant, size: 18),
+                SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     controller: searchController,
                     onChanged: onSearch,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: "Search vehicle, license plate, or job ID…",
                       hintStyle: TextStyle(color: _onSurfaceVariant, fontSize: 13),
                       border: InputBorder.none,
                       isDense: true,
                     ),
-                    style: const TextStyle(color: _onSurface, fontSize: 13),
+                    style: TextStyle(color: _onSurface, fontSize: 13),
                   ),
                 ),
               ],
@@ -467,20 +478,20 @@ class _Header extends ConsumerWidget {
                   ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
                 },
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(userName, style: const TextStyle(color: _onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
-                  const Text('Workshop Partner', style: TextStyle(color: _onSurfaceVariant, fontSize: 11)),
+                  Text(userName, style: TextStyle(color: _onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text('Workshop Partner', style: TextStyle(color: _onSurfaceVariant, fontSize: 11)),
                 ],
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Container(
                 width: 32, height: 32,
-                decoration: const BoxDecoration(color: _primary, shape: BoxShape.circle),
-                child: const Icon(Icons.person, color: _onPrimary, size: 18),
+                decoration: BoxDecoration(color: _primary, shape: BoxShape.circle),
+                child: Icon(Icons.person, color: _onPrimary, size: 18),
               ),
             ],
           ),
@@ -504,11 +515,11 @@ class _KpiStrip extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: _KpiCard(title: 'Active Repairs', value: '$totalJobs', subtitle: 'total jobs', icon: Icons.build_outlined, iconColor: _primary)),
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
         Expanded(child: _KpiCard(title: 'In Active Bay', value: '$inProgress', subtitle: 'in-progress', icon: Icons.hardware_outlined, iconColor: _amber500)),
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
         Expanded(child: _KpiCard(title: 'Awaiting Dispatch', value: '$awaiting', subtitle: 'ready to go', icon: Icons.local_shipping_outlined, iconColor: _emerald500)),
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
         Expanded(child: _KpiCard(title: 'Unread Messages', value: '$unread', subtitle: 'from admin', icon: Icons.forum_outlined, iconColor: _blue500, highlight: unread > 0)),
       ],
     );
@@ -533,7 +544,7 @@ class _KpiCard extends StatelessWidget {
         color: highlight ? _primaryContainer.withValues(alpha: 0.08) : _surfaceLowest,
         borderRadius: BorderRadius.circular(12),
         border: highlight ? Border.all(color: _primaryContainer.withValues(alpha: 0.3)) : null,
-        boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 1))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,18 +552,18 @@ class _KpiCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title.toUpperCase(), style: const TextStyle(color: _onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4)),
+              Text(title.toUpperCase(), style: TextStyle(color: _onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4)),
               Icon(icon, color: iconColor, size: 20),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(value, style: TextStyle(color: highlight ? _primaryContainer : _onSurface, fontSize: 36, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 6),
-              Text(subtitle, style: const TextStyle(color: _onSurfaceVariant, fontSize: 13)),
+              SizedBox(width: 6),
+              Text(subtitle, style: TextStyle(color: _onSurfaceVariant, fontSize: 13)),
             ],
           ),
         ],
@@ -580,16 +591,16 @@ class _FilterPill extends StatelessWidget {
         decoration: BoxDecoration(
           color: isActive ? _primaryContainer : _surfaceLowest,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 4)],
+          boxShadow: [BoxShadow(color: Color(0x0D000000), blurRadius: 4)],
         ),
         child: Row(
           children: [
             Text(text, style: TextStyle(color: isActive ? _onPrimary : _onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isActive ? const Color(0x33FFFFFF) : _surfaceHigh,
+                color: isActive ? Color(0x33FFFFFF) : _surfaceHigh,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(count, style: TextStyle(color: isActive ? _onPrimary : _onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold)),
@@ -631,12 +642,12 @@ class _Swimlane extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
-                  child: Text('${jobs.length}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                  child: Text('${jobs.length}', style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           if (jobs.isEmpty)
             Container(
               width: double.infinity,
@@ -649,7 +660,7 @@ class _Swimlane extends StatelessWidget {
               child: Column(
                 children: [
                   Icon(Icons.inbox_outlined, color: _onSurfaceVariant, size: 28),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Text('No jobs in this stage', style: TextStyle(color: _onSurfaceVariant, fontSize: 12)),
                 ],
               ),
@@ -683,7 +694,7 @@ class _JobCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: _surfaceLowest,
         borderRadius: BorderRadius.circular(10),
-        boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -714,28 +725,28 @@ class _JobCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('${job.carMake} ${job.carModel}',
-                    style: const TextStyle(color: _onSurface, fontWeight: FontWeight.bold, fontSize: 15)),
-                const SizedBox(height: 4),
+                    style: TextStyle(color: _onSurface, fontWeight: FontWeight.bold, fontSize: 15)),
+                SizedBox(height: 4),
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(color: _surfaceLow, borderRadius: BorderRadius.circular(4), border: Border.all(color: _surfaceHigh)),
-                      child: Text(job.licensePlate.toUpperCase(), style: const TextStyle(color: _onSurface, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.2)),
+                      child: Text(job.licensePlate.toUpperCase(), style: TextStyle(color: _onSurface, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.2)),
                     ),
-                    const SizedBox(width: 8),
-                    Text('• ${job.customerName}', style: const TextStyle(color: _onSurfaceVariant, fontSize: 11)),
+                    SizedBox(width: 8),
+                    Text('• ${job.customerName}', style: TextStyle(color: _onSurfaceVariant, fontSize: 11)),
                   ],
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.timer_outlined, size: 13, color: _onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        Text(elapsedText, style: const TextStyle(color: _onSurfaceVariant, fontSize: 11)),
+                        Icon(Icons.timer_outlined, size: 13, color: _onSurfaceVariant),
+                        SizedBox(width: 4),
+                        Text(elapsedText, style: TextStyle(color: _onSurfaceVariant, fontSize: 11)),
                       ],
                     ),
                     // Advance stage button + Upload Photo
@@ -747,28 +758,28 @@ class _JobCard extends StatelessWidget {
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: _primaryContainer,
-                                side: const BorderSide(color: _primaryContainer, width: 1),
+                                side: BorderSide(color: _primaryContainer, width: 1),
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                               ),
-                              icon: const Icon(Icons.photo_camera_outlined, size: 13),
-                              label: const Text('Photo', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                              icon: Icon(Icons.photo_camera_outlined, size: 13),
+                              label: Text('Photo', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                               onPressed: () => controller.captureAndUploadProgressPhoto(job.id, job.status),
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6),
                           SizedBox(
                             height: 28,
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: color,
-                                foregroundColor: Colors.white,
+                                foregroundColor: Theme.of(context).colorScheme.surface,
                                 padding: const EdgeInsets.symmetric(horizontal: 10),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                                 elevation: 0,
                               ),
-                              icon: const Icon(Icons.arrow_forward, size: 13),
-                              label: Text((job.status == '3_booked' || job.status == '4_paid') ? 'Admit Vehicle' : 'Advance', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                              icon: Icon(Icons.arrow_forward, size: 13),
+                              label: Text((job.status == '3_booked' || job.status == '4_paid') ? 'Admit Vehicle' : 'Advance', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                               onPressed: () => controller.advanceJobStage(job.id, job.status),
                             ),
                           ),
@@ -794,7 +805,7 @@ class _EmptyState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(64),
       child: Column(
-        children: const [
+        children: [
           Icon(Icons.emoji_transportation, size: 56, color: _onSurfaceVariant),
           SizedBox(height: 16),
           Text('No Active Jobs', style: TextStyle(color: _onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
@@ -819,11 +830,11 @@ class _ErrorState extends StatelessWidget {
       decoration: BoxDecoration(color: _errorContainer, borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
-          const Icon(Icons.error_outline, size: 40, color: _onErrorContainer),
-          const SizedBox(height: 12),
-          Text(message, style: const TextStyle(color: _onErrorContainer, fontSize: 14), textAlign: TextAlign.center),
-          const SizedBox(height: 8),
-          const Text('Check that your partner account has a partner_id set in user metadata.',
+          Icon(Icons.error_outline, size: 40, color: _onErrorContainer),
+          SizedBox(height: 12),
+          Text(message, style: TextStyle(color: _onErrorContainer, fontSize: 14), textAlign: TextAlign.center),
+          SizedBox(height: 8),
+          Text('Check that your partner account has a partner_id set in user metadata.',
               style: TextStyle(color: _onErrorContainer, fontSize: 12), textAlign: TextAlign.center),
         ],
       ),

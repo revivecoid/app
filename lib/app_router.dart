@@ -206,13 +206,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // --- PASSWORD RECOVERY ---
       GoRoute(
         path: '/update-password',
-        builder: (context, state) => const UpdatePasswordScreen(),
+        builder: (context, state) => UpdatePasswordScreen(),
       ),
 
       // --- CUSTOMER DOMAIN ---
       GoRoute(
         path: '/',
-        builder: (context, state) => const CustomerLandingScreen(), // Public Home Landing
+        builder: (context, state) => CustomerLandingScreen(), // Public Home Landing
       ),
       GoRoute(
         path: '/partner/register',
@@ -220,7 +220,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/estimator',
-        builder: (context, state) => const EstimatorScreen(), // Move estimator here
+        builder: (context, state) => EstimatorScreen(), // Move estimator here
       ),
       GoRoute(
         path: '/booking/schedule/:jobId',
@@ -255,7 +255,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/notifications',
-        builder: (context, state) => const CustomerNotificationsScreen(),
+        builder: (context, state) => CustomerNotificationsScreen(),
       ),
       GoRoute(
         path: '/notification-settings',
@@ -302,15 +302,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // --- PARTNER WORKSHOP DOMAIN ---
       GoRoute(
         path: '/partner-dashboard',
-        builder: (context, state) => const PartnerDashboardDesktop(),
+        builder: (context, state) => PartnerDashboardDesktop(),
       ),
       GoRoute(
         path: '/partner-dashboard/profile',
-        builder: (context, state) => const PartnerProfileScreen(),
+        builder: (context, state) => PartnerProfileScreen(),
       ),
       GoRoute(
         path: '/partner-dashboard/settings',
-        builder: (context, state) => const PartnerSettingsScreen(),
+        builder: (context, state) => PartnerSettingsScreen(),
       ),
       GoRoute(
         path: '/partner-dashboard/schedule',

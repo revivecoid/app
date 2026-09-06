@@ -44,21 +44,23 @@ const _stepDescriptions = [
 // ─── Main Screen ────────────────────────────────────────────────────────────
 class LiveStepperTimeline extends ConsumerWidget {
   final String jobId;
-  const LiveStepperTimeline({super.key, required this.jobId});
+  LiveStepperTimeline({super.key, required this.jobId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final streamState = ref.watch(jobStreamProvider(jobId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? Color(0xFF1D1C1D) : Color(0xFFF8F9FA);
-    final cardColor = isDark ? Color(0xFF2C2B2C) : Colors.white;
-    final textColor = isDark ? Colors.white : Color(0xFF1D1C1D);
-    final mutedColor = isDark ? theme.colorScheme.outlineVariant! : theme.colorScheme.outlineVariant!;
+    final cardColor = isDark ? Color(0xFF2C2B2C) : Theme.of(context).colorScheme.surface;
+    final textColor = isDark ? Theme.of(context).colorScheme.surface : Color(0xFF1D1C1D);
+    final mutedColor = isDark ? Theme.of(context).colorScheme.outline! : Theme.of(context).colorScheme.outline;
 
-    return Scaffold(
+    return LayoutBuilder(builder: (context, constraints) {
+      final isDesktop = constraints.maxWidth > 900;
+      Widget inner = Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: isDark ? Color(0xFF1D1C1D) : Colors.white,
+        backgroundColor: isDark ? Color(0xFF1D1C1D) : Theme.of(context).colorScheme.surface,
         elevation: 1,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: textColor),
@@ -76,11 +78,11 @@ class LiveStepperTimeline extends ConsumerWidget {
         ),
         actions: [
           if (streamState.isDisconnected)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(right: 12),
               child: Chip(
                 backgroundColor: Colors.orange,
-                label: Text('Reconnecting…', style: TextStyle(color: theme.colorScheme.onPrimaryContainer, fontSize: 11)),
+                label: Text('Reconnecting…', style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 11)),
                 padding: EdgeInsets.zero,
               ),
             )
@@ -88,13 +90,13 @@ class LiveStepperTimeline extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: Chip(
-                backgroundColor: Colors.green.withValues(alpha: 0.15),
+                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
                 label: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.circle, size: 8, color: Colors.green),
+                  children: [
+                    Icon(Icons.circle, size: 8, color: Theme.of(context).colorScheme.primary),
                     SizedBox(width: 4),
-                    Text('LIVE', style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text('LIVE', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 11, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 padding: EdgeInsets.zero,
@@ -111,7 +113,7 @@ class LiveStepperTimeline extends ConsumerWidget {
         ],
       ),
       body: streamState.isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.fireRed))
+          ? Center(child: CircularProgressIndicator(color: AppColors.fireRed))
           : _TrackerBody(
               jobId: jobId,
               status: streamState.currentStatus,
@@ -122,6 +124,8 @@ class LiveStepperTimeline extends ConsumerWidget {
               isDark: isDark,
             ),
     );
+      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+    });
   }
 }
 
@@ -158,7 +162,7 @@ class _TrackerBody extends StatelessWidget {
         children: [
           // ─── Status Banner ───
           _StatusBanner(status: status, mutedColor: mutedColor),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // ─── Timeline ───
           _card(
@@ -213,14 +217,14 @@ class _TrackerBody extends StatelessWidget {
                     width: double.infinity,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white10 : theme.colorScheme.outlineVariant,
+                      color: isDark ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.10) : Theme.of(context).colorScheme.surfaceContainer,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.image_search, size: 36, color: mutedColor),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text(
                           'Awaiting photo updates from the workshop floor…',
                           style: TextStyle(color: mutedColor, fontSize: 12),
@@ -232,8 +236,8 @@ class _TrackerBody extends StatelessWidget {
                 else
                   GridView.builder(
                     shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    physics: NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
@@ -251,8 +255,8 @@ class _TrackerBody extends StatelessWidget {
                               photo.publicUrl,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
-                                color: theme.colorScheme.outlineVariant,
-                                child: const Icon(Icons.broken_image, color: Colors.grey),
+                                color: Theme.of(context).colorScheme.outlineVariant,
+                                child: Icon(Icons.broken_image, color: Theme.of(context).colorScheme.outline),
                               ),
                             ),
                             Positioned(
@@ -260,12 +264,12 @@ class _TrackerBody extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.onSurface54,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   photo.context.toUpperCase(),
-                                  style: const TextStyle(color: theme.colorScheme.onPrimaryContainer, fontSize: 9, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 9, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
@@ -277,7 +281,7 @@ class _TrackerBody extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // ─── Job Details ───
           _card(
@@ -286,16 +290,16 @@ class _TrackerBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Job Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 _detailRow(Icons.tag, 'Job ID', jobId, textColor, mutedColor),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _detailRow(Icons.info_outline, 'Current Status', status.replaceAll('_', ' ').toUpperCase(), textColor, mutedColor),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _detailRow(Icons.photo_library, 'Workshop Photos', '${progressPhotos.length} uploaded', textColor, mutedColor),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
         ],
       ),
     );
@@ -305,7 +309,7 @@ class _TrackerBody extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 16, color: AppColors.fireRed),
-        const SizedBox(width: 10),
+        SizedBox(width: 10),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -324,7 +328,7 @@ class _TrackerBody extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: theme.colorScheme.onSurface.withValues(alpha: 0.06), blurRadius: 6, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Color(0xFF000000).withValues(alpha: 0.06), blurRadius: 6, offset: Offset(0, 2))],
       ),
       child: child,
     );
@@ -350,13 +354,13 @@ class _StatusBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.sync, color: AppColors.fireRed, size: 18),
+          Icon(Icons.sync, color: AppColors.fireRed, size: 18),
           SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('CURRENT STATUS', style: TextStyle(fontSize: 10, color: AppColors.fireRed, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-              Text(label, style: const TextStyle(fontSize: 14, color: AppColors.fireRed, fontWeight: FontWeight.bold)),
+              Text(label, style: TextStyle(fontSize: 14, color: AppColors.fireRed, fontWeight: FontWeight.bold)),
             ],
           ),
         ],
@@ -394,10 +398,10 @@ class _TimelineStep extends StatelessWidget {
     final isPending = state == _StepState.pending;
 
     Color dotColor = isPending
-        ? (isDark ? Colors.white12 : theme.colorScheme.outlineVariant!)
+        ? (isDark ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.12) : Theme.of(context).colorScheme.outlineVariant!)
         : isActive
             ? AppColors.fireRed
-            : Colors.green;
+            : Theme.of(context).colorScheme.primary;
 
     return IntrinsicHeight(
       child: Row(
@@ -413,19 +417,19 @@ class _TimelineStep extends StatelessWidget {
                   height: 22,
                   decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
                   child: isCompleted
-                      ? const Icon(Icons.check, size: 13, color: theme.colorScheme.onPrimaryContainer)
+                      ? Icon(Icons.check, size: 13, color: Theme.of(context).colorScheme.surface)
                       : isActive
-                          ? const Center(child: Icon(Icons.circle, size: 8, color: theme.colorScheme.onPrimaryContainer))
+                          ? Center(child: Icon(Icons.circle, size: 8, color: Theme.of(context).colorScheme.surface))
                           : null,
                 ),
                 if (!isLast)
                   Expanded(
-                    child: Container(width: 2, color: isDark ? Colors.white12 : theme.colorScheme.outlineVariant),
+                    child: Container(width: 2, color: isDark ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.12) : Theme.of(context).colorScheme.surfaceContainerHigh),
                   ),
               ],
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           // ─── Content ───
           Expanded(
             child: Opacity(
@@ -460,11 +464,11 @@ class _TimelineStep extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(color: AppColors.fireRed, borderRadius: BorderRadius.circular(8)),
-                            child: const Text('ACTIVE', style: TextStyle(fontSize: 9, color: theme.colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold)),
+                            child: Text('ACTIVE', style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold)),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 3),
+                    SizedBox(height: 3),
                     Text(description, style: TextStyle(fontSize: 11, color: isActive ? AppColors.fireRed.withValues(alpha: 0.85) : mutedColor)),
                   ],
                 ),

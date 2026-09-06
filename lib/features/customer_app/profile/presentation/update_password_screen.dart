@@ -7,7 +7,7 @@ import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../app_router.dart';
 
 class UpdatePasswordScreen extends ConsumerStatefulWidget {
-  const UpdatePasswordScreen({super.key});
+  UpdatePasswordScreen({super.key});
 
   @override
   ConsumerState<UpdatePasswordScreen> createState() => _UpdatePasswordScreenState();
@@ -44,7 +44,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
       ref.read(passwordRecoveryProvider.notifier).state = false;
       
       // Give the user a moment to read the success message before redirecting
-      Future.delayed(const Duration(seconds: 2), () {
+      Future.delayed(Duration(seconds: 2), () {
         if (mounted) context.go('/');
       });
       
@@ -59,15 +59,16 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-        final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final textColor = theme.colorScheme.onSurface;
-    final bgColor = theme.colorScheme.surface;
-    final surfaceColor = theme.colorScheme.surfaceContainerHighest;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Theme.of(context).colorScheme.surface : AppColors.sleekBlack;
+    final bgColor = isDark ? AppColors.sleekBlack : Theme.of(context).colorScheme.surfaceContainerLow;
+    final surfaceColor = isDark ? AppColors.surface : Theme.of(context).colorScheme.surface;
 
-    return Scaffold(
+    return LayoutBuilder(builder: (context, constraints) {
+      final isDesktop = constraints.maxWidth > 900;
+      Widget inner = Scaffold(
       backgroundColor: bgColor,
-      appBar: const ReVAppBar(
+      appBar: ReVAppBar(
         title: Text('Update Password'),
       ),
       body: Center(
@@ -79,32 +80,32 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
             decoration: BoxDecoration(
               color: surfaceColor,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: isDark ? Colors.black26 : theme.colorScheme.shadow, blurRadius: 20)],
+              boxShadow: [BoxShadow(color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.26) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 20)],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.lock_reset, size: 64, color: AppColors.fireRed),
-                const SizedBox(height: 16),
+                Icon(Icons.lock_reset, size: 64, color: AppColors.fireRed),
+                SizedBox(height: 16),
                 Text('Secure Your Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor), textAlign: TextAlign.center),
-                const SizedBox(height: 8),
-                const Text('Please enter a new password below.', style: TextStyle(color: AppColors.daysGray), textAlign: TextAlign.center),
-                const SizedBox(height: 32),
+                SizedBox(height: 8),
+                Text('Please enter a new password below.', style: TextStyle(color: AppColors.daysGray), textAlign: TextAlign.center),
+                SizedBox(height: 32),
                 
                 if (_errorMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 16),
-                    color: theme.colorScheme.error.withValues(alpha: 0.1),
-                    child: Text(_errorMessage!, style: TextStyle(color: theme.colorScheme.error, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                    color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                    child: Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                   ),
                 
                 if (_successMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 16),
-                    color: theme.colorScheme.tertiary.withValues(alpha: 0.1),
-                    child: Text(_successMessage!, style: TextStyle(color: theme.colorScheme.tertiary, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    child: Text(_successMessage!, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                   ),
 
                 TextField(
@@ -112,25 +113,25 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                   style: TextStyle(color: textColor),
                   decoration: InputDecoration(
                     labelText: 'New Password', 
-                    labelStyle: const TextStyle(color: AppColors.daysGray),
-                    border: const OutlineInputBorder(),
+                    labelStyle: TextStyle(color: AppColors.daysGray),
+                    border: OutlineInputBorder(),
                     enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.daysGray.withValues(alpha: 0.5)))
                   ),
                   obscureText: true,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 TextField(
                   controller: _confirmPasswordController,
                   style: TextStyle(color: textColor),
                   decoration: InputDecoration(
                     labelText: 'Confirm New Password', 
-                    labelStyle: const TextStyle(color: AppColors.daysGray),
-                    border: const OutlineInputBorder(),
+                    labelStyle: TextStyle(color: AppColors.daysGray),
+                    border: OutlineInputBorder(),
                     enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.daysGray.withValues(alpha: 0.5)))
                   ),
                   obscureText: true,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -138,8 +139,8 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                     onPressed: (_isLoading || _successMessage != null) ? null : _updatePassword,
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed),
                     child: _isLoading 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: theme.colorScheme.onPrimaryContainer, strokeWidth: 2))
-                      : const Text('SAVE PASSWORD', style: TextStyle(color: theme.colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                      ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.surface, strokeWidth: 2))
+                      : Text('SAVE PASSWORD', style: TextStyle(color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   ),
                 ),
               ],
@@ -148,5 +149,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
         ),
       ),
     );
+      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+    });
   }
 }
