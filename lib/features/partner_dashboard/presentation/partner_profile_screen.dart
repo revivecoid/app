@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/responsive_layout_guard.dart';
 import 'partner_profile_controller.dart';
 
 const _emerald500 = Color(0xFF10B981);
@@ -66,7 +67,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       }
       if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.errorMessage!), backgroundColor: Colors.red),
+          SnackBar(content: Text(next.errorMessage!), backgroundColor: _DesignColors.primaryContainer),
         );
       }
     });
@@ -91,7 +92,9 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
             ),
           ),
         ],
-      ),
+      );
+        return isDesktop ? Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: innerContent)) : innerContent;
+      }),
     );
   }
 
@@ -105,7 +108,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       (Icons.timer_outlined, 'Panel Durations', '/partner-dashboard/quota'),
     ];
     final sidebarBg = isDark ? AppColors.surfaceContainerLowest : Colors.white;
-    final dividerColor = isDark ? AppColors.outlineVariant : Colors.black12;
+    final dividerColor = isDark ? AppColors.outlineVariant : _DesignColors.onSurface12;
 
     return Container(
       width: _kSidebarWidth,
@@ -164,7 +167,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
   // â”€â”€ Top Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildTopBar(BuildContext context, bool isDark, ColorScheme cs,
       PartnerProfileState state, PartnerProfileController controller) {
-    final dividerColor = isDark ? AppColors.outlineVariant : Colors.black12;
+    final dividerColor = isDark ? AppColors.outlineVariant : _DesignColors.onSurface12;
     final barBg = isDark ? AppColors.surfaceContainerLowest : Colors.white;
 
     return Container(
@@ -299,8 +302,8 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceContainerLow : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AppColors.outlineVariant : Colors.black12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
+        border: Border.all(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12),
+        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
       ),
       child: child,
     );
@@ -391,7 +394,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
         Text('Contact & Operations',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
         const SizedBox(height: 16),
-        Divider(color: isDark ? AppColors.outlineVariant : Colors.black12),
+        Divider(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12),
         const SizedBox(height: 12),
         if (_isEditing) ...[
           _editField(isDark, cs, 'Address', _addressCtrl, Icons.location_on_outlined),
@@ -423,9 +426,9 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
         filled: true,
         fillColor: isDark ? AppColors.surfaceContainerLowest : Colors.grey.shade50,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: isDark ? AppColors.outlineVariant : Colors.black12)),
+            borderSide: BorderSide(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: isDark ? AppColors.outlineVariant : Colors.black12)),
+            borderSide: BorderSide(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: AppColors.fireRed, width: 2)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -459,7 +462,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
         Text('Performance KPIs',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
         const SizedBox(height: 16),
-        Divider(color: isDark ? AppColors.outlineVariant : Colors.black12),
+        Divider(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12),
         const SizedBox(height: 12),
         _kpiTile(cs, 'Total Jobs Completed', '${state.totalJobsDone}', Icons.check_circle_outline, _emerald500),
         const SizedBox(height: 12),
@@ -506,7 +509,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.surfaceContainerLowest : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: isDark ? AppColors.outlineVariant : Colors.black12),
+                  border: Border.all(color: isDark ? AppColors.outlineVariant : _DesignColors.onSurface12),
                 ),
                 child: Text('No facility photos uploaded yet.',
                     style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),

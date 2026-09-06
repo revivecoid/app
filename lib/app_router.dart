@@ -11,7 +11,6 @@ import 'core/widgets/rev_app_bar.dart';
 import 'features/partner_dashboard/presentation/partner_profile_screen.dart';
 import 'features/customer_app/home/presentation/customer_landing_screen.dart';
 import 'features/customer_app/estimator/presentation/estimator_screen.dart';
-import 'features/customer_app/estimator/presentation/diagram_test_screen.dart';
 import 'features/customer_app/order/presentation/booking_scheduling_screen.dart';
 import 'features/customer_app/order/presentation/checkout_payment_screen.dart';
 import 'features/customer_app/tracking/presentation/live_stepper_timeline.dart';
@@ -222,10 +221,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/estimator',
         builder: (context, state) => const EstimatorScreen(), // Move estimator here
-      ),
-      GoRoute(
-        path: '/diagram-test',
-        builder: (context, state) => const DiagramTestScreen(),
       ),
       GoRoute(
         path: '/booking/schedule/:jobId',
@@ -484,10 +479,10 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : AppColors.sleekBlack;
-    final bgColor = isDark ? AppColors.sleekBlack : Colors.grey[50];
-    final surfaceColor = isDark ? AppColors.surface : Colors.white;
+    final theme = Theme.of(context);
+    final textColor = theme.colorScheme.onSurface;
+    final bgColor = theme.colorScheme.surface;
+    final surfaceColor = theme.colorScheme.surfaceContainerHighest;
 
     return Consumer(builder: (context, ref, child) {
       return Scaffold(
@@ -502,7 +497,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
               decoration: BoxDecoration(
                 color: surfaceColor,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.05), blurRadius: 20)],
+                boxShadow: [BoxShadow(color: theme.colorScheme.shadow, blurRadius: 20)],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -517,7 +512,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                         Image.asset(
                           'assets/images/revive_logo.png',
                           height: 40,
-                          color: isDark ? Colors.white : AppColors.fireRed,
+                          color: theme.colorScheme.primary,
                         ),
                         SizedBox(width: 12),
                         Text(
@@ -525,7 +520,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 32,
-                            color: isDark ? Colors.white : AppColors.sleekBlack,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -657,7 +652,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                       icon: Image.asset('assets/images/google_logo.png', height: 24),
                       label: Text('Continue with Google', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: isDark ? AppColors.daysGray : AppColors.daysGray.withValues(alpha: 0.5), width: 1),
+                        side: BorderSide(color: theme.colorScheme.outline, width: 1),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         backgroundColor: surfaceColor,
                       ),

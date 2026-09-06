@@ -44,7 +44,7 @@ class CustomerNotificationsScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
                   SizedBox(height: 12),
                   Text('Gagal memuat notifikasi', style: theme.textTheme.titleMedium),
                   SizedBox(height: 8),
@@ -137,12 +137,12 @@ class _NotificationTile extends StatelessWidget {
       background: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.red,
+          color: theme.colorScheme.error,
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const Icon(Icons.delete, color: theme.colorScheme.onPrimaryContainer),
       ),
       onDismissed: (_) => onDismiss(),
       child: GestureDetector(
@@ -158,7 +158,7 @@ class _NotificationTile extends StatelessWidget {
             boxShadow: [
               if (!isDark)
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: theme.colorScheme.shadow,
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),

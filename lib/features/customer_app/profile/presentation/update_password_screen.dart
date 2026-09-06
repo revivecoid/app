@@ -59,10 +59,11 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : AppColors.sleekBlack;
-    final bgColor = isDark ? AppColors.sleekBlack : Colors.grey[50];
-    final surfaceColor = isDark ? AppColors.surface : Colors.white;
+        final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.colorScheme.onSurface;
+    final bgColor = theme.colorScheme.surface;
+    final surfaceColor = theme.colorScheme.surfaceContainerHighest;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -78,7 +79,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
             decoration: BoxDecoration(
               color: surfaceColor,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.05), blurRadius: 20)],
+              boxShadow: [BoxShadow(color: isDark ? Colors.black26 : theme.colorScheme.shadow, blurRadius: 20)],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -94,16 +95,16 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 16),
-                    color: Colors.red.withValues(alpha: 0.1),
-                    child: Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                    color: theme.colorScheme.error.withValues(alpha: 0.1),
+                    child: Text(_errorMessage!, style: TextStyle(color: theme.colorScheme.error, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                   ),
                 
                 if (_successMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 16),
-                    color: Colors.green.withValues(alpha: 0.1),
-                    child: Text(_successMessage!, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                    color: theme.colorScheme.tertiary.withValues(alpha: 0.1),
+                    child: Text(_successMessage!, style: TextStyle(color: theme.colorScheme.tertiary, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                   ),
 
                 TextField(
@@ -137,8 +138,8 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                     onPressed: (_isLoading || _successMessage != null) ? null : _updatePassword,
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed),
                     child: _isLoading 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('SAVE PASSWORD', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: theme.colorScheme.onPrimaryContainer, strokeWidth: 2))
+                      : const Text('SAVE PASSWORD', style: TextStyle(color: theme.colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   ),
                 ),
               ],

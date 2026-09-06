@@ -140,7 +140,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             const SizedBox(height: 8),
           ],
         ),
-      ),
+      );
+        return isDesktop ? Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: innerContent)) : innerContent;
+      }),
     );
   }
 
@@ -1315,11 +1317,13 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     }
 
     return Scaffold(
-      backgroundColor: (isDark ? AppColors.surface : Colors.white),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: const ReVAppBar(
         title: Text('AI Body Repair Estimator'),
       ),
-      body: Stack(
+      body: LayoutBuilder(builder: (context, constraints) { 
+        final isDesktop = constraints.maxWidth > 900; 
+        Widget innerContent = Stack(
         children: [
           SingleChildScrollView(
             padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
@@ -1332,9 +1336,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               decoration: BoxDecoration(
-                color: (isDark ? AppColors.surface : Colors.white),
+                color: Theme.of(context).colorScheme.surface,
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))
+                  BoxShadow(color: Theme.of(context).colorScheme.shadow, blurRadius: 10, offset: const Offset(0, -5))
                 ],
               ),
               child: Row(
