@@ -53,7 +53,7 @@ class LiveStepperTimeline extends ConsumerWidget {
     final bg = isDark ? Color(0xFF1D1C1D) : Color(0xFFF8F9FA);
     final cardColor = isDark ? Color(0xFF2C2B2C) : Colors.white;
     final textColor = isDark ? Colors.white : Color(0xFF1D1C1D);
-    final mutedColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+    final mutedColor = isDark ? theme.colorScheme.outlineVariant! : theme.colorScheme.outlineVariant!;
 
     return Scaffold(
       backgroundColor: bg,
@@ -80,7 +80,7 @@ class LiveStepperTimeline extends ConsumerWidget {
               padding: EdgeInsets.only(right: 12),
               child: Chip(
                 backgroundColor: Colors.orange,
-                label: Text('Reconnecting…', style: TextStyle(color: Colors.white, fontSize: 11)),
+                label: Text('Reconnecting…', style: TextStyle(color: theme.colorScheme.onPrimaryContainer, fontSize: 11)),
                 padding: EdgeInsets.zero,
               ),
             )
@@ -213,7 +213,7 @@ class _TrackerBody extends StatelessWidget {
                     width: double.infinity,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white10 : Colors.grey[100],
+                      color: isDark ? Colors.white10 : theme.colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
@@ -251,7 +251,7 @@ class _TrackerBody extends StatelessWidget {
                               photo.publicUrl,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
-                                color: Colors.grey[300],
+                                color: theme.colorScheme.outlineVariant,
                                 child: const Icon(Icons.broken_image, color: Colors.grey),
                               ),
                             ),
@@ -260,12 +260,12 @@ class _TrackerBody extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: Colors.black54,
+                                  color: theme.colorScheme.onSurface54,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   photo.context.toUpperCase(),
-                                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(color: theme.colorScheme.onPrimaryContainer, fontSize: 9, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
@@ -324,7 +324,7 @@ class _TrackerBody extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 6, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: theme.colorScheme.onSurface.withValues(alpha: 0.06), blurRadius: 6, offset: const Offset(0, 2))],
       ),
       child: child,
     );
@@ -394,7 +394,7 @@ class _TimelineStep extends StatelessWidget {
     final isPending = state == _StepState.pending;
 
     Color dotColor = isPending
-        ? (isDark ? Colors.white12 : Colors.grey[300]!)
+        ? (isDark ? Colors.white12 : theme.colorScheme.outlineVariant!)
         : isActive
             ? AppColors.fireRed
             : Colors.green;
@@ -413,14 +413,14 @@ class _TimelineStep extends StatelessWidget {
                   height: 22,
                   decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
                   child: isCompleted
-                      ? const Icon(Icons.check, size: 13, color: Colors.white)
+                      ? const Icon(Icons.check, size: 13, color: theme.colorScheme.onPrimaryContainer)
                       : isActive
-                          ? const Center(child: Icon(Icons.circle, size: 8, color: Colors.white))
+                          ? const Center(child: Icon(Icons.circle, size: 8, color: theme.colorScheme.onPrimaryContainer))
                           : null,
                 ),
                 if (!isLast)
                   Expanded(
-                    child: Container(width: 2, color: isDark ? Colors.white12 : Colors.grey[200]),
+                    child: Container(width: 2, color: isDark ? Colors.white12 : theme.colorScheme.outlineVariant),
                   ),
               ],
             ),
@@ -460,7 +460,7 @@ class _TimelineStep extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(color: AppColors.fireRed, borderRadius: BorderRadius.circular(8)),
-                            child: const Text('ACTIVE', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                            child: const Text('ACTIVE', style: TextStyle(fontSize: 9, color: theme.colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold)),
                           ),
                       ],
                     ),

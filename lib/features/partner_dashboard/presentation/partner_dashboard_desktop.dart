@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/responsive_layout_guard.dart';
 import 'partner_dashboard_controller.dart';
 
 // ─── Color tokens (keep consistent with the original design) ─────────────────
@@ -79,23 +80,15 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
     final inPaint = allJobs.where((j) => j.status == '7_finished').toList();
     final inQC = allJobs.where((j) => j.status == '8_awaiting_delivery').toList();
 
-    return Scaffold(
-      backgroundColor: _surface,
-      body: state.isLoading && state.activeJobs.isEmpty
-          ? const Center(child: CircularProgressIndicator(color: _primaryContainer))
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ─── SIDEBAR ───────────────────────────────────────────────
-                _Sidebar(
-                  userName: userName,
-                  unreadCount: state.unreadMessageCount,
-                  onNavigate: (route) => context.push(route),
-                ),
+    final sidebar = _Sidebar(
+      userName: userName,
+      unreadCount: state.unreadMessageCount,
+      onNavigate: (route) => context.push(route),
+    );
 
-                // ─── MAIN CONTENT ──────────────────────────────────────────
-                Expanded(
-                  child: Column(
+    Widget mainContent = state.isLoading && state.activeJobs.isEmpty
+        ? const Center(child: CircularProgressIndicator(color: _primaryContainer))
+        : Column(
                     children: [
                       // HEADER
                       _Header(

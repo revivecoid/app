@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/responsive_layout_guard.dart';
 
 // Helper for exact colors matching the design system
 class _DesignColors {
@@ -117,7 +118,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
             ),
           ),
         ],
-      ),
+      );
     );
   }
 
@@ -290,7 +291,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
         color: _DesignColors.surfaceContainerLowest.withValues(alpha: 0.9),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: _DesignColors.onSurface.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 1),
           ),
@@ -369,7 +370,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1)),
+          BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1)),
         ],
       ),
       child: Column(
@@ -430,7 +431,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
+        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -484,7 +485,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
+        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,7 +529,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
+        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
       ),
       child: Column(
         children: [
@@ -706,7 +707,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
+        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
       ),
       child: Column(
         children: [
@@ -807,7 +808,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
       decoration: BoxDecoration(
         color: _DesignColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
+        boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
       ),
       child: Column(
         children: [
@@ -816,7 +817,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: _DesignColors.surfaceContainerLowest,
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 1))],
+              boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 1))],
             ),
             child: Column(
               children: [
@@ -903,7 +904,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                   Container(
                     margin: const EdgeInsets.only(left: 44, right: 44),
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: _DesignColors.surfaceContainerLowest, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)]),
+                    decoration: BoxDecoration(color: _DesignColors.surfaceContainerLowest, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.04), blurRadius: 4)]),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -941,7 +942,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: _DesignColors.surfaceContainerLowest,
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, -1))],
+              boxShadow: [BoxShadow(color: _DesignColors.onSurface.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, -1))],
             ),
             child: Column(
               children: [
@@ -1034,7 +1035,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                 decoration: const BoxDecoration(
                   color: _DesignColors.surfaceContainerLowest,
                   borderRadius: BorderRadius.only(topRight: Radius.circular(12), bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                  boxShadow: [BoxShadow(color: Color(0x1F1C1B1C), blurRadius: 4)],
                 ),
                 child: Text(text, style: const TextStyle(fontSize: 14, color: _DesignColors.onSurface)),
               ),
@@ -1070,7 +1071,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                 decoration: const BoxDecoration(
                   color: _DesignColors.primaryContainer,
                   borderRadius: BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                  boxShadow: [BoxShadow(color: Color(0x1F1C1B1C), blurRadius: 4)],
                 ),
                 child: Text(text, style: const TextStyle(fontSize: 14, color: _DesignColors.onPrimary)),
               ),

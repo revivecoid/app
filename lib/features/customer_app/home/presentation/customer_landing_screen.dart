@@ -100,7 +100,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(color: theme.colorScheme.shadow, blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -132,7 +132,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
             label: const Text('Get Free AI Estimate', style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryContainer,
-              foregroundColor: Colors.white,
+              foregroundColor: theme.colorScheme.onPrimaryContainer,
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -152,7 +152,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(color: theme.colorScheme.shadow, blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -246,7 +246,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                 label: const Text('Track Live', style: TextStyle(fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryContainer,
-                  foregroundColor: Colors.white,
+                  foregroundColor: theme.colorScheme.onPrimaryContainer,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   minimumSize: const Size(0, 36),
@@ -270,7 +270,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                 color: AppColors.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                  BoxShadow(color: theme.colorScheme.shadow, blurRadius: 4, offset: const Offset(0, 2)),
                 ],
               ),
               child: Column(
@@ -279,20 +279,20 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   Container(
                     width: 36, height: 36,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.photo_camera, color: Colors.white),
+                    child: const Icon(Icons.photo_camera, color: theme.colorScheme.onPrimaryContainer),
                   ),
                   const SizedBox(height: 12),
-                  Text('New Claim', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
-                  Text('Scan car damage with AI', style: theme.textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.8))),
+                  Text('New Claim', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold)),
+                  Text('Scan car damage with AI', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8))),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text('Start Scan', style: theme.textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                      Text('Start Scan', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold)),
                       const SizedBox(width: 4),
-                      const Icon(Icons.arrow_forward, size: 14, color: Colors.white),
+                      const Icon(Icons.arrow_forward, size: 14, color: theme.colorScheme.onPrimaryContainer),
                     ],
                   ),
                 ],
@@ -310,7 +310,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                 color: theme.colorScheme.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                  BoxShadow(color: theme.colorScheme.shadow, blurRadius: 4, offset: const Offset(0, 2)),
                 ],
               ),
               child: Column(
@@ -350,7 +350,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(color: theme.colorScheme.shadow, blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -397,7 +397,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(color: theme.colorScheme.shadow, blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -481,7 +481,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(color: theme.colorScheme.shadow, blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -513,10 +513,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.8),
+                        color: theme.colorScheme.surface.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text('Bumper Repair', style: TextStyle(color: Colors.white, fontSize: 10)),
+                      child: const Text('Bumper Repair', style: TextStyle(color: theme.colorScheme.onPrimaryContainer, fontSize: 10)),
                     ),
                   ),
                 ),
@@ -538,10 +538,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.8),
+                        color: theme.colorScheme.surface.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text('Color Matching', style: TextStyle(color: Colors.white, fontSize: 10)),
+                      child: const Text('Color Matching', style: TextStyle(color: theme.colorScheme.onPrimaryContainer, fontSize: 10)),
                     ),
                   ),
                 ),
@@ -560,7 +560,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(color: theme.colorScheme.shadow, blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -606,7 +606,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               color: theme.colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2),
+                BoxShadow(color: theme.colorScheme.shadow, blurRadius: 2),
               ],
             ),
             child: Icon(icon, color: iconColor, size: 20),
