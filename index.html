@@ -35,14 +35,15 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <script>
+    window.onerror = function(msg, src, line, col, err) {
+      document.body.innerHTML = '<pre style="color:yellow;background:#8b0000;padding:20px;font-size:13px;white-space:pre-wrap"><b>JS ERROR:</b> ' + msg + '\nSource: ' + src + ':' + line + ':' + col + '\n\n' + (err && err.stack ? err.stack : '(no stack)') + '</pre>';
+      return true;
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+      document.body.innerHTML = '<pre style="color:yellow;background:#8b0000;padding:20px;font-size:13px;white-space:pre-wrap"><b>UNHANDLED PROMISE REJECTION:</b>\n' + (e.reason ? (e.reason.stack || e.reason.toString()) : String(e)) + '</pre>';
+    });
+  </script>
   <script src="flutter_bootstrap.js?v=9999" async></script>
 </body>
 </html>
