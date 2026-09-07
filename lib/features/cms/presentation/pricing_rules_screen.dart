@@ -27,11 +27,11 @@ class _PricingItem {
   double get beratPrice => basePrice * beratMultiplier;
 
   Map<String, dynamic> toMap() => {
-        'key': key,
-        'label': label,
-        'base_price': basePrice,
-        'sedang_multiplier': sedangMultiplier,
-        'berat_multiplier': beratMultiplier,
+        'panel_id': key,
+        'panel_name': label,
+        'base_rate': basePrice,
+        'severity_min': sedangMultiplier,
+        'severity_max': beratMultiplier,
       };
 }
 
@@ -151,21 +151,23 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
       final rows = await Supabase.instance.client
           .from(_tableName)
           .select()
-          .order('key');
+          .order('panel_id');
       final sections = _defaultSections();
       if (rows.isNotEmpty) {
+        // Key DB rows by panel_id to match _PricingItem.key
         final Map<String, Map<String, dynamic>> byKey = {
-          for (final r in (rows as List)) r['key'] as String: r
+          for (final r in (rows as List)) r['panel_id'] as String: r
         };
         for (final sec in sections) {
           for (final item in sec.items) {
             if (byKey.containsKey(item.key)) {
               final r = byKey[item.key]!;
-              item.basePrice = (r['base_price'] as num).toDouble();
+              item.basePrice = (r['base_rate'] as num).toDouble();
+              // severity_min = sedang multiplier, severity_max = berat multiplier
               item.sedangMultiplier =
-                  (r['sedang_multiplier'] as num?)?.toDouble() ?? 1.5;
+                  (r['severity_min'] as num?)?.toDouble() ?? 1.5;
               item.beratMultiplier =
-                  (r['berat_multiplier'] as num?)?.toDouble() ?? 2.0;
+                  (r['severity_max'] as num?)?.toDouble() ?? 2.0;
             }
           }
         }
@@ -188,7 +190,7 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
       ];
       await Supabase.instance.client
           .from(_tableName)
-          .upsert(rows, onConflict: 'key');
+          .upsert(rows, onConflict: 'panel_id');
       // Bust the Dart-side PricingMatrix cache so the next AI estimate
       // uses the newly saved prices without requiring an app restart.
       PricingMatrix.invalidateCache();
