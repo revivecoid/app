@@ -43,10 +43,10 @@ const FALLBACK_PRICES: Record<string, number> = {
 
 // ── LivePricingRule: shape of a row from the pricing_rules table ──
 interface LivePricingRule {
-  label: string;
-  base_price: number;
-  sedang_multiplier: number;
-  berat_multiplier: number;
+  panel_name: string;   // matches what AI returns and what's in DB
+  base_rate: number;
+  severity_min: number; // sedang (medium) multiplier
+  severity_max: number; // berat  (heavy)  multiplier
 }
 
 // ── Fetches live pricing rules from DB; gracefully falls back to hardcoded map ──
@@ -54,25 +54,25 @@ async function loadPricingRules(): Promise<LivePricingRule[]> {
   try {
     const { data, error } = await supabase
       .from("pricing_rules")
-      .select("label, base_price, sedang_multiplier, berat_multiplier");
+      .select("panel_name, base_rate, severity_min, severity_max");
 
     if (error || !data || data.length === 0) {
       console.warn("pricing_rules fetch failed or empty — using hardcoded fallback.", error?.message);
-      return Object.entries(FALLBACK_PRICES).map(([label, base_price]) => ({
-        label,
-        base_price,
-        sedang_multiplier: 1.5,
-        berat_multiplier: 2.0,
+      return Object.entries(FALLBACK_PRICES).map(([panel_name, base_rate]) => ({
+        panel_name,
+        base_rate,
+        severity_min: 1.5,
+        severity_max: 2.0,
       }));
     }
     return data as LivePricingRule[];
   } catch (err) {
     console.error("Unexpected error loading pricing_rules:", err);
-    return Object.entries(FALLBACK_PRICES).map(([label, base_price]) => ({
-      label,
-      base_price,
-      sedang_multiplier: 1.5,
-      berat_multiplier: 2.0,
+    return Object.entries(FALLBACK_PRICES).map(([panel_name, base_rate]) => ({
+      panel_name,
+      base_rate,
+      severity_min: 1.5,
+      severity_max: 2.0,
     }));
   }
 }
@@ -84,9 +84,9 @@ function calculateDeterministicCost(
 ): number {
   if (!structuredData?.assessment?.damaged_panels_detail) return 0;
 
-  // Build a fast lookup map: label → rule
+  // Build a fast lookup map: panel_name → rule
   const ruleMap = new Map<string, LivePricingRule>(
-    rules.map((r) => [r.label, r])
+    rules.map((r) => [r.panel_name, r])
   );
 
   let totalCost = 0;
@@ -95,13 +95,13 @@ function calculateDeterministicCost(
     const severity: string = (panel.panel_severity || "ringan").toLowerCase();
 
     const rule = ruleMap.get(name);
-    const basePrice = rule?.base_price ?? FALLBACK_PRICES[name] ?? 500000;
+    const basePrice = rule?.base_rate ?? FALLBACK_PRICES[name] ?? 500000;
 
     let multiplier = 1.0;
     if (severity === "sedang") {
-      multiplier = rule?.sedang_multiplier ?? 1.5;
+      multiplier = rule?.severity_min ?? 1.5;
     } else if (severity === "berat") {
-      multiplier = rule?.berat_multiplier ?? 2.0;
+      multiplier = rule?.severity_max ?? 2.0;
     }
 
     const panelCost = basePrice * multiplier;

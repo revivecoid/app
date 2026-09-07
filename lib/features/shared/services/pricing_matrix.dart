@@ -69,7 +69,7 @@ class PricingMatrix {
     try {
       final rows = await Supabase.instance.client
           .from('pricing_rules')
-          .select('label, base_price, sedang_multiplier, berat_multiplier');
+          .select('panel_name, base_rate, severity_min, severity_max');
 
       if (rows.isEmpty) {
         _cache = _buildFallbackCache();
@@ -78,10 +78,10 @@ class PricingMatrix {
 
       _cache = {
         for (final r in (rows as List))
-          r['label'] as String: _PricingRule(
-            basePrice: (r['base_price'] as num).toDouble(),
-            sedangMultiplier: (r['sedang_multiplier'] as num?)?.toDouble() ?? 1.5,
-            beratMultiplier: (r['berat_multiplier'] as num?)?.toDouble() ?? 2.0,
+          r['panel_name'] as String: _PricingRule(
+            basePrice: (r['base_rate'] as num).toDouble(),
+            sedangMultiplier: (r['severity_min'] as num?)?.toDouble() ?? 1.5,
+            beratMultiplier: (r['severity_max'] as num?)?.toDouble() ?? 2.0,
           )
       };
     } catch (e) {

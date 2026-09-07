@@ -244,6 +244,10 @@ class _ContentTabState extends State<_ContentTab> {
   late TextEditingController _v1t, _v1s, _v2t, _v2s, _v3t, _v3s, _v4t, _v4s;
   // Partner CTA
   late TextEditingController _pcTitle, _pcSub;
+  // Privacy Policy page
+  late TextEditingController _ppTitle, _ppUpdated, _ppIntro;
+  // 8 privacy sections (title + body)
+  final List<TextEditingController> _ppST = [], _ppSB = [];
   final _faqQ = <TextEditingController>[], _faqA = <TextEditingController>[];
   int _faqCnt = 3;
   bool _dirty = false;
@@ -304,6 +308,24 @@ class _ContentTabState extends State<_ContentTab> {
     // Partner CTA
     _pcTitle = TextEditingController(text: widget.s('partner_cta_title', fb: 'Bergabung sebagai Partner Bengkel'));
     _pcSub   = TextEditingController(text: widget.s('partner_cta_sub',   fb: 'Daftarkan bengkel Anda dan mulai terima order dari Revive.'));
+    // Privacy Policy
+    _ppTitle   = TextEditingController(text: widget.s('privacy_page_title', fb: 'Kebijakan Privasi'));
+    _ppUpdated = TextEditingController(text: widget.s('privacy_updated',    fb: 'Terakhir diperbarui: September 2026'));
+    _ppIntro   = TextEditingController(text: widget.s('privacy_intro',      fb: 'Kami berkomitmen untuk melindungi privasi dan keamanan data pribadi Anda. Kebijakan ini menjelaskan bagaimana Revive Indonesia mengumpulkan, menggunakan, dan melindungi informasi Anda.'));
+    const _ppDefaults = [
+      ('1. Data yang Kami Kumpulkan', 'Kami mengumpulkan informasi yang Anda berikan saat mendaftar (nama, email, nomor telepon), data kendaraan (merek, model, plat nomor), foto kerusakan yang Anda unggah, dan data penggunaan aplikasi secara anonim untuk meningkatkan layanan.'),
+      ('2. Penggunaan Data', 'Data Anda digunakan untuk memproses estimasi kerusakan AI, menghubungkan Anda dengan bengkel partner terdekat, mengirimkan pembaruan status perbaikan, memproses pembayaran dan klaim asuransi, serta meningkatkan akurasi model AI kami.'),
+      ('3. Keamanan Data', 'Seluruh data disimpan di infrastruktur Supabase dengan enkripsi AES-256. Kami tidak pernah menjual data pribadi Anda kepada pihak ketiga. Akses data dibatasi hanya untuk keperluan layanan yang Anda gunakan.'),
+      ('4. Berbagi Data dengan Pihak Ketiga', 'Data minimal yang diperlukan dibagikan kepada bengkel partner yang Anda pilih untuk keperluan perbaikan, serta kepada perusahaan asuransi jika Anda mengajukan klaim. Semua mitra terikat perjanjian kerahasiaan data.'),
+      ('5. Hak Pengguna', 'Anda berhak mengakses, memperbaiki, atau menghapus data pribadi Anda kapan saja melalui halaman profil. Untuk permintaan penghapusan akun, hubungi privacy@revive.co.id dan kami akan memprosesnya dalam 30 hari kerja.'),
+      ('6. Cookie dan Pelacakan', 'Aplikasi web kami menggunakan cookie sesi untuk autentikasi dan preferensi tema. Tidak ada cookie pelacakan pihak ketiga atau iklan yang digunakan di platform kami.'),
+      ('7. Perubahan Kebijakan', 'Kebijakan ini dapat diperbarui sewaktu-waktu. Perubahan material akan diberitahukan melalui email terdaftar Anda minimal 14 hari sebelum berlaku. Penggunaan layanan setelah tanggal efektif dianggap sebagai persetujuan atas perubahan tersebut.'),
+      ('8. Kontak', 'Untuk pertanyaan terkait privasi data, hubungi kami di: privacy@revive.co.id atau melalui fitur Support di aplikasi kami.'),
+    ];
+    for (int i = 0; i < 8; i++) {
+      _ppST.add(TextEditingController(text: widget.s('privacy_${i}_title', fb: _ppDefaults[i].$1)));
+      _ppSB.add(TextEditingController(text: widget.s('privacy_${i}_body',  fb: _ppDefaults[i].$2)));
+    }
     for (int i = 0; i < _faqCnt; i++) {
       _faqQ.add(TextEditingController(text: widget.s('faq_${i}_q')));
       _faqA.add(TextEditingController(text: widget.s('faq_${i}_a')));
@@ -324,6 +346,8 @@ class _ContentTabState extends State<_ContentTab> {
       _stPartners, _stRating, _stJobs,
       _v1t, _v1s, _v2t, _v2s, _v3t, _v3s, _v4t, _v4s,
       _pcTitle, _pcSub,
+      _ppTitle, _ppUpdated, _ppIntro,
+      ..._ppST, ..._ppSB,
       ..._faqQ, ..._faqA,
     ]) c.dispose();
     super.dispose();
@@ -384,7 +408,14 @@ class _ContentTabState extends State<_ContentTab> {
       widget.onSave('value_4_sub',           _v4s.text,          cat: 'about'),
       widget.onSave('partner_cta_title',     _pcTitle.text,      cat: 'about'),
       widget.onSave('partner_cta_sub',       _pcSub.text,        cat: 'about'),
+      widget.onSave('privacy_page_title',    _ppTitle.text,      cat: 'legal'),
+      widget.onSave('privacy_updated',       _ppUpdated.text,    cat: 'legal'),
+      widget.onSave('privacy_intro',         _ppIntro.text,      cat: 'legal'),
     ];
+    for (int i = 0; i < 8; i++) {
+      saves.add(widget.onSave('privacy_${i}_title', _ppST[i].text, cat: 'legal'));
+      saves.add(widget.onSave('privacy_${i}_body',  _ppSB[i].text, cat: 'legal'));
+    }
     for (int i = 0; i < _faqCnt; i++) {
       saves.add(widget.onSave('faq_${i}_q', _faqQ[i].text, cat: 'faq'));
       saves.add(widget.onSave('faq_${i}_a', _faqA[i].text, cat: 'faq'));
@@ -571,6 +602,25 @@ class _ContentTabState extends State<_ContentTab> {
           _Field(cs: cs, label: 'Title',    ctrl: _pcTitle, hint: 'Bergabung sebagai Partner Bengkel', onChange: _mark),
           const SizedBox(height: 12),
           _Field(cs: cs, label: 'Subtitle', ctrl: _pcSub,   hint: 'Daftarkan bengkel Anda...', maxLines: 2, onChange: _mark),
+        ]),
+        const SizedBox(height: 16),
+        // ── Privacy Policy page ───────────────────────────────────────────
+        _Card(cs: cs, title: 'Privacy Policy Page', icon: Icons.privacy_tip_outlined, children: [
+          _Field(cs: cs, label: 'Page Title',   ctrl: _ppTitle,   hint: 'Kebijakan Privasi', onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Last Updated', ctrl: _ppUpdated, hint: 'Terakhir diperbarui: September 2026', onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Introduction', ctrl: _ppIntro,   hint: 'Intro paragraph...', maxLines: 4, onChange: _mark),
+          const SizedBox(height: 14),
+          Text('Sections', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
+          for (int i = 0; i < 8; i++) ...[
+            const SizedBox(height: 12),
+            Text('Section ${i + 1}', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 6),
+            _Field(cs: cs, label: 'Title', ctrl: _ppST[i], hint: 'Section heading', onChange: _mark),
+            const SizedBox(height: 6),
+            _Field(cs: cs, label: 'Body',  ctrl: _ppSB[i], hint: 'Section content', maxLines: 4, onChange: _mark),
+          ],
         ]),
         const SizedBox(height: 80),
       ]),
