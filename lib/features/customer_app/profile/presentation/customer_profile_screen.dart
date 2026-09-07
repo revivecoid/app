@@ -160,7 +160,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                               }).toList();
                             },
                             loading: () => [
-                              const Center(
+                              Center(
                                   child: Padding(
                                 padding: EdgeInsets.all(24),
                                 child: CircularProgressIndicator(),
@@ -201,7 +201,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                               }).toList();
                             },
                             loading: () => [
-                              const Center(
+                              Center(
                                   child: Padding(
                                 padding: EdgeInsets.all(24),
                                 child: CircularProgressIndicator(),
@@ -1021,7 +1021,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                     onPressed: () =>
                         context.push('/track/$activeJobId'),
                     icon: Icon(Icons.fmd_good_outlined, size: 16),
-                    label: const Text('Track Live Repair',
+                    label: Text('Track Live Repair',
                         style: TextStyle(fontSize: 13)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryContainer,
@@ -1251,7 +1251,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                 child: ElevatedButton.icon(
                   onPressed: () => context.push('/track/${job['id']}'),
                   icon: Icon(Icons.fmd_good_outlined, size: 15),
-                  label: const Text('Track Order',
+                  label: Text('Track Order',
                       style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryContainer,
@@ -1275,7 +1275,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                     );
                   },
                   icon: Icon(Icons.verified_outlined, size: 15),
-                  label: const Text('Guarantee',
+                  label: Text('Guarantee',
                       style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -1347,7 +1347,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                             color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text('Completed',
+                          child: Text('Completed',
                               style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -1403,7 +1403,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                     );
                   },
                   icon: Icon(Icons.receipt_long_outlined, size: 15),
-                  label: const Text('Tax Receipt',
+                  label: Text('Tax Receipt',
                       style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -1426,7 +1426,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                     );
                   },
                   icon: Icon(Icons.verified_outlined, size: 15),
-                  label: const Text('Guarantee',
+                  label: Text('Guarantee',
                       style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -1551,7 +1551,7 @@ class CustomerProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _divider() => const Divider(
+  Widget _divider() => Divider(
       height: 1, thickness: 1, color: Color(0xFFF0F0F0), indent: 16);
 
   // ─────────────────────────────────────────────────────────────────────────

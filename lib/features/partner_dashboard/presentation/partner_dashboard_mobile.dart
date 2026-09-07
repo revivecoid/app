@@ -49,7 +49,7 @@ class _PartnerDashboardMobileState extends ConsumerState<PartnerDashboardMobile>
     if (state.isLoading && state.activeJobs.isEmpty) {
       return Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-        body: const Center(child: CircularProgressIndicator(color: _primary)),
+        body: Center(child: CircularProgressIndicator(color: _primary)),
       );
     }
 
@@ -122,24 +122,24 @@ class _MobileHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Row(children: [
-        Container(width: 28, height: 28, decoration: const BoxDecoration(color: _primaryContainer, shape: BoxShape.circle), child: const Icon(Icons.build_circle, color: _onPrimary, size: 16)),
-        const SizedBox(width: 8),
+        Container(width: 28, height: 28, decoration: BoxDecoration(color: _primaryContainer, shape: BoxShape.circle), child: Icon(Icons.build_circle, color: _onPrimary, size: 16)),
+        SizedBox(width: 8),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('re-V Partner', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
+          Text('re-V Partner', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
           Row(children: [
             Container(width: 6, height: 6, decoration: BoxDecoration(color: isLive ? _emerald500 : Colors.orange, shape: BoxShape.circle)),
-            const SizedBox(width: 4),
-            Text(isLive ? 'Live Sync' : 'Reconnecting…', style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
+            SizedBox(width: 4),
+            Text(isLive ? 'Live Sync' : 'Reconnecting…', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
           ]),
         ]),
         const Spacer(),
         Badge(
           isLabelVisible: unreadCount > 0,
-          label: Text('$unreadCount', style: const TextStyle(fontSize: 9)),
+          label: Text('$unreadCount', style: TextStyle(fontSize: 9)),
           backgroundColor: _primaryContainer,
-          child: IconButton(icon: const Icon(Icons.forum_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: onCommlink),
+          child: IconButton(icon: Icon(Icons.forum_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: onCommlink),
         ),
-        IconButton(icon: const Icon(Icons.tune_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: onSettings),
+        IconButton(icon: Icon(Icons.tune_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: onSettings),
       ]),
     );
   }
@@ -161,11 +161,11 @@ class _KpiRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Row(children: [
         Expanded(child: _MobileKpi(label: 'Active Jobs', value: '$total', color: _primary, icon: Icons.build_outlined)),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Expanded(child: _MobileKpi(label: 'In Bay', value: '$inBay', color: _amber500, icon: Icons.hardware_outlined)),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Expanded(child: _MobileKpi(label: 'QC Ready', value: '$qc', color: _emerald500, icon: Icons.local_shipping_outlined)),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Expanded(child: _MobileKpi(label: 'Messages', value: '${state.unreadMessageCount}', color: _blue500, icon: Icons.forum_outlined, highlight: state.unreadMessageCount > 0)),
       ]),
     );
@@ -190,10 +190,10 @@ class _MobileKpi extends StatelessWidget {
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, color: color, size: 16),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         Text(value, style: TextStyle(color: highlight ? color : Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 2),
-        Text(label, style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w600), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+        SizedBox(height: 2),
+        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w600), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
       ]),
     );
   }
@@ -214,18 +214,18 @@ class _SearchBar extends StatelessWidget {
         decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(10), border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(children: [
-          const Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 16),
-          const SizedBox(width: 8),
+          Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 16),
+          SizedBox(width: 8),
           Expanded(child: TextField(
             controller: ctrl,
             onChanged: onSearch,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Search vehicle, plate, customer…',
               hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
               border: InputBorder.none,
               isDense: true,
             ),
-            style: const TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
           )),
         ]),
       ),
@@ -259,7 +259,7 @@ class _FilterChips extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         itemCount: filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        separatorBuilder: (_, __) => SizedBox(width: 6),
         itemBuilder: (_, i) {
           final f = filters[i];
           final isActive = f == selected;
@@ -274,7 +274,7 @@ class _FilterChips extends StatelessWidget {
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Text(f, style: TextStyle(color: isActive ? _onPrimary : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500)),
-                const SizedBox(width: 5),
+                SizedBox(width: 5),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                   decoration: BoxDecoration(color: isActive ? Colors.white.withValues(alpha: 0.25) : Theme.of(context).colorScheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(8)),
@@ -307,10 +307,10 @@ class _JobList extends StatelessWidget {
     if (jobs.isEmpty) {
       return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.emoji_transportation, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
-        const SizedBox(height: 12),
-        const Text('No Jobs Found', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 6),
-        const Text('Try changing your filter or search term.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+        SizedBox(height: 12),
+        Text('No Jobs Found', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.bold)),
+        SizedBox(height: 6),
+        Text('Try changing your filter or search term.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
       ]));
     }
 
@@ -342,7 +342,7 @@ class _JobList extends StatelessWidget {
               ),
               child: Row(children: [
                 Text('#$jobIdShort', style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
@@ -350,26 +350,26 @@ class _JobList extends StatelessWidget {
                 ),
                 const Spacer(),
                 Icon(Icons.timer_outlined, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                const SizedBox(width: 3),
-                Text(elapsedText, style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
+                SizedBox(width: 3),
+                Text(elapsedText, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
               ]),
             ),
             // Card body
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${job.carMake} ${job.carModel}', style: const TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 4),
+                Text('${job.carMake} ${job.carModel}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
+                SizedBox(height: 4),
                 Row(children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(4), border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
-                    child: Text(job.licensePlate.toUpperCase(), style: const TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.2)),
+                    child: Text(job.licensePlate.toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.2)),
                   ),
-                  const SizedBox(width: 8),
-                  Text('• ${job.customerName}', style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                  SizedBox(width: 8),
+                  Text('• ${job.customerName}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                 ]),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(children: [
                   Expanded(child: SizedBox(
                     height: 34,
@@ -380,12 +380,12 @@ class _JobList extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      icon: const Icon(Icons.photo_camera_outlined, size: 14),
-                      label: const Text('Photo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      icon: Icon(Icons.photo_camera_outlined, size: 14),
+                      label: Text('Photo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () => controller.captureAndUploadProgressPhoto(job.id, job.status),
                     ),
                   )),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   if (job.status != '9_done') Expanded(child: SizedBox(
                     height: 34,
                     child: ElevatedButton.icon(
@@ -396,10 +396,10 @@ class _JobList extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         elevation: 0,
                       ),
-                      icon: const Icon(Icons.arrow_forward, size: 14),
+                      icon: Icon(Icons.arrow_forward, size: 14),
                       label: Text(
                         (job.status == '3_booked' || job.status == '4_paid') ? 'Admit' : 'Advance',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                       onPressed: () => controller.advanceJobStage(job.id, job.status),
                     ),
@@ -462,10 +462,10 @@ class _NavItem extends StatelessWidget {
             if (badge > 0) Positioned(top: -4, right: -8, child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               decoration: BoxDecoration(color: _primaryContainer, borderRadius: BorderRadius.circular(8)),
-              child: Text('$badge', style: const TextStyle(color: _onPrimary, fontSize: 9, fontWeight: FontWeight.bold)),
+              child: Text('$badge', style: TextStyle(color: _onPrimary, fontSize: 9, fontWeight: FontWeight.bold)),
             )),
           ]),
-          const SizedBox(height: 3),
+          SizedBox(height: 3),
           Text(label, style: TextStyle(color: active ? _primary : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
         ]),
       ),
