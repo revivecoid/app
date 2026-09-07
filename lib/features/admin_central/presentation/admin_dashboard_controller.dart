@@ -427,18 +427,26 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
 
       final res = await _supabase
           .from('profiles')
-          .select('full_name, role, hub_id')
+          .select('full_name, role, hub_id, admin_level')
           .eq('id', user.id)
           .maybeSingle();
 
-      if (res == null) return;
+      // Determine name — prefer full_name, fall back to email prefix
+      String fullName;
+      if (res != null && res['full_name'] != null &&
+          (res['full_name'] as String).trim().isNotEmpty) {
+        fullName = res['full_name'].toString().trim();
+      } else {
+        final email = user.email ?? 'Admin';
+        fullName = email.contains('@') ? email.split('@').first : email;
+      }
 
-      final fullName = res['full_name']?.toString() ?? user.email ?? 'Admin';
-      final role = res['role']?.toString() ?? 'master_admin';
+      final role = res?['role']?.toString() ?? 'master_admin';
+      final adminLevel = res?['admin_level']?.toString() ?? 'admin';
 
       // Fetch hub name if hub_id is set
       String hubName = '—';
-      final hubId = res['hub_id']?.toString();
+      final hubId = res?['hub_id']?.toString();
       if (hubId != null && hubId.isNotEmpty) {
         final hubRes = await _supabase
             .from('partners')
@@ -447,7 +455,6 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
             .maybeSingle();
         hubName = hubRes?['shop_name']?.toString() ?? '—';
       } else {
-        // Default: pick first active partner as active hub display
         final firstPartner = await _supabase
             .from('partners')
             .select('shop_name')
@@ -461,11 +468,18 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       state = state.copyWith(
         adminName: fullName,
         adminRole: role,
-        adminLevel: 'admin', // future: from profiles.admin_level when column exists
+        adminLevel: adminLevel,
         activeHubName: hubName,
       );
     } catch (e) {
       debugPrint('Admin profile fetch error: $e');
+      // Fallback to email
+      final user = _supabase.auth.currentUser;
+      if (user != null && mounted) {
+        final email = user.email ?? 'Admin';
+        final name = email.contains('@') ? email.split('@').first : email;
+        state = state.copyWith(adminName: name);
+      }
     }
   }
 
@@ -548,7 +562,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       vehicles:vehicle_id (make, model, license_plate),
       partners:partner_id (shop_name),
       repair_photos (step_context, r2_file_key)
-    ''').neq('status', '9_done');
+    ''').not('status', 'in', '("9_done","completed")');
 
     final cdnBucketPath =
         _supabase.storage.from('revive-photos').getPublicUrl('');

@@ -20,9 +20,8 @@ const _navItems = [
   _NavItem('Job Board / Pipeline', Icons.view_kanban_outlined),
   _NavItem('Workshop Settings & Quotas', Icons.tune_outlined),
   _NavItem('Assign Jobs Hub', Icons.assignment_outlined),
-  _NavItem('Partner & Hub Management', Icons.handshake_outlined),
-  _NavItem('Analytics & Telemetry', Icons.speed_outlined),
-  _NavItem('System Settings', Icons.settings_outlined),
+  _NavItem('Customer Database', Icons.people_outline_rounded),
+  _NavItem('System Settings', Icons.settings_outlined, sysadminOnly: true),
   _NavItem('User Accounts', Icons.manage_accounts_outlined,
       route: '/admin-central/users', sysadminOnly: true),
   _NavItem('Frontend Settings', Icons.palette_outlined,
@@ -134,13 +133,19 @@ class _MasterAdminDesktopState
         return _AssignJobsContent(
             cs: cs, state: state, controller: controller);
       case 3:
-        return _PartnerHubContent(
-            cs: cs, state: state, controller: controller);
-      case 4:
         return _CustomerCrmContent(cs: cs, state: state);
+      case 4:
+        return _PlaceholderContent(
+          cs: cs,
+          label: 'System Settings',
+          subtitle: 'Sysadmin-only. Contact your system administrator.',
+          icon: Icons.settings_outlined,
+        );
       default:
         return _PlaceholderContent(
-            cs: cs, label: _navItems[_activeNavIndex].label);
+          cs: cs,
+          label: _navItems[_activeNavIndex].label,
+        );
     }
   }
 }
@@ -760,7 +765,21 @@ class _OpsMatrixContent extends StatelessWidget {
                 ]),
               ),
               if (state.activeJobs.isEmpty && !state.isLoading)
-                _SampleRows(cs: cs, onVerify: onVerify)
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.inbox_outlined,
+                        size: 48, color: cs.onSurfaceVariant),
+                    const SizedBox(height: 12),
+                    Text('No active jobs in the pipeline.',
+                        style:
+                            TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+                  ],
+                ),
+              ),
+            )
               else
                 ...state.activeJobs.map((j) => _JobRow(
                       cs: cs,
@@ -799,60 +818,6 @@ class _OpsMatrixContent extends StatelessWidget {
             ]),
           ),
         ]);
-  }
-}
-
-class _SampleRows extends StatelessWidget {
-  final ColorScheme cs;
-  final void Function(AdminJobNode) onVerify;
-  const _SampleRows(
-      {required this.cs, required this.onVerify});
-
-  @override
-  Widget build(BuildContext context) {
-    final jobs = [
-      AdminJobNode(
-          id: 'JB-03537083',
-          customerName: 'Budi Wicaksono',
-          carIdentity: 'Toyota Innova Zenix - B 1984 REV',
-          status: 'manual_verification_pending',
-          partnerName: 'Revive Hub 04 - Kebon Jeruk',
-          createdAt:
-              DateTime.now().subtract(const Duration(hours: 2)),
-          lastUpdatedAt: DateTime.now()
-              .subtract(const Duration(minutes: 30))),
-      AdminJobNode(
-          id: 'JB-03536644',
-          customerName: 'Hendri Kusuma',
-          carIdentity:
-              'Mitsubishi Pajero Dakar - B 1888 SUV',
-          status: 'completed',
-          partnerName: 'Revive Hub 09 - Kelapa Gading',
-          createdAt:
-              DateTime.now().subtract(const Duration(days: 1)),
-          lastUpdatedAt: DateTime.now()
-              .subtract(const Duration(hours: 6))),
-      AdminJobNode(
-          id: 'JB-03536502',
-          customerName: 'Clara Sutedja',
-          carIdentity: 'Wuling Air EV Long - B 2441 KLL',
-          status: 'overdue',
-          partnerName: 'Revive Hub 04 - Kebon Jeruk',
-          createdAt:
-              DateTime.now().subtract(const Duration(days: 3)),
-          lastUpdatedAt: DateTime.now()
-              .subtract(const Duration(days: 2))),
-    ];
-    return Column(
-        children: jobs
-            .map((j) => _JobRow(
-                  cs: cs,
-                  job: j,
-                  partners: const [],
-                  onVerify: () => onVerify(j),
-                  onOverride: (_) {},
-                ))
-            .toList());
   }
 }
 
@@ -1029,13 +994,11 @@ class _JobRow extends StatelessWidget {
                           PopupMenuItem(
                             value: 'view',
                             child: Row(children: [
-                              Icon(
-                                  Icons
-                                      .open_in_new_rounded,
+                              Icon(Icons.open_in_new_rounded,
                                   size: 16,
                                   color: cs.onSurface),
                               const SizedBox(width: 10),
-                              Text('View Details',
+                              Text('View Job Details',
                                   style: TextStyle(
                                       fontSize: 13,
                                       color: cs.onSurface)),
@@ -1073,10 +1036,7 @@ class _JobRow extends StatelessWidget {
                         onSelected: (val) {
                           switch (val) {
                             case 'view':
-                              if (job.partnerId != null) {
-                                context.push(
-                                    '/admin-central/partner/${job.partnerId}');
-                              }
+                              context.push('/track/${job.id}');
                             case 'override':
                               _showStatusPicker(
                                   context, job, onOverride);
@@ -2392,8 +2352,10 @@ class _CustomerCrmContent extends StatelessWidget {
 class _PlaceholderContent extends StatelessWidget {
   final ColorScheme cs;
   final String label;
+  final String? subtitle;
+  final IconData? icon;
   const _PlaceholderContent(
-      {required this.cs, required this.label});
+      {required this.cs, required this.label, this.subtitle, this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -2403,7 +2365,7 @@ class _PlaceholderContent extends StatelessWidget {
           child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-        Icon(Icons.construction_rounded,
+        Icon(icon ?? Icons.construction_rounded,
             size: 48, color: cs.onSurfaceVariant),
         const SizedBox(height: 12),
         Text(label,
@@ -2412,7 +2374,7 @@ class _PlaceholderContent extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 color: cs.onSurface)),
         const SizedBox(height: 8),
-        Text('This section is under construction.',
+        Text(subtitle ?? 'This section is under construction.',
             style: TextStyle(
                 fontSize: 14, color: cs.onSurfaceVariant)),
       ])),

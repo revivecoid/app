@@ -89,7 +89,11 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
   Future<void> _init() async {
     try {
       // 1. Fetch Partner Data
-      final pRes = await _supabase.from('partners').select().eq('id', partnerId).single();
+      final pRes = await _supabase.from('partners').select().eq('id', partnerId).maybeSingle();
+      if (pRes == null) {
+        state = state.copyWith(isLoading: false, errorMessage: 'Partner not found.');
+        return;
+      }
 
       // 2. Fetch Schedule
       Map<String, dynamic>? schedData;
