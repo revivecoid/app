@@ -421,10 +421,11 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
 
   Widget _buildLegend(ThemeData t, ColorScheme cs) {
     final cs = Theme.of(context).colorScheme;
+    // Ringan = neutral base, Sedang = tertiary, Berat = primary (brand red)
     final severities = [
-      ('Ringan', '× 1.0  –  Harga Dasar', cs.primary),
+      ('Ringan', '× 1.0  –  Harga Dasar',            cs.onSurfaceVariant),
       ('Sedang', '× 1.5  –  dapat diubah per baris', cs.tertiary),
-      ('Berat',  '× 2.0  –  dapat diubah per baris', cs.error),
+      ('Berat',  '× 2.0  –  dapat diubah per baris', cs.primary),
     ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -464,7 +465,7 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
       padding: const EdgeInsets.only(bottom: 24),
       child: Container(
         decoration: BoxDecoration(
-          color: cs.surface,
+          color: cs.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -472,14 +473,14 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                 blurRadius: 18,
                 offset: const Offset(0, 4))
           ],
-          border: Border.all(color: cs.outlineVariant),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
         ),
         child: Column(children: [
           // Section title bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             decoration: BoxDecoration(
-                color: cs.primaryContainer.withValues(alpha: 0.3),
+                color: cs.surfaceContainerHigh,
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(16))),
             child: Row(children: [
@@ -487,16 +488,16 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
               const SizedBox(width: 10),
               Text(section.title,
                   style: t.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700, color: cs.primary)),
+                      ?.copyWith(fontWeight: FontWeight.w700, color: cs.onSurface)),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.1),
+                    color: cs.surfaceContainer,
                     borderRadius: BorderRadius.circular(8)),
                 child: Text('${section.items.length} panel',
                     style: t.textTheme.labelSmall
-                        ?.copyWith(color: cs.primary, fontWeight: FontWeight.w600)),
+                        ?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
               ),
             ]),
           ),
@@ -514,14 +515,14 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
   Widget _buildColHeaders(ThemeData t, ColorScheme cs) {
     final cs = Theme.of(context).colorScheme;
     final cols = [
-      ('Panel', 3, null),
-      ('Ringan (Dasar)', 2, cs.primary),
-      ('Sedang', 2, cs.tertiary),
-      ('Berat', 2, cs.error),
-      ('', 1, null),
+      ('Panel',          3, null),
+      ('Ringan (Dasar)', 2, cs.onSurfaceVariant),  // neutral
+      ('Sedang',         2, cs.tertiary),
+      ('Berat',          2, cs.primary),
+      ('',               1, null),
     ];
     return Container(
-      color: cs.surfaceContainer.withValues(alpha: 0.5),
+      color: cs.surfaceContainerLow,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: cols.map((c) {
@@ -568,18 +569,18 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                   style: t.textTheme.bodyMedium
                       ?.copyWith(fontWeight: FontWeight.w500)),
             ),
-            // Ringan
+            // Ringan (neutral base price)
             Expanded(
               flex: 2,
               child: isEditing
                   ? _NumField(
                       controller: _baseCtrl[item.key]!,
-                      color: cs.primary,
+                      color: cs.onSurface,
                       prefix: 'Rp ',
                       digitsOnly: true,
                       onChanged: (_) => setState(() => _isDirty = true),
                     )
-                  : _PriceCell(value: item.basePrice, color: cs.primary),
+                  : _PriceCell(value: item.basePrice, color: cs.onSurface),
             ),
             // Sedang
             Expanded(
@@ -603,12 +604,12 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                   ? _MultiplierField(
                       controller: _beratCtrl[item.key]!,
                       basePrice: item.basePrice,
-                      color: cs.error,
+                      color: cs.primary,
                       onChanged: (_) => setState(() => _isDirty = true),
                     )
                   : _PriceCell(
                       value: item.beratPrice,
-                      color: cs.error,
+                      color: cs.primary,
                       multiplier: item.beratMultiplier),
             ),
             // Action buttons
@@ -618,7 +619,7 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                   ? Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                       IconButton(
                         tooltip: 'Batalkan',
-                        icon: Icon(Icons.close, color: cs.error, size: 18),
+                        icon: Icon(Icons.close, color: cs.onSurfaceVariant, size: 18),
                         onPressed: _cancelEdit,
                         visualDensity: VisualDensity.compact,
                       ),
