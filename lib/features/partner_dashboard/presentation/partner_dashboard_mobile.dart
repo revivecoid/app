@@ -1,158 +1,479 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/rev_app_bar.dart';
 import 'partner_dashboard_controller.dart';
 
-class PartnerDashboardMobile extends ConsumerWidget {
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const _primary = Color(0xFFa40016);
+const _primaryContainer = Color(0xFFd10721);
+const _onPrimary = Color(0xFFffffff);
+const _onSurface = Color(0xFF1c1b1c);
+const _onSurfaceVariant = Color(0xFF5d3f3d);
+const _surfaceLowest = Color(0xFFffffff);
+const _surfaceLow = Color(0xFFf7f2f3);
+const _surfaceHigh = Color(0xFFebe7e8);
+const _emerald500 = Color(0xFF10B981);
+const _amber500 = Color(0xFFF59E0B);
+const _blue500 = Color(0xFF3B82F6);
+
+String _statusLabel(String raw) =>
+    raw.replaceAll(RegExp(r'^\d+_'), '').replaceAll('_', ' ').toUpperCase();
+
+class PartnerDashboardMobile extends ConsumerStatefulWidget {
   const PartnerDashboardMobile({super.key});
+  @override
+  ConsumerState<PartnerDashboardMobile> createState() => _PartnerDashboardMobileState();
+}
+
+class _PartnerDashboardMobileState extends ConsumerState<PartnerDashboardMobile> {
+  int _navIndex = 0;
+  String _filterStatus = 'All';
+  final _searchCtrl = TextEditingController();
+  String _searchQuery = '';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(partnerDashboardProvider);
     final controller = ref.read(partnerDashboardProvider.notifier);
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = Theme.of(context).scaffoldBackgroundColor;
-    final surfaceColor = isDark ? AppColors.surface : Colors.white;
-    final textColor = isDark ? Colors.white : AppColors.sleekBlack;
-    final iconColor = isDark ? Colors.white70 : AppColors.sleekBlack;
-
-    // Global Notification Listener mapped for Mobile Viewport constraints
-    ref.listen<PartnerDashboardState>(partnerDashboardProvider, (previous, next) {
-      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: next.errorMessage!.contains('offline') || next.errorMessage!.contains('successfully') 
-                ? Colors.green[800] 
-                : AppColors.fireRed,
-          ),
-        );
+    ref.listen<PartnerDashboardState>(partnerDashboardProvider, (prev, next) {
+      if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(next.errorMessage!),
+          backgroundColor: next.errorMessage!.contains('successfully') ? _emerald500 : _primaryContainer,
+        ));
       }
     });
 
     if (state.isLoading && state.activeJobs.isEmpty) {
       return Scaffold(
-        backgroundColor: bgColor,
-        body: const Center(child: CircularProgressIndicator(color: AppColors.fireRed)),
+        backgroundColor: _surfaceLow,
+        body: const Center(child: CircularProgressIndicator(color: _primary)),
       );
     }
 
+    // Filter jobs
+    List<PartnerJobNode> filteredJobs = state.activeJobs.where((j) {
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery.toLowerCase();
+        if (!j.carMake.toLowerCase().contains(q) &&
+            !j.carModel.toLowerCase().contains(q) &&
+            !j.licensePlate.toLowerCase().contains(q) &&
+            !j.customerName.toLowerCase().contains(q)) return false;
+      }
+      switch (_filterStatus) {
+        case 'Incoming': return j.status == '3_booked' || j.status == '4_paid';
+        case 'In Bay': return j.status == '5_admitted' || j.status == '6_in_progress';
+        case 'Paint': return j.status == '7_finished';
+        case 'QC': return j.status == '8_awaiting_delivery';
+        default: return true;
+      }
+    }).toList();
+
     return Scaffold(
-      backgroundColor: bgColor,
-      appBar: ReVAppBar(
-        title: Text('Garage Floor Mechanic', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
-        actions: [
-          Badge(
-            isLabelVisible: state.unreadMessageCount > 0,
-            label: Text(state.unreadMessageCount.toString()),
-            child: IconButton(
-              icon: Icon(Icons.settings, color: iconColor),
-              tooltip: 'Workshop Settings & Commlink',
-              onPressed: () => context.push('/partner-dashboard/settings'),
-            ),
+      backgroundColor: _surfaceLow,
+      body: SafeArea(
+        child: Column(children: [
+          _MobileHeader(
+            unreadCount: state.unreadMessageCount,
+            isLive: !state.isOfflineSyncing,
+            onSettings: () => context.push('/partner-dashboard/settings'),
+            onCommlink: () => context.push('/partner-dashboard/commlink'),
           ),
-          if (state.isOfflineSyncing)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Icon(Icons.sync, color: Colors.greenAccent),
-            ),
-        ],
+          _KpiRow(state: state),
+          _SearchBar(ctrl: _searchCtrl, onSearch: (q) => setState(() => _searchQuery = q)),
+          _FilterChips(
+            selected: _filterStatus,
+            jobs: state.activeJobs,
+            onSelect: (f) => setState(() => _filterStatus = f),
+          ),
+          Expanded(child: _JobList(jobs: filteredJobs, controller: controller)),
+        ]),
       ),
-      body: Stack(
-        children: [
-          ListView.builder(
-            padding: const EdgeInsets.only(top: 12.0, left: 12.0, right: 12.0, bottom: 80.0),
-            itemCount: state.activeJobs.length,
-            itemBuilder: (context, index) {
-              final job = state.activeJobs[index];
-              return Card(
-                color: surfaceColor,
-                margin: const EdgeInsets.only(bottom: 12),
-                elevation: isDark ? 4 : 1,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: isDark ? Colors.transparent : Colors.grey.shade300)
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      // Car Identity Column
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${job.carMake} ${job.carModel}', 
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: textColor),
-                            ),
-                            SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isDark ? Colors.black : Colors.grey[200],
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: isDark ? Colors.white30 : Colors.grey),
-                              ),
-                              child: Text(
-                                job.licensePlate.toUpperCase(), 
-                                style: TextStyle(color: textColor, fontWeight: FontWeight.bold, letterSpacing: 1.5),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Status: ${job.status.replaceAll(RegExp(r'^\d+_'), '').toUpperCase()}', 
-                              style: const TextStyle(color: AppColors.fireRed, fontWeight: FontWeight.bold, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Direct High-Contrast Camera Trigger
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.fireRed.withValues(alpha: 0.1),
-                          border: Border.all(color: AppColors.fireRed, width: 2),
-                        ),
-                        child: IconButton(
-                          iconSize: 40,
-                          icon: const Icon(Icons.camera_alt, color: AppColors.fireRed),
-                          onPressed: () => controller.captureAndUploadProgressPhoto(job.id, job.status),
-                          tooltip: 'Upload Progress Photo',
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-          
-          // Processing Overlay Guard
-          if (state.isLoading)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                color: surfaceColor,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.fireRed, strokeWidth: 2)),
-                    const SizedBox(width: 16),
-                    Text('Compressing & Uploading...', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-            ),
-        ],
+      bottomNavigationBar: _BottomNav(
+        current: _navIndex,
+        unread: state.unreadMessageCount,
+        onTap: (i) {
+          setState(() => _navIndex = i);
+          switch (i) {
+            case 0: break; // stay on dashboard
+            case 1: context.push('/partner-dashboard/schedule'); break;
+            case 2: context.push('/partner-dashboard/commlink'); break;
+            case 3: context.push('/partner-dashboard/profile'); break;
+          }
+        },
       ),
     );
+  }
+}
+
+// ─── Mobile Header ────────────────────────────────────────────────────────────
+class _MobileHeader extends StatelessWidget {
+  final int unreadCount;
+  final bool isLive;
+  final VoidCallback onSettings;
+  final VoidCallback onCommlink;
+  const _MobileHeader({required this.unreadCount, required this.isLive, required this.onSettings, required this.onCommlink});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: _surfaceLowest,
+      child: Row(children: [
+        Container(width: 28, height: 28, decoration: const BoxDecoration(color: _primaryContainer, shape: BoxShape.circle), child: const Icon(Icons.build_circle, color: _onPrimary, size: 16)),
+        const SizedBox(width: 8),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('re-V Partner', style: TextStyle(color: _onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
+          Row(children: [
+            Container(width: 6, height: 6, decoration: BoxDecoration(color: isLive ? _emerald500 : Colors.orange, shape: BoxShape.circle)),
+            const SizedBox(width: 4),
+            Text(isLive ? 'Live Sync' : 'Reconnecting…', style: const TextStyle(color: _onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
+          ]),
+        ]),
+        const Spacer(),
+        Badge(
+          isLabelVisible: unreadCount > 0,
+          label: Text('$unreadCount', style: const TextStyle(fontSize: 9)),
+          backgroundColor: _primaryContainer,
+          child: IconButton(icon: const Icon(Icons.forum_outlined, color: _onSurfaceVariant), onPressed: onCommlink),
+        ),
+        IconButton(icon: const Icon(Icons.tune_outlined, color: _onSurfaceVariant), onPressed: onSettings),
+      ]),
+    );
+  }
+}
+
+// ─── KPI Row ──────────────────────────────────────────────────────────────────
+class _KpiRow extends StatelessWidget {
+  final PartnerDashboardState state;
+  const _KpiRow({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = state.activeJobs.length;
+    final inBay = state.activeJobs.where((j) => j.status == '5_admitted' || j.status == '6_in_progress').length;
+    final qc = state.activeJobs.where((j) => j.status == '8_awaiting_delivery').length;
+
+    return Container(
+      color: _surfaceLowest,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Row(children: [
+        Expanded(child: _MobileKpi(label: 'Active Jobs', value: '$total', color: _primary, icon: Icons.build_outlined)),
+        const SizedBox(width: 8),
+        Expanded(child: _MobileKpi(label: 'In Bay', value: '$inBay', color: _amber500, icon: Icons.hardware_outlined)),
+        const SizedBox(width: 8),
+        Expanded(child: _MobileKpi(label: 'QC Ready', value: '$qc', color: _emerald500, icon: Icons.local_shipping_outlined)),
+        const SizedBox(width: 8),
+        Expanded(child: _MobileKpi(label: 'Messages', value: '${state.unreadMessageCount}', color: _blue500, icon: Icons.forum_outlined, highlight: state.unreadMessageCount > 0)),
+      ]),
+    );
+  }
+}
+
+class _MobileKpi extends StatelessWidget {
+  final String label, value;
+  final Color color;
+  final IconData icon;
+  final bool highlight;
+  const _MobileKpi({required this.label, required this.value, required this.color, required this.icon, this.highlight = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(
+        color: highlight ? color.withValues(alpha: 0.08) : _surfaceLow,
+        borderRadius: BorderRadius.circular(10),
+        border: highlight ? Border.all(color: color.withValues(alpha: 0.3)) : null,
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: color, size: 16),
+        const SizedBox(height: 4),
+        Text(value, style: TextStyle(color: highlight ? color : _onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 2),
+        Text(label, style: const TextStyle(color: _onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w600), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ]),
+    );
+  }
+}
+
+// ─── Search Bar ───────────────────────────────────────────────────────────────
+class _SearchBar extends StatelessWidget {
+  final TextEditingController ctrl;
+  final ValueChanged<String> onSearch;
+  const _SearchBar({required this.ctrl, required this.onSearch});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: Container(
+        height: 38,
+        decoration: BoxDecoration(color: _surfaceLowest, borderRadius: BorderRadius.circular(10), border: Border.all(color: _surfaceHigh)),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(children: [
+          const Icon(Icons.search, color: _onSurfaceVariant, size: 16),
+          const SizedBox(width: 8),
+          Expanded(child: TextField(
+            controller: ctrl,
+            onChanged: onSearch,
+            decoration: const InputDecoration(
+              hintText: 'Search vehicle, plate, customer…',
+              hintStyle: TextStyle(color: _onSurfaceVariant, fontSize: 12),
+              border: InputBorder.none,
+              isDense: true,
+            ),
+            style: const TextStyle(color: _onSurface, fontSize: 13),
+          )),
+        ]),
+      ),
+    );
+  }
+}
+
+// ─── Filter Chips ─────────────────────────────────────────────────────────────
+class _FilterChips extends StatelessWidget {
+  final String selected;
+  final List<PartnerJobNode> jobs;
+  final ValueChanged<String> onSelect;
+  const _FilterChips({required this.selected, required this.jobs, required this.onSelect});
+
+  int _count(String filter) {
+    switch (filter) {
+      case 'Incoming': return jobs.where((j) => j.status == '3_booked' || j.status == '4_paid').length;
+      case 'In Bay': return jobs.where((j) => j.status == '5_admitted' || j.status == '6_in_progress').length;
+      case 'Paint': return jobs.where((j) => j.status == '7_finished').length;
+      case 'QC': return jobs.where((j) => j.status == '8_awaiting_delivery').length;
+      default: return jobs.length;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const filters = ['All', 'Incoming', 'In Bay', 'Paint', 'QC'];
+    return SizedBox(
+      height: 36,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: filters.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (_, i) {
+          final f = filters[i];
+          final isActive = f == selected;
+          return GestureDetector(
+            onTap: () => onSelect(f),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isActive ? _primaryContainer : _surfaceLowest,
+                borderRadius: BorderRadius.circular(16),
+                border: isActive ? null : Border.all(color: _surfaceHigh),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(f, style: TextStyle(color: isActive ? _onPrimary : _onSurfaceVariant, fontSize: 12, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500)),
+                const SizedBox(width: 5),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(color: isActive ? Colors.white.withValues(alpha: 0.25) : _surfaceHigh, borderRadius: BorderRadius.circular(8)),
+                  child: Text('${_count(f)}', style: TextStyle(color: isActive ? _onPrimary : _onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+              ]),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ─── Job List ─────────────────────────────────────────────────────────────────
+class _JobList extends StatelessWidget {
+  final List<PartnerJobNode> jobs;
+  final PartnerDashboardController controller;
+  const _JobList({required this.jobs, required this.controller});
+
+  Color _statusColor(String status) {
+    if (status == '3_booked' || status == '4_paid') return _blue500;
+    if (status == '5_admitted' || status == '6_in_progress') return _primary;
+    if (status == '7_finished') return _amber500;
+    return _emerald500;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (jobs.isEmpty) {
+      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.emoji_transportation, size: 48, color: _onSurfaceVariant.withValues(alpha: 0.4)),
+        const SizedBox(height: 12),
+        const Text('No Jobs Found', style: TextStyle(color: _onSurface, fontSize: 17, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        const Text('Try changing your filter or search term.', style: TextStyle(color: _onSurfaceVariant, fontSize: 13)),
+      ]));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 90),
+      itemCount: jobs.length,
+      itemBuilder: (_, i) {
+        final job = jobs[i];
+        final color = _statusColor(job.status);
+        final elapsed = DateTime.now().difference(job.admittedAt);
+        final elapsedText = elapsed.inHours > 0 ? '${elapsed.inHours}h ${elapsed.inMinutes % 60}m' : '${elapsed.inMinutes}m';
+        final jobIdShort = job.id.length > 8 ? job.id.substring(0, 8).toUpperCase() : job.id.toUpperCase();
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: _surfaceLowest,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2))],
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Card header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.08),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                border: Border(left: BorderSide(color: color, width: 4)),
+              ),
+              child: Row(children: [
+                Text('#$jobIdShort', style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+                  child: Text(_statusLabel(job.status), style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                ),
+                const Spacer(),
+                Icon(Icons.timer_outlined, size: 12, color: _onSurfaceVariant),
+                const SizedBox(width: 3),
+                Text(elapsedText, style: const TextStyle(color: _onSurfaceVariant, fontSize: 11)),
+              ]),
+            ),
+            // Card body
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('${job.carMake} ${job.carModel}', style: const TextStyle(color: _onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 4),
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: _surfaceLow, borderRadius: BorderRadius.circular(4), border: Border.all(color: _surfaceHigh)),
+                    child: Text(job.licensePlate.toUpperCase(), style: const TextStyle(color: _onSurface, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.2)),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('• ${job.customerName}', style: const TextStyle(color: _onSurfaceVariant, fontSize: 12)),
+                ]),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(child: SizedBox(
+                    height: 34,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _primaryContainer,
+                        side: const BorderSide(color: _primaryContainer),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.photo_camera_outlined, size: 14),
+                      label: const Text('Photo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () => controller.captureAndUploadProgressPhoto(job.id, job.status),
+                    ),
+                  )),
+                  const SizedBox(width: 8),
+                  if (job.status != '9_done') Expanded(child: SizedBox(
+                    height: 34,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.arrow_forward, size: 14),
+                      label: Text(
+                        (job.status == '3_booked' || job.status == '4_paid') ? 'Admit' : 'Advance',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () => controller.advanceJobStage(job.id, job.status),
+                    ),
+                  )),
+                ]),
+              ]),
+            ),
+          ]),
+        );
+      },
+    );
+  }
+}
+
+// ─── Bottom Nav ───────────────────────────────────────────────────────────────
+class _BottomNav extends StatelessWidget {
+  final int current;
+  final int unread;
+  final ValueChanged<int> onTap;
+  const _BottomNav({required this.current, required this.unread, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _surfaceLowest,
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -2))],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(children: [
+          _NavItem(icon: Icons.view_kanban_outlined, label: 'Pipeline', index: 0, current: current, onTap: onTap),
+          _NavItem(icon: Icons.calendar_month_outlined, label: 'Schedule', index: 1, current: current, onTap: onTap),
+          _NavItem(icon: Icons.forum_outlined, label: 'Commlink', index: 2, current: current, onTap: onTap, badge: unread),
+          _NavItem(icon: Icons.person_outlined, label: 'Profile', index: 3, current: current, onTap: onTap),
+        ]),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index, current;
+  final int badge;
+  final ValueChanged<int> onTap;
+  const _NavItem({required this.icon, required this.label, required this.index, required this.current, required this.onTap, this.badge = 0});
+
+  @override
+  Widget build(BuildContext context) {
+    final active = index == current;
+    return Expanded(child: GestureDetector(
+      onTap: () => onTap(index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Stack(clipBehavior: Clip.none, children: [
+            Icon(icon, color: active ? _primary : _onSurfaceVariant, size: 22),
+            if (badge > 0) Positioned(top: -4, right: -8, child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(color: _primaryContainer, borderRadius: BorderRadius.circular(8)),
+              child: Text('$badge', style: const TextStyle(color: _onPrimary, fontSize: 9, fontWeight: FontWeight.bold)),
+            )),
+          ]),
+          const SizedBox(height: 3),
+          Text(label, style: TextStyle(color: active ? _primary : _onSurfaceVariant, fontSize: 10, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+        ]),
+      ),
+    ));
   }
 }
