@@ -22,6 +22,8 @@ const _navItems = [
   _NavItem('Workshop Settings & Quotas', Icons.tune_outlined),
   _NavItem('Assign Jobs Hub', Icons.assignment_outlined),
   _NavItem('Customer Database', Icons.people_outline_rounded),
+  _NavItem('Pricing Rules', Icons.price_change_outlined,
+      route: '/admin-central/cms/pricing-rules', sysadminOnly: true),
   _NavItem('System Settings', Icons.settings_outlined, sysadminOnly: true),
   _NavItem('User Accounts', Icons.manage_accounts_outlined,
       route: '/admin-central/users', sysadminOnly: true),

@@ -117,24 +117,33 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     });
 
     try {
-      final compressedBytes = await ImageCompressor.compressImage(_selectedImages.first);
-      
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-      await Supabase.instance.client.storage
-          .from('revive-photos')
-          .uploadBinary(fileName, compressedBytes);
-          
-      final publicUrl = Supabase.instance.client.storage.from('revive-photos').getPublicUrl(fileName);
-      
+      // Upload ALL selected images (up to _maxImages), not just the first
+      final List<String> photoUrls = [];
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+      for (int i = 0; i < _selectedImages.length; i++) {
+        final compressedBytes =
+            await ImageCompressor.compressImage(_selectedImages[i]);
+        final fileName = '${timestamp}_$i.jpg';
+        await Supabase.instance.client.storage
+            .from('revive-photos')
+            .uploadBinary(fileName, compressedBytes);
+        final publicUrl = Supabase.instance.client.storage
+            .from('revive-photos')
+            .getPublicUrl(fileName);
+        photoUrls.add(publicUrl);
+      }
+
       final selectedPanels = ref.read(selectedPanelsProvider);
       final selectedPanelLabels = selectedPanels.map((p) => p.label).toList();
 
       final res = await Supabase.instance.client.functions.invoke(
         'vision-estimation',
         body: {
-          'photoUrl': publicUrl, 
+          'photoUrls': photoUrls,          // full array — all images
+          'photoUrl': photoUrls.first,     // backwards-compat fallback
           'damageDescription': 'User uploaded car damage',
-          'selectedPanels': selectedPanelLabels
+          'selectedPanels': selectedPanelLabels,
         },
       );
 

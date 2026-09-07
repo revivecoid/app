@@ -14,50 +14,102 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const pricingMatrix: Record<string, number> = {
-    'Bumper Depan': 500500,
-    'Spoiler Bumper depan': 286000,
-    'Kap Mesin': 715000,
-    'Bumper Belakang': 500500,
-    'Spoiler Bumper Belakang': 286000,
-    'Bagasi': 643500,
-    'Spoiler Bagasi': 286000,
-    'Fender RH': 572000,
-    'Pintu Depan RH': 572000,
-    'Spion RH': 143000,
-    'Pintu Belakang RH': 572000,
-    'Quarter RH': 572000,
-    'Trisplang RH': 357500,
-    'Side Roof RH': 357500,
-    'Fender LH': 572000,
-    'Pintu Depan LH': 572000,
-    'Spion LH': 143000,
-    'Pintu Belakang LH': 572000,
-    'Quarter LH': 572000,
-    'Trisplang LH': 357500,
-    'Side Roof LH': 357500,
-    'Roof': 1001000,
-    'Cover': 286000,
+// ── Hardcoded fallback prices (used if pricing_rules table is empty/unreachable) ──
+const FALLBACK_PRICES: Record<string, number> = {
+  'Bumper Depan': 500500,
+  'Spoiler Bumper depan': 286000,
+  'Kap Mesin': 715000,
+  'Bumper Belakang': 500500,
+  'Spoiler Bumper Belakang': 286000,
+  'Bagasi': 643500,
+  'Spoiler Bagasi': 286000,
+  'Fender RH': 572000,
+  'Pintu Depan RH': 572000,
+  'Spion RH': 143000,
+  'Pintu Belakang RH': 572000,
+  'Quarter RH': 572000,
+  'Trisplang RH': 357500,
+  'Side Roof RH': 357500,
+  'Fender LH': 572000,
+  'Pintu Depan LH': 572000,
+  'Spion LH': 143000,
+  'Pintu Belakang LH': 572000,
+  'Quarter LH': 572000,
+  'Trisplang LH': 357500,
+  'Side Roof LH': 357500,
+  'Roof': 1001000,
+  'Cover': 286000,
 };
 
-function calculateDeterministicCost(structuredData: any): number {
-    if (!structuredData?.assessment?.damaged_panels_detail) return 0;
-    
-    let totalCost = 0;
-    for (const panel of structuredData.assessment.damaged_panels_detail) {
-        const name = panel.panel_name;
-        const severity = (panel.panel_severity || "ringan").toLowerCase();
-        
-        const basePrice = pricingMatrix[name] || 500000;
-        let multiplier = 1.0;
-        if (severity === 'sedang') multiplier = 1.5;
-        if (severity === 'berat') multiplier = 2.0;
-        
-        const panelCost = basePrice * multiplier;
-        panel.calculated_cost = panelCost; // Inject individual cost for frontend
-        totalCost += panelCost;
+// ── LivePricingRule: shape of a row from the pricing_rules table ──
+interface LivePricingRule {
+  label: string;
+  base_price: number;
+  sedang_multiplier: number;
+  berat_multiplier: number;
+}
+
+// ── Fetches live pricing rules from DB; gracefully falls back to hardcoded map ──
+async function loadPricingRules(): Promise<LivePricingRule[]> {
+  try {
+    const { data, error } = await supabase
+      .from("pricing_rules")
+      .select("label, base_price, sedang_multiplier, berat_multiplier");
+
+    if (error || !data || data.length === 0) {
+      console.warn("pricing_rules fetch failed or empty — using hardcoded fallback.", error?.message);
+      return Object.entries(FALLBACK_PRICES).map(([label, base_price]) => ({
+        label,
+        base_price,
+        sedang_multiplier: 1.5,
+        berat_multiplier: 2.0,
+      }));
     }
-    return totalCost;
+    return data as LivePricingRule[];
+  } catch (err) {
+    console.error("Unexpected error loading pricing_rules:", err);
+    return Object.entries(FALLBACK_PRICES).map(([label, base_price]) => ({
+      label,
+      base_price,
+      sedang_multiplier: 1.5,
+      berat_multiplier: 2.0,
+    }));
+  }
+}
+
+// ── Deterministic cost engine — uses live DB rules, not hardcoded map ──
+function calculateDeterministicCost(
+  structuredData: any,
+  rules: LivePricingRule[]
+): number {
+  if (!structuredData?.assessment?.damaged_panels_detail) return 0;
+
+  // Build a fast lookup map: label → rule
+  const ruleMap = new Map<string, LivePricingRule>(
+    rules.map((r) => [r.label, r])
+  );
+
+  let totalCost = 0;
+  for (const panel of structuredData.assessment.damaged_panels_detail) {
+    const name: string = panel.panel_name;
+    const severity: string = (panel.panel_severity || "ringan").toLowerCase();
+
+    const rule = ruleMap.get(name);
+    const basePrice = rule?.base_price ?? FALLBACK_PRICES[name] ?? 500000;
+
+    let multiplier = 1.0;
+    if (severity === "sedang") {
+      multiplier = rule?.sedang_multiplier ?? 1.5;
+    } else if (severity === "berat") {
+      multiplier = rule?.berat_multiplier ?? 2.0;
+    }
+
+    const panelCost = basePrice * multiplier;
+    panel.calculated_cost = panelCost; // inject per-panel cost for frontend display
+    panel.applied_multiplier = multiplier;
+    totalCost += panelCost;
+  }
+  return totalCost;
 }
 
 
@@ -68,21 +120,31 @@ serve(async (req) => {
   }
 
   try {
-    const { photoUrl, damageDescription, selectedPanels } = await req.json();
+    const { photoUrl, photoUrls: photoUrlsRaw, damageDescription, selectedPanels } = await req.json();
 
-    if (!photoUrl) {
-      return new Response(JSON.stringify({ error: "photoUrl is required" }), {
+    // Support both the new array format and the legacy single-URL format
+    const photoUrls: string[] = Array.isArray(photoUrlsRaw) && photoUrlsRaw.length > 0
+      ? photoUrlsRaw
+      : photoUrl
+      ? [photoUrl]
+      : [];
+
+    if (photoUrls.length === 0) {
+      return new Response(JSON.stringify({ error: "photoUrl or photoUrls is required" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
     }
 
-    // Fetch ALL active models to allow automatic fallback cascading
-    const { data: configs, error: configError } = await supabase
-      .from("ai_config")
-      .select("*")
-      .eq("is_active", true)
-      .order("priority_order", { ascending: true });
+    // Load AI config + live pricing rules in parallel for minimum latency
+    const [{ data: configs, error: configError }, liveRules] = await Promise.all([
+      supabase
+        .from("ai_config")
+        .select("*")
+        .eq("is_active", true)
+        .order("priority_order", { ascending: true }),
+      loadPricingRules(),
+    ]);
 
     if (configError || !configs || configs.length === 0) {
       throw new Error("Failed to load active AI configuration (No active models found)");
@@ -120,11 +182,11 @@ Return precise counts for dents, scratches, and broken panels in the exact follo
         const provider = configData.provider.toLowerCase();
         
         if (provider.includes("google") || provider.includes("gemini")) {
-          estimationResult = await callGoogleGemini(photoUrl, masterPrompt, configData.model_name, googleApiKey);
+          estimationResult = await callGoogleGemini(photoUrls, masterPrompt, configData.model_name, googleApiKey);
         } else if (provider.includes("groq")) {
-          estimationResult = await callOpenAICompatible(photoUrl, masterPrompt, configData.model_name, groqApiKey, configData.api_base_url);
+          estimationResult = await callOpenAICompatible(photoUrls, masterPrompt, configData.model_name, groqApiKey, configData.api_base_url);
         } else if (provider.includes("openai")) {
-          estimationResult = await callOpenAICompatible(photoUrl, masterPrompt, configData.model_name, openaiApiKey, configData.api_base_url);
+          estimationResult = await callOpenAICompatible(photoUrls, masterPrompt, configData.model_name, openaiApiKey, configData.api_base_url);
         } else {
           throw new Error(`Unsupported model provider: ${provider}`);
         }
@@ -159,9 +221,10 @@ Return precise counts for dents, scratches, and broken panels in the exact follo
         }
         
         finalCostEstimation = JSON.parse(jsonStr);
-        const calculatedCost = calculateDeterministicCost(finalCostEstimation);
+        const calculatedCost = calculateDeterministicCost(finalCostEstimation, liveRules);
         finalCostEstimation.financial_estimation = finalCostEstimation.financial_estimation || {};
         finalCostEstimation.financial_estimation.calculated_base_cost = calculatedCost;
+        finalCostEstimation.financial_estimation.pricing_source = "live_db";
         
     } catch (e: any) {
         estimationResult = estimationResult + "\n\n[PARSE ERROR]: " + e.message;
@@ -187,19 +250,22 @@ Return precise counts for dents, scratches, and broken panels in the exact follo
 
 // --- Model API Call Wrappers ---
 
-async function callGoogleGemini(photoUrl: string, prompt: string, modelName: string, apiKey: string) {
-  const imageResp = await fetch(photoUrl);
-  if (!imageResp.ok) throw new Error("Failed to fetch image from URL");
-  
-  const imageBuffer = await imageResp.arrayBuffer();
-  let binary = '';
-  const bytes = new Uint8Array(imageBuffer);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
+async function callGoogleGemini(photoUrls: string[], prompt: string, modelName: string, apiKey: string) {
+  // Fetch and base64-encode ALL images, add each as a separate inline_data part
+  const imageParts: object[] = [];
+  for (const url of photoUrls) {
+    const imageResp = await fetch(url);
+    if (!imageResp.ok) throw new Error(`Failed to fetch image from URL: ${url}`);
+    const imageBuffer = await imageResp.arrayBuffer();
+    let binary = '';
+    const bytes = new Uint8Array(imageBuffer);
+    for (let i = 0; i < bytes.byteLength; i++) {
       binary += String.fromCharCode(bytes[i]);
+    }
+    const base64Image = btoa(binary);
+    const mimeType = imageResp.headers.get('content-type') || 'image/jpeg';
+    imageParts.push({ inline_data: { mime_type: mimeType, data: base64Image } });
   }
-  const base64Image = btoa(binary);
-  const mimeType = imageResp.headers.get('content-type') || 'image/jpeg';
 
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
     method: "POST",
@@ -208,7 +274,7 @@ async function callGoogleGemini(photoUrl: string, prompt: string, modelName: str
       contents: [{
         parts: [
           { text: prompt },
-          { inline_data: { mime_type: mimeType, data: base64Image } }
+          ...imageParts,     // all images injected here
         ]
       }],
       generationConfig: {
@@ -227,21 +293,19 @@ async function callGoogleGemini(photoUrl: string, prompt: string, modelName: str
   throw new Error("No output returned from Google AI");
 }
 
-async function callOpenAICompatible(photoUrl: string, prompt: string, modelName: string, apiKey: string, apiBaseUrl: string) {
+async function callOpenAICompatible(photoUrls: string[], prompt: string, modelName: string, apiKey: string, apiBaseUrl: string) {
   const isGroq = apiBaseUrl.includes("groq");
   const isOpenRouterFree = modelName.includes("free");
-  
+
+  // Build content array: text prompt first, then one image_url entry per photo
+  const contentArray: object[] = [
+    { type: "text", text: prompt },
+    ...photoUrls.map((url) => ({ type: "image_url", image_url: { url } })),
+  ];
+
   const payload: any = {
     model: modelName,
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: prompt },
-          { type: "image_url", image_url: { url: photoUrl } }
-        ]
-      }
-    ]
+    messages: [{ role: "user", content: contentArray }],
   };
 
   // Skip JSON mode for models that might not fully support strict structured format
