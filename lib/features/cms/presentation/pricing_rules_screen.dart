@@ -46,7 +46,7 @@ class _Section {
 List<_Section> _defaultSections() => [
       _Section(title: 'Depan', items: [
         _PricingItem(key: 'bumper_depan', label: 'Bumper Depan', basePrice: 500500),
-        _PricingItem(key: 'spoiler_bumper_depan', label: 'Spoiler Bumper Depan', basePrice: 286000),
+        _PricingItem(key: 'spoiler_bumper_depan', label: 'Spoiler Bumper depan', basePrice: 286000),
         _PricingItem(key: 'kap_mesin', label: 'Kap Mesin', basePrice: 715000),
       ]),
       _Section(title: 'Belakang', items: [
