@@ -419,20 +419,18 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
     );
   }
 
-  Widget _buildLegend(ThemeData t, ColorScheme cs) {
-    final cs = Theme.of(context).colorScheme;
-    // Ringan = neutral base, Sedang = tertiary, Berat = primary (brand red)
-    final severities = [
+  Widget _buildLegend(ThemeData t, ColorScheme cs, Color sedangColor, Color beratColor) {
+    final items = [
       ('Ringan', '× 1.0  –  Harga Dasar',            cs.onSurfaceVariant),
-      ('Sedang', '× 1.5  –  dapat diubah per baris', cs.tertiary),
-      ('Berat',  '× 2.0  –  dapat diubah per baris', cs.primary),
+      ('Sedang', '× 1.5  –  dapat diubah per baris', sedangColor),
+      ('Berat',  '× 2.0  –  dapat diubah per baris', beratColor),
     ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-          color: cs.surfaceContainer,
+          color: cs.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outlineVariant)),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4))),
       child: Wrap(
         spacing: 24,
         runSpacing: 8,
@@ -444,143 +442,183 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
             Text('Tingkat Keparahan:',
                 style: t.textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
           ]),
-          for (final s in severities)
-            Row(mainAxisSize: MainAxisSize.min, children: [
-              Container(
-                  width: 10, height: 10,
-                  decoration: BoxDecoration(
-                      color: s.$3, borderRadius: BorderRadius.circular(3))),
-              const SizedBox(width: 6),
-              Text('${s.$1} — ${s.$2}',
-                  style: t.textTheme.bodySmall?.copyWith(
-                      color: cs.onSurface, fontWeight: FontWeight.w500)),
-            ]),
+          for (final item in items)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainer,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                    width: 8, height: 8,
+                    decoration: BoxDecoration(
+                        color: item.$3, borderRadius: BorderRadius.circular(2))),
+                const SizedBox(width: 6),
+                Text(item.$1,
+                    style: t.textTheme.labelSmall?.copyWith(
+                        color: cs.onSurface, fontWeight: FontWeight.w700)),
+                const SizedBox(width: 4),
+                Text('— ${item.$2}',
+                    style: t.textTheme.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant)),
+              ]),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionCard(_Section section, ThemeData t, ColorScheme cs) {
+
+  Widget _buildSectionCard(
+    _Section section, ThemeData t, ColorScheme cs, bool isDark,
+    Color sedangColor, Color beratColor, Color ringanColor,
+  ) {
+    // Divider color — 5% white in dark, subtle outlineVariant in light
+    final dividerColor = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : cs.outlineVariant.withValues(alpha: 0.35);
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 20),
       child: Container(
         decoration: BoxDecoration(
           color: cs.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-                color: cs.shadow.withValues(alpha: 0.06),
-                blurRadius: 18,
-                offset: const Offset(0, 4))
+                color: cs.shadow.withValues(alpha: isDark ? 0.3 : 0.06),
+                blurRadius: isDark ? 8 : 16,
+                offset: const Offset(0, 2))
           ],
-          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+          border: Border.all(
+            color: isDark
+                ? cs.outlineVariant.withValues(alpha: 0.15)
+                : cs.outlineVariant.withValues(alpha: 0.3),
+          ),
         ),
+        clipBehavior: Clip.antiAlias,
         child: Column(children: [
-          // Section title bar
+          // ── Section header bar ─────────────────────────────────────────────
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
                 color: cs.surfaceContainerHigh,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(16))),
+                border: Border(
+                    bottom: BorderSide(
+                        color: dividerColor, width: 1))),
             child: Row(children: [
-              Icon(Icons.directions_car_outlined, size: 18, color: cs.primary),
+              Icon(Icons.directions_car_outlined, size: 16, color: cs.primary),
               const SizedBox(width: 10),
               Text(section.title,
-                  style: t.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700, color: cs.onSurface)),
+                  style: t.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700, color: cs.onSurface)),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                     color: cs.surfaceContainer,
-                    borderRadius: BorderRadius.circular(8)),
+                    borderRadius: BorderRadius.circular(20)),
                 child: Text('${section.items.length} panel',
                     style: t.textTheme.labelSmall
                         ?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
               ),
             ]),
           ),
-          // Column headers
-          _buildColHeaders(t, cs),
-          const Divider(height: 1),
-          // Data rows
-          for (int i = 0; i < section.items.length; i++)
-            _buildRow(section.items[i], i.isOdd, t, cs),
+
+          // ── Column headers ─────────────────────────────────────────────────
+          Container(
+            color: cs.surfaceContainerLow,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(children: [
+              Expanded(flex: 3,
+                child: Text('Panel',
+                    style: t.textTheme.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant, fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6))),
+              Expanded(flex: 2,
+                child: Row(children: [
+                  Container(width: 7, height: 7,
+                      decoration: BoxDecoration(color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(2))),
+                  const SizedBox(width: 5),
+                  Text('Ringan (Dasar)',
+                      style: t.textTheme.labelSmall?.copyWith(
+                          color: cs.onSurfaceVariant, fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5)),
+                ])),
+              Expanded(flex: 2,
+                child: Row(children: [
+                  Container(width: 7, height: 7,
+                      decoration: BoxDecoration(color: sedangColor,
+                          borderRadius: BorderRadius.circular(2))),
+                  const SizedBox(width: 5),
+                  Text('Sedang',
+                      style: t.textTheme.labelSmall?.copyWith(
+                          color: sedangColor, fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5)),
+                ])),
+              Expanded(flex: 2,
+                child: Row(children: [
+                  Container(width: 7, height: 7,
+                      decoration: BoxDecoration(color: beratColor,
+                          borderRadius: BorderRadius.circular(2))),
+                  const SizedBox(width: 5),
+                  Text('Berat',
+                      style: t.textTheme.labelSmall?.copyWith(
+                          color: beratColor, fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5)),
+                ])),
+              const Expanded(flex: 1, child: SizedBox()),
+            ]),
+          ),
+
+          // ── Data rows ──────────────────────────────────────────────────────
+          for (int i = 0; i < section.items.length; i++) ...[
+            if (i > 0)
+              Divider(height: 1, thickness: 1, color: dividerColor, indent: 0, endIndent: 0),
+            _buildRow(section.items[i], t, cs, sedangColor, beratColor, ringanColor),
+          ],
         ]),
       ),
     );
   }
 
-  Widget _buildColHeaders(ThemeData t, ColorScheme cs) {
-    final cs = Theme.of(context).colorScheme;
-    final cols = [
-      ('Panel',          3, null),
-      ('Ringan (Dasar)', 2, cs.onSurfaceVariant),  // neutral
-      ('Sedang',         2, cs.tertiary),
-      ('Berat',          2, cs.primary),
-      ('',               1, null),
-    ];
-    return Container(
-      color: cs.surfaceContainerLow,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: cols.map((c) {
-          Widget label = Text(c.$1,
-              style: t.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: c.$3 ?? cs.onSurfaceVariant,
-                  letterSpacing: 0.5));
-          if (c.$3 != null && c.$1.isNotEmpty) {
-            label = Row(mainAxisSize: MainAxisSize.min, children: [
-              Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                      color: c.$3, borderRadius: BorderRadius.circular(2))),
-              const SizedBox(width: 5),
-              label,
-            ]);
-          }
-          return Expanded(flex: c.$2, child: label);
-        }).toList(),
-      ),
-    );
-  }
-
   Widget _buildRow(
-      _PricingItem item, bool isAlt, ThemeData t, ColorScheme cs) {
+    _PricingItem item, ThemeData t, ColorScheme cs,
+    Color sedangColor, Color beratColor, Color ringanColor,
+  ) {
     final isEditing = _editingKey == item.key;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
+    return Material(
       color: isEditing
-          ? cs.primaryContainer.withValues(alpha: 0.18)
-          : isAlt
-              ? cs.surfaceContainer.withValues(alpha: 0.22)
-              : Colors.transparent,
-      child: Column(children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          ? cs.primaryContainer.withValues(alpha: 0.12)
+          : Colors.transparent,
+      child: InkWell(
+        onTap: isEditing ? null : () => _startEdit(item),
+        hoverColor: cs.surfaceContainerLow.withValues(alpha: 0.7),
+        splashColor: cs.primaryContainer.withValues(alpha: 0.15),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             // Panel name
             Expanded(
               flex: 3,
               child: Text(item.label,
                   style: t.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w500)),
+                      ?.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface)),
             ),
-            // Ringan (neutral base price)
+            // Ringan (neutral base)
             Expanded(
               flex: 2,
               child: isEditing
                   ? _NumField(
                       controller: _baseCtrl[item.key]!,
-                      color: cs.onSurface,
+                      color: ringanColor,
                       prefix: 'Rp ',
                       digitsOnly: true,
                       onChanged: (_) => setState(() => _isDirty = true),
                     )
-                  : _PriceCell(value: item.basePrice, color: cs.onSurface),
+                  : _PriceCell(value: item.basePrice, color: ringanColor),
             ),
             // Sedang
             Expanded(
@@ -589,12 +627,12 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                   ? _MultiplierField(
                       controller: _sedangCtrl[item.key]!,
                       basePrice: item.basePrice,
-                      color: cs.tertiary,
+                      color: sedangColor,
                       onChanged: (_) => setState(() => _isDirty = true),
                     )
                   : _PriceCell(
                       value: item.sedangPrice,
-                      color: cs.tertiary,
+                      color: sedangColor,
                       multiplier: item.sedangMultiplier),
             ),
             // Berat
@@ -604,15 +642,15 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                   ? _MultiplierField(
                       controller: _beratCtrl[item.key]!,
                       basePrice: item.basePrice,
-                      color: cs.primary,
+                      color: beratColor,
                       onChanged: (_) => setState(() => _isDirty = true),
                     )
                   : _PriceCell(
                       value: item.beratPrice,
-                      color: cs.primary,
+                      color: beratColor,
                       multiplier: item.beratMultiplier),
             ),
-            // Action buttons
+            // Action
             Expanded(
               flex: 1,
               child: isEditing
@@ -625,8 +663,7 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                       ),
                       IconButton(
                         tooltip: 'Terapkan',
-                        icon: Icon(Icons.check,
-                            color: cs.primary, size: 18),
+                        icon: Icon(Icons.check, color: cs.primary, size: 18),
                         onPressed: () => setState(_commitActiveEdit),
                         visualDensity: VisualDensity.compact,
                       ),
@@ -644,8 +681,7 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
             ),
           ]),
         ),
-        const Divider(height: 1),
-      ]),
+      ),
     );
   }
 }
@@ -675,7 +711,7 @@ class _PriceCell extends StatelessWidget {
         if (multiplier != null && multiplier != 1.0)
           Text('× $multiplier',
               style: t.textTheme.labelSmall?.copyWith(
-                  color: color.withValues(alpha: 0.6), fontSize: 10)),
+                  color: color.withValues(alpha: 0.55), fontSize: 10)),
       ],
     );
   }
@@ -716,11 +752,15 @@ class _NumField extends StatelessWidget {
         decoration: InputDecoration(
           prefixText: prefix,
           prefixStyle: TextStyle(fontSize: 11, color: color),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          filled: true,
+          fillColor: color.withValues(alpha: 0.06),
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide(color: color)),
+              borderSide: BorderSide(color: color.withValues(alpha: 0.3))),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide(color: color.withValues(alpha: 0.3))),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(color: color, width: 1.5)),
@@ -784,8 +824,7 @@ class _MultiplierFieldState extends State<_MultiplierField> {
             child: TextField(
               controller: widget.controller,
               onChanged: widget.onChanged,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))
               ],
@@ -794,11 +833,15 @@ class _MultiplierFieldState extends State<_MultiplierField> {
                   fontWeight: FontWeight.w700,
                   color: widget.color),
               decoration: InputDecoration(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                filled: true,
+                fillColor: widget.color.withValues(alpha: 0.06),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide(color: widget.color)),
+                    borderSide: BorderSide(color: widget.color.withValues(alpha: 0.3))),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(color: widget.color.withValues(alpha: 0.3))),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                     borderSide: BorderSide(color: widget.color, width: 1.5)),
