@@ -50,17 +50,18 @@ class LiveStepperTimeline extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final streamState = ref.watch(jobStreamProvider(jobId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? Color(0xFF1D1C1D) : Color(0xFFF8F9FA);
-    final cardColor = isDark ? Color(0xFF2C2B2C) : Theme.of(context).colorScheme.surface;
-    final textColor = isDark ? Theme.of(context).colorScheme.surface : Color(0xFF1D1C1D);
-    final mutedColor = isDark ? Theme.of(context).colorScheme.outline! : Theme.of(context).colorScheme.outline;
+    final cs = Theme.of(context).colorScheme;
+    final bg = cs.surface;
+    final cardColor = isDark ? const Color(0xFF2C2B2C) : cs.surfaceContainerLowest;
+    final textColor = cs.onSurface;
+    final mutedColor = cs.onSurfaceVariant;
 
     return LayoutBuilder(builder: (context, constraints) {
       final isDesktop = constraints.maxWidth > 900;
       Widget inner = Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: isDark ? Color(0xFF1D1C1D) : Theme.of(context).colorScheme.surface,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 1,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: textColor),
@@ -397,11 +398,12 @@ class _TimelineStep extends StatelessWidget {
     final isActive = state == _StepState.active;
     final isPending = state == _StepState.pending;
 
+    final cs = Theme.of(context).colorScheme;
     Color dotColor = isPending
-        ? (isDark ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.12) : Theme.of(context).colorScheme.outlineVariant!)
+        ? cs.surfaceContainerHigh
         : isActive
             ? AppColors.fireRed
-            : Theme.of(context).colorScheme.primary;
+            : cs.primary;
 
     return IntrinsicHeight(
       child: Row(
@@ -417,14 +419,14 @@ class _TimelineStep extends StatelessWidget {
                   height: 22,
                   decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
                   child: isCompleted
-                      ? Icon(Icons.check, size: 13, color: Theme.of(context).colorScheme.surface)
+                      ? Icon(Icons.check, size: 13, color: Theme.of(context).colorScheme.onPrimary)
                       : isActive
-                          ? Center(child: Icon(Icons.circle, size: 8, color: Theme.of(context).colorScheme.surface))
+                          ? Center(child: Icon(Icons.circle, size: 8, color: Theme.of(context).colorScheme.onError))
                           : null,
                 ),
                 if (!isLast)
                   Expanded(
-                    child: Container(width: 2, color: isDark ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.12) : Theme.of(context).colorScheme.surfaceContainerHigh),
+                    child: Container(width: 2, color: Theme.of(context).colorScheme.surfaceContainerHigh),
                   ),
               ],
             ),
