@@ -2468,7 +2468,7 @@ class _CustomerCrmContent extends StatelessWidget {
                     final v = job['vehicles'] as Map<String, dynamic>? ?? {};
                     final p = job['partners'] as Map<String, dynamic>? ?? {};
                     final status = job['status']?.toString() ?? '';
-                    final price = job['final_price'];
+                    final price = job['final_cost'];
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(12),

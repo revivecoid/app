@@ -425,44 +425,35 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       final user = _supabase.auth.currentUser;
       if (user == null) return;
 
-      final res = await _supabase
-          .from('profiles')
-          .select('full_name, role, hub_id, admin_level')
-          .eq('id', user.id)
-          .maybeSingle();
+      // Use SECURITY DEFINER RPC to bypass any RLS issues on profiles
+      final res = await _supabase.rpc('get_admin_profile');
 
-      // Determine name — prefer full_name, fall back to email prefix
+      final Map<String, dynamic> data =
+          res is Map<String, dynamic> ? res : {};
+
       String fullName;
-      if (res != null && res['full_name'] != null &&
-          (res['full_name'] as String).trim().isNotEmpty) {
-        fullName = res['full_name'].toString().trim();
+      if (data['full_name'] != null &&
+          (data['full_name'] as String).trim().isNotEmpty) {
+        fullName = data['full_name'].toString().trim();
       } else {
-        final email = user.email ?? 'Admin';
+        final email = data['email']?.toString() ?? user.email ?? 'Admin';
         fullName = email.contains('@') ? email.split('@').first : email;
       }
 
-      final role = res?['role']?.toString() ?? 'master_admin';
-      final adminLevel = res?['admin_level']?.toString() ?? 'admin';
+      final adminLevel = data['admin_level']?.toString() ?? 'admin';
+      final role = data['role']?.toString() ?? 'master_admin';
 
-      // Fetch hub name if hub_id is set
+      // Fetch first active partner as the active hub display
       String hubName = '—';
-      final hubId = res?['hub_id']?.toString();
-      if (hubId != null && hubId.isNotEmpty) {
-        final hubRes = await _supabase
-            .from('partners')
-            .select('shop_name')
-            .eq('id', hubId)
-            .maybeSingle();
-        hubName = hubRes?['shop_name']?.toString() ?? '—';
-      } else {
-        final firstPartner = await _supabase
-            .from('partners')
-            .select('shop_name')
-            .eq('is_active', true)
-            .limit(1)
-            .maybeSingle();
-        hubName = firstPartner?['shop_name']?.toString() ?? '—';
-      }
+      final firstPartner = await _supabase
+          .from('partners')
+          .select('shop_name')
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+      hubName = firstPartner?['shop_name']?.toString() ?? '—';
+
+      debugPrint('Admin profile: name=$fullName level=$adminLevel');
 
       if (!mounted) return;
       state = state.copyWith(
@@ -473,7 +464,6 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       );
     } catch (e) {
       debugPrint('Admin profile fetch error: $e');
-      // Fallback to email
       final user = _supabase.auth.currentUser;
       if (user != null && mounted) {
         final email = user.email ?? 'Admin';
@@ -493,14 +483,14 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
 
       final res = await _supabase
           .from('repair_jobs')
-          .select('final_price')
+          .select('final_cost')
           .eq('status', 'completed')
           .gte('created_at', '${todayStr}T00:00:00')
           .lte('created_at', '${todayStr}T23:59:59');
 
       double total = 0;
       for (final row in (res as List)) {
-        final price = row['final_price'];
+        final price = row['final_cost'];
         if (price != null) {
           total += (price as num).toDouble();
         }
@@ -557,65 +547,81 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
 
   Future<void> _fetchActiveJobs() async {
     try {
-      final response = await _supabase.from('repair_jobs').select('''
-        id, status, scheduled_date, created_at, partner_id, final_price,
-        profiles:customer_id (full_name),
-        vehicles:vehicle_id (make, model, license_plate),
-        partners:partner_id (shop_name),
-        repair_photos (step_context, r2_file_key)
-      ''').not('status', 'in', '(9_done,completed)');
+      // Use SECURITY DEFINER RPC to bypass RLS on repair_jobs
+      final response = await _supabase.rpc('get_admin_active_jobs');
+
+      final List<dynamic> rows = response is List
+          ? response
+          : (response == null ? [] : [response]);
+
+      debugPrint('Admin jobs via RPC: ${rows.length} rows');
 
       final cdnBucketPath =
           _supabase.storage.from('revive-photos').getPublicUrl('');
 
-      debugPrint('Admin jobs fetched: ${(response as List).length} rows');
-
-    final List<AdminJobNode> jobs = (response as List).map((job) {
-        final customerData =
-            job['profiles'] as Map<String, dynamic>? ?? {};
-        final vehicleData =
-            job['vehicles'] as Map<String, dynamic>? ?? {};
-        final partnerData =
-            job['partners'] as Map<String, dynamic>? ?? {};
-
-        final photos = (job['repair_photos'] as List?) ?? [];
-        String? proofUrl;
-        for (final p in photos) {
-          final key = p['r2_file_key']?.toString();
-          if (key != null && key.startsWith('proof_')) {
-            proofUrl = '$cdnBucketPath/$key';
-            break;
-          }
-        }
-
+      final List<AdminJobNode> jobs = rows.map((job) {
+        final j = job as Map<String, dynamic>;
         return AdminJobNode(
-          id: job['id'].toString(),
-          customerName:
-              customerData['full_name']?.toString() ?? 'Unknown User',
+          id: j['id'].toString(),
+          customerName: j['customer_name']?.toString() ?? 'Unknown',
           carIdentity:
-              '${vehicleData['make'] ?? ''} ${vehicleData['model'] ?? ''} - ${vehicleData['license_plate'] ?? ''}',
-          status: job['status'].toString(),
-          partnerName:
-              partnerData['shop_name']?.toString() ?? 'Unassigned',
-          partnerId: job['partner_id']?.toString(),
-          scheduledDate: job['scheduled_date'] != null
-              ? DateTime.parse(job['scheduled_date'].toString())
+              '${j['make'] ?? ''} ${j['model'] ?? ''} - ${j['license_plate'] ?? ''}',
+          status: j['status']?.toString() ?? 'unknown',
+          partnerName: j['partner_name']?.toString() ?? 'Unassigned',
+          partnerId: j['partner_id']?.toString(),
+          scheduledDate: j['scheduled_date'] != null
+              ? DateTime.tryParse(j['scheduled_date'].toString())
               : null,
-          createdAt: DateTime.parse(job['created_at'].toString()),
-          lastUpdatedAt:
-              DateTime.now().subtract(const Duration(hours: 1)),
-          paymentProofUrl: proofUrl,
-          finalPrice: job['final_price'] != null
-              ? (job['final_price'] as num).toDouble()
-              : null,
+          createdAt: DateTime.tryParse(j['created_at']?.toString() ?? '') ??
+              DateTime.now(),
+          lastUpdatedAt: DateTime.now(),
+          paymentProofUrl: null,
+          finalPrice: null, // column doesn't exist in repair_jobs
         );
       }).toList();
 
       if (!mounted) return;
       state = state.copyWith(activeJobs: jobs);
     } catch (e) {
-      debugPrint('⚠️ _fetchActiveJobs error: $e');
-      // Keep empty list — RLS may be blocking; surface error in console
+      debugPrint('⚠️ _fetchActiveJobs RPC error: $e');
+      // Fallback: try direct query without filter
+      try {
+        final response = await _supabase.from('repair_jobs').select('''
+          id, status, scheduled_date, created_at, partner_id, final_price,
+          profiles:customer_id (full_name),
+          vehicles:vehicle_id (make, model, license_plate),
+          partners:partner_id (shop_name)
+        ''').limit(50);
+        final cdnBucketPath =
+            _supabase.storage.from('revive-photos').getPublicUrl('');
+        final List<AdminJobNode> jobs = (response as List).map((job) {
+          final customerData = job['profiles'] as Map<String, dynamic>? ?? {};
+          final vehicleData = job['vehicles'] as Map<String, dynamic>? ?? {};
+          final partnerData = job['partners'] as Map<String, dynamic>? ?? {};
+          return AdminJobNode(
+            id: job['id'].toString(),
+            customerName: customerData['full_name']?.toString() ?? 'Unknown',
+            carIdentity:
+                '${vehicleData['make'] ?? ''} ${vehicleData['model'] ?? ''} - ${vehicleData['license_plate'] ?? ''}',
+            status: job['status'].toString(),
+            partnerName: partnerData['shop_name']?.toString() ?? 'Unassigned',
+            partnerId: job['partner_id']?.toString(),
+            scheduledDate: job['scheduled_date'] != null
+                ? DateTime.parse(job['scheduled_date'].toString())
+                : null,
+            createdAt: DateTime.parse(job['created_at'].toString()),
+            lastUpdatedAt: DateTime.now(),
+            paymentProofUrl: null,
+            finalPrice: job['final_cost'] != null
+                ? (job['final_cost'] as num).toDouble()
+                : null,
+          );
+        }).toList();
+        if (!mounted) return;
+        state = state.copyWith(activeJobs: jobs);
+      } catch (e2) {
+        debugPrint('⚠️ Fallback job fetch error: $e2');
+      }
     }
   }
 
