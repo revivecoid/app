@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'partner_dashboard_controller.dart';
+import 'partner_dashboard_mobile.dart';
 
 // ─── Color tokens (keep consistent with the original design) ─────────────────
 const _surface = Color(0xFFfdf8f9);
@@ -204,7 +205,8 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
               ],
             ),
     );
-      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+      if (!isDesktop) return const PartnerDashboardMobile();
+      return inner;
     });
   }
 
@@ -316,7 +318,7 @@ class _Sidebar extends StatelessWidget {
                 icon: Icons.forum_outlined,
                 text: 'Commlink & Messages',
                 badge: unreadCount,
-                onTap: () => onNavigate('/partner-dashboard/settings'),
+                onTap: () => onNavigate('/partner-dashboard/commlink'),
               ),
 
             ],

@@ -27,6 +27,7 @@ import 'features/partner_dashboard/presentation/partner_registration_screen.dart
 import 'features/partner_dashboard/presentation/schedule_config_screen.dart';
 import 'features/partner_dashboard/presentation/panel_duration_config_screen.dart';
 import 'features/partner_dashboard/settings/presentation/partner_settings_screen.dart';
+import 'features/partner_dashboard/presentation/partner_commlink_screen.dart';
 
 
 // --- IMPORTING CMS SCREENS ---
@@ -319,6 +320,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/partner-dashboard/quota',
         builder: (context, state) => const PanelDurationConfigScreen(),
+      ),
+      GoRoute(
+        path: '/partner-dashboard/commlink',
+        builder: (context, state) => const PartnerCommLinkScreen(),
       ),
 
     ],
