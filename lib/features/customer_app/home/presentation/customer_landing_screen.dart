@@ -5,6 +5,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 
+// ── CMS settings provider ──────────────────────────────────────────────────────
+final cmsSettingsProvider = FutureProvider.autoDispose<Map<String, String>>((ref) async {
+  try {
+    final res = await Supabase.instance.client.rpc('get_cms_settings');
+    if (res is Map) {
+      return res.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
+    }
+  } catch (_) {}
+  return {};
+});
+
+String _cms(Map<String, String> s, String key, {required String fallback}) =>
+    (s[key] != null && s[key]!.isNotEmpty) ? s[key]! : fallback;
+
 class CustomerLandingScreen extends ConsumerStatefulWidget {
   CustomerLandingScreen({super.key});
 
@@ -51,6 +65,8 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     final bool isLoggedIn = user != null;
     final activeJobAsync = ref.watch(activeJobProvider);
+    final cmsAsync = ref.watch(cmsSettingsProvider);
+    final cms = cmsAsync.valueOrNull ?? {};
 
     return LayoutBuilder(builder: (context, constraints) {
       final isDesktop = constraints.maxWidth > 900;
@@ -62,7 +78,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeroSection(theme),
+            _buildHeroSection(theme, cms),
             SizedBox(height: 16),
             if (isLoggedIn)
               activeJobAsync.when(
@@ -87,6 +103,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
             SizedBox(height: 16),
             _buildTrustBadges(theme),
             SizedBox(height: 16),
+            if (cms['contact_phone'] != null || cms['contact_email'] != null || cms['contact_address'] != null)
+              _buildContactSection(theme, cms),
+            if (cms['contact_phone'] != null || cms['contact_email'] != null || cms['contact_address'] != null)
+              SizedBox(height: 16),
             _buildFooterWidget(theme),
             SizedBox(height: 32),
           ],
@@ -97,7 +117,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     });
   }
 
-  Widget _buildHeroSection(ThemeData theme) {
+  Widget _buildHeroSection(ThemeData theme, Map<String, String> cms) {
+    final heroTitle = _cms(cms, 'hero_title', fallback: 'Body Repair\nMade Simple.');
+    final heroSub = _cms(cms, 'hero_subtitle', fallback: 'Instant body repair estimation & real-time tracking. Get your car shining faster, with absolute transparency.');
+    final heroCta = _cms(cms, 'hero_cta', fallback: 'Get Free AI Estimate');
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -126,14 +149,14 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
             ),
           ),
           SizedBox(height: 12),
-          Text('Body Repair\nMade Simple.', style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800, height: 1.1)),
+          Text(heroTitle, style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800, height: 1.1)),
           SizedBox(height: 8),
-          Text('Instant body repair estimation & real-time tracking. Get your car shining faster, with absolute transparency.', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(heroSub, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () => context.go('/estimator'),
             icon: Icon(Icons.auto_awesome, size: 18),
-            label: Text('Get Free AI Estimate', style: TextStyle(fontWeight: FontWeight.bold)),
+            label: Text(heroCta, style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryContainer,
               foregroundColor: Theme.of(context).colorScheme.surface,
@@ -144,6 +167,44 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildContactSection(ThemeData theme, Map<String, String> cms) {
+    final phone = cms['contact_phone'];
+    final email = cms['contact_email'];
+    final address = cms['contact_address'];
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('CONTACT US', style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          if (phone != null && phone.isNotEmpty)
+            _buildContactRow(theme, Icons.phone_rounded, phone),
+          if (email != null && email.isNotEmpty) ...[const SizedBox(height: 8),
+            _buildContactRow(theme, Icons.email_rounded, email)],
+          if (address != null && address.isNotEmpty) ...[const SizedBox(height: 8),
+            _buildContactRow(theme, Icons.location_on_rounded, address)],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactRow(ThemeData theme, IconData icon, String text) {
+    return Row(children: [
+      Icon(icon, size: 16, color: AppColors.primary),
+      const SizedBox(width: 10),
+      Expanded(child: Text(text, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface))),
+    ]);
   }
 
   Widget _buildActiveRepairWidget(ThemeData theme, Map<String, dynamic> job) {
