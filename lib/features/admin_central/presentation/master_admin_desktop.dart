@@ -2395,14 +2395,12 @@ class _CustomerCrmContent extends StatelessWidget {
         expand: false,
         builder: (_, scrollCtrl) => FutureBuilder<List<Map<String, dynamic>>>(
           future: supabase
-              .from('repair_jobs')
-              .select('''
-                id, status, created_at, final_price,
-                vehicles:vehicle_id (make, model, license_plate),
-                partners:partner_id (shop_name)
-              ''')
-              .eq('customer_id', c.id)
-              .order('created_at', ascending: false),
+              .rpc('get_customer_jobs', params: {'p_customer_id': c.id})
+              .then((res) {
+            if (res == null) return <Map<String, dynamic>>[];
+            final list = res as List;
+            return list.cast<Map<String, dynamic>>();
+          }),
           builder: (ctx, snap) {
             final jobs = snap.data ?? [];
             return ListView(

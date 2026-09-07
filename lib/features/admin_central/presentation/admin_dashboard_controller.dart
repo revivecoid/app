@@ -687,10 +687,11 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
   Future<void> assignJobToPartner(
       String jobId, String partnerId, String partnerName) async {
     try {
-      await _supabase.from('repair_jobs').update({
-        'partner_id': partnerId,
-        'status': '3_booked',
-      }).eq('id', jobId);
+      await _supabase.rpc('admin_assign_job', params: {
+        'p_job_id': jobId,
+        'p_partner_id': partnerId,
+        'p_status': '3_booked',
+      });
 
       final idx = state.activeJobs.indexWhere((j) => j.id == jobId);
       if (idx != -1) {
@@ -703,17 +704,18 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
         );
         state = state.copyWith(activeJobs: updated);
       }
+      debugPrint('✅ Job $jobId assigned to $partnerName');
     } catch (e) {
+      debugPrint('❌ assignJobToPartner error: $e');
       state = state.copyWith(errorMessage: 'Assignment failed: $e');
     }
   }
 
   Future<void> unassignJob(String jobId) async {
     try {
-      await _supabase.from('repair_jobs').update({
-        'partner_id': null,
-        'status': '2_estimated',
-      }).eq('id', jobId);
+      await _supabase.rpc('admin_unassign_job', params: {
+        'p_job_id': jobId,
+      });
 
       final idx = state.activeJobs.indexWhere((j) => j.id == jobId);
       if (idx != -1) {
@@ -726,7 +728,9 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
         );
         state = state.copyWith(activeJobs: updated);
       }
+      debugPrint('✅ Job $jobId unassigned');
     } catch (e) {
+      debugPrint('❌ unassignJob error: $e');
       state = state.copyWith(errorMessage: 'Unassign failed: $e');
     }
   }
