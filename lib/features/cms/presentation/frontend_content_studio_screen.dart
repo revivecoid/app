@@ -133,11 +133,10 @@ class _FrontendCmsState extends ConsumerState<FrontendContentStudioScreen> {
     switch (_tab) {
       case 0: return _ContentTab(cs: cs, s: _s, b: _b, onSave: _save);
       case 1: return _AssetTab(cs: cs, assets: _assets, loading: _assetsLoading, cat: _assetCat, onCat: (c) => setState(() => _assetCat = c), onRefresh: _loadAssets, sup: _supabase);
-      case 2: return _PricingTab(cs: cs, rules: _pricing, onUpdate: _updateRule);
-      case 3: return _NlpTab(cs: cs, toggles: _nlpToggles, onToggle: (i, v) => setState(() => _nlpToggles[i] = v));
-      case 4: return _CommissionTab(cs: cs);
-      case 5: return _AboutCmsTab(cs: cs, s: _s, onSave: _save);
-      case 6: return _PrivacyCmsTab(cs: cs, s: _s, onSave: _save);
+      case 2: return _NlpTab(cs: cs, toggles: _nlpToggles, onToggle: (i, v) => setState(() => _nlpToggles[i] = v));
+      case 3: return _CommissionTab(cs: cs);
+      case 4: return _AboutCmsTab(cs: cs, s: _s, onSave: _save);
+      case 5: return _PrivacyCmsTab(cs: cs, s: _s, onSave: _save);
       default: return const SizedBox();
     }
   }
@@ -151,8 +150,8 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const icons = [Icons.dashboard_customize_outlined, Icons.folder_special_outlined, Icons.price_change_outlined, Icons.smart_toy_outlined, Icons.payments_outlined, Icons.info_outlined, Icons.privacy_tip_outlined];
-    const labels = ['Content Studio', 'Digital Assets', 'Pricing Rules', 'NLP Studio', 'Commissions', 'About Us', 'Privacy Policy'];
+    const icons = [Icons.dashboard_customize_outlined, Icons.folder_special_outlined, Icons.smart_toy_outlined, Icons.payments_outlined, Icons.info_outlined, Icons.privacy_tip_outlined];
+    const labels = ['Content Studio', 'Digital Assets', 'NLP Studio', 'Commissions', 'About Us', 'Privacy Policy'];
 
     return Container(
       color: cs.surfaceContainerLowest,
