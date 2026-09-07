@@ -202,7 +202,7 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
             SizedBox(width: 8),
             Text('Pricing rules berhasil disimpan'),
           ]),
-          backgroundColor: Colors.green.shade700,
+          backgroundColor: cs.primary,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
@@ -213,7 +213,7 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Gagal menyimpan: $e'),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: cs.error,
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -377,17 +377,17 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.15),
+                    color: cs.tertiaryContainer,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.withValues(alpha: 0.6)),
+                    border: Border.all(color: cs.tertiary.withValues(alpha: 0.6)),
                   ),
                   child: Row(children: [
-                    const Icon(Icons.edit_note, size: 14, color: Colors.orange),
+                    Icon(Icons.edit_note, size: 14, color: cs.tertiary),
                     const SizedBox(width: 5),
                     Text('Ada perubahan belum disimpan',
                         style: TextStyle(
                             fontSize: 11,
-                            color: Colors.orange.shade700,
+                            color: cs.onTertiaryContainer,
                             fontWeight: FontWeight.w600)),
                   ]),
                 ),
@@ -418,10 +418,11 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
   }
 
   Widget _buildLegend(ThemeData t, ColorScheme cs) {
-    const severities = [
-      ('Ringan', '× 1.0  –  Harga Dasar', Color(0xFF2196F3)),
-      ('Sedang', '× 1.5  –  dapat diubah per baris', Color(0xFFFF9800)),
-      ('Berat',  '× 2.0  –  dapat diubah per baris', Color(0xFFF44336)),
+    final cs = Theme.of(context).colorScheme;
+    final severities = [
+      ('Ringan', '× 1.0  –  Harga Dasar', cs.primary),
+      ('Sedang', '× 1.5  –  dapat diubah per baris', cs.tertiary),
+      ('Berat',  '× 2.0  –  dapat diubah per baris', cs.error),
     ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -509,11 +510,12 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
   }
 
   Widget _buildColHeaders(ThemeData t, ColorScheme cs) {
+    final cs = Theme.of(context).colorScheme;
     final cols = [
       ('Panel', 3, null),
-      ('Ringan (Dasar)', 2, const Color(0xFF2196F3)),
-      ('Sedang', 2, const Color(0xFFFF9800)),
-      ('Berat', 2, const Color(0xFFF44336)),
+      ('Ringan (Dasar)', 2, cs.primary),
+      ('Sedang', 2, cs.tertiary),
+      ('Berat', 2, cs.error),
       ('', 1, null),
     ];
     return Container(
@@ -570,12 +572,12 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
               child: isEditing
                   ? _NumField(
                       controller: _baseCtrl[item.key]!,
-                      color: const Color(0xFF2196F3),
+                      color: cs.primary,
                       prefix: 'Rp ',
                       digitsOnly: true,
                       onChanged: (_) => setState(() => _isDirty = true),
                     )
-                  : _PriceCell(value: item.basePrice, color: const Color(0xFF2196F3)),
+                  : _PriceCell(value: item.basePrice, color: cs.primary),
             ),
             // Sedang
             Expanded(
@@ -584,12 +586,12 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                   ? _MultiplierField(
                       controller: _sedangCtrl[item.key]!,
                       basePrice: item.basePrice,
-                      color: const Color(0xFFFF9800),
+                      color: cs.tertiary,
                       onChanged: (_) => setState(() => _isDirty = true),
                     )
                   : _PriceCell(
                       value: item.sedangPrice,
-                      color: const Color(0xFFFF9800),
+                      color: cs.tertiary,
                       multiplier: item.sedangMultiplier),
             ),
             // Berat
@@ -599,12 +601,12 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                   ? _MultiplierField(
                       controller: _beratCtrl[item.key]!,
                       basePrice: item.basePrice,
-                      color: const Color(0xFFF44336),
+                      color: cs.error,
                       onChanged: (_) => setState(() => _isDirty = true),
                     )
                   : _PriceCell(
                       value: item.beratPrice,
-                      color: const Color(0xFFF44336),
+                      color: cs.error,
                       multiplier: item.beratMultiplier),
             ),
             // Action buttons
@@ -621,7 +623,7 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                       IconButton(
                         tooltip: 'Terapkan',
                         icon: Icon(Icons.check,
-                            color: Colors.green.shade600, size: 18),
+                            color: cs.primary, size: 18),
                         onPressed: () => setState(_commitActiveEdit),
                         visualDensity: VisualDensity.compact,
                       ),
