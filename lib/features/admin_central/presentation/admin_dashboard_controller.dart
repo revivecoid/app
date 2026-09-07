@@ -556,59 +556,67 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
   void setSearchQuery(String query) => state = state.copyWith(searchQuery: query);
 
   Future<void> _fetchActiveJobs() async {
-    final response = await _supabase.from('repair_jobs').select('''
-      id, status, scheduled_date, created_at, partner_id, final_price,
-      profiles:customer_id (full_name),
-      vehicles:vehicle_id (make, model, license_plate),
-      partners:partner_id (shop_name),
-      repair_photos (step_context, r2_file_key)
-    ''').not('status', 'in', '("9_done","completed")');
+    try {
+      final response = await _supabase.from('repair_jobs').select('''
+        id, status, scheduled_date, created_at, partner_id, final_price,
+        profiles:customer_id (full_name),
+        vehicles:vehicle_id (make, model, license_plate),
+        partners:partner_id (shop_name),
+        repair_photos (step_context, r2_file_key)
+      ''').not('status', 'in', '(9_done,completed)');
 
-    final cdnBucketPath =
-        _supabase.storage.from('revive-photos').getPublicUrl('');
+      final cdnBucketPath =
+          _supabase.storage.from('revive-photos').getPublicUrl('');
+
+      debugPrint('Admin jobs fetched: ${(response as List).length} rows');
 
     final List<AdminJobNode> jobs = (response as List).map((job) {
-      final customerData =
-          job['profiles'] as Map<String, dynamic>? ?? {};
-      final vehicleData =
-          job['vehicles'] as Map<String, dynamic>? ?? {};
-      final partnerData =
-          job['partners'] as Map<String, dynamic>? ?? {};
+        final customerData =
+            job['profiles'] as Map<String, dynamic>? ?? {};
+        final vehicleData =
+            job['vehicles'] as Map<String, dynamic>? ?? {};
+        final partnerData =
+            job['partners'] as Map<String, dynamic>? ?? {};
 
-      final photos = (job['repair_photos'] as List?) ?? [];
-      String? proofUrl;
-      for (final p in photos) {
-        final key = p['r2_file_key']?.toString();
-        if (key != null && key.startsWith('proof_')) {
-          proofUrl = '$cdnBucketPath/$key';
-          break;
+        final photos = (job['repair_photos'] as List?) ?? [];
+        String? proofUrl;
+        for (final p in photos) {
+          final key = p['r2_file_key']?.toString();
+          if (key != null && key.startsWith('proof_')) {
+            proofUrl = '$cdnBucketPath/$key';
+            break;
+          }
         }
-      }
 
-      return AdminJobNode(
-        id: job['id'].toString(),
-        customerName:
-            customerData['full_name']?.toString() ?? 'Unknown User',
-        carIdentity:
-            '${vehicleData['make'] ?? ''} ${vehicleData['model'] ?? ''} - ${vehicleData['license_plate'] ?? ''}',
-        status: job['status'].toString(),
-        partnerName:
-            partnerData['shop_name']?.toString() ?? 'Unassigned',
-        partnerId: job['partner_id']?.toString(),
-        scheduledDate: job['scheduled_date'] != null
-            ? DateTime.parse(job['scheduled_date'].toString())
-            : null,
-        createdAt: DateTime.parse(job['created_at'].toString()),
-        lastUpdatedAt:
-            DateTime.now().subtract(const Duration(hours: 1)),
-        paymentProofUrl: proofUrl,
-        finalPrice: job['final_price'] != null
-            ? (job['final_price'] as num).toDouble()
-            : null,
-      );
-    }).toList();
+        return AdminJobNode(
+          id: job['id'].toString(),
+          customerName:
+              customerData['full_name']?.toString() ?? 'Unknown User',
+          carIdentity:
+              '${vehicleData['make'] ?? ''} ${vehicleData['model'] ?? ''} - ${vehicleData['license_plate'] ?? ''}',
+          status: job['status'].toString(),
+          partnerName:
+              partnerData['shop_name']?.toString() ?? 'Unassigned',
+          partnerId: job['partner_id']?.toString(),
+          scheduledDate: job['scheduled_date'] != null
+              ? DateTime.parse(job['scheduled_date'].toString())
+              : null,
+          createdAt: DateTime.parse(job['created_at'].toString()),
+          lastUpdatedAt:
+              DateTime.now().subtract(const Duration(hours: 1)),
+          paymentProofUrl: proofUrl,
+          finalPrice: job['final_price'] != null
+              ? (job['final_price'] as num).toDouble()
+              : null,
+        );
+      }).toList();
 
-    state = state.copyWith(activeJobs: jobs);
+      if (!mounted) return;
+      state = state.copyWith(activeJobs: jobs);
+    } catch (e) {
+      debugPrint('⚠️ _fetchActiveJobs error: $e');
+      // Keep empty list — RLS may be blocking; surface error in console
+    }
   }
 
   void _subscribeToJobMutations() {
