@@ -41,6 +41,7 @@ import 'features/cms/presentation/commission_settlement_engine_screen.dart';
 import 'features/customer_app/faq/presentation/faq_screen.dart';
 import 'features/customer_app/about/presentation/about_us_screen.dart';
 import 'features/customer_app/legal/presentation/privacy_policy_screen.dart';
+import 'features/admin_central/presentation/admin_user_accounts_screen.dart';
 
 // --- RECOVERY STATE PROVIDER ---
 final passwordRecoveryProvider = StateProvider<bool>((ref) => false);
@@ -293,20 +294,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/admin-central/users',
-        builder: (context, state) => Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          body: Center(
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(Icons.manage_accounts_outlined, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
-              const SizedBox(height: 16),
-              Text('User Accounts', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
-              const SizedBox(height: 8),
-              Text('Sysadmin-only · Under construction', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 24),
-              TextButton(onPressed: () => context.go('/admin-central'), child: const Text('Back to Admin Central')),
-            ]),
-          ),
-        ),
+        builder: (context, state) => const AdminUserAccountsScreen(),
       ),
       GoRoute(
         path: '/admin-central/frontend-settings',
