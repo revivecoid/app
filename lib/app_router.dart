@@ -15,7 +15,6 @@ import 'features/customer_app/order/presentation/booking_scheduling_screen.dart'
 import 'features/customer_app/order/presentation/checkout_payment_screen.dart';
 import 'features/customer_app/tracking/presentation/live_stepper_timeline.dart';
 import 'features/customer_app/profile/presentation/customer_profile_screen.dart';
-import 'features/customer_app/support/presentation/customer_support_screen.dart';
 import 'features/customer_app/notifications/presentation/customer_notifications_screen.dart';
 import 'features/customer_app/notifications/presentation/notification_preferences_screen.dart';
 import 'features/customer_app/profile/presentation/update_password_screen.dart';
@@ -36,6 +35,7 @@ import 'features/cms/presentation/customer_concierge_nlp_studio_screen.dart';
 import 'features/cms/presentation/digital_asset_manager_screen.dart';
 import 'features/cms/presentation/frontend_content_studio_screen.dart';
 import 'features/cms/presentation/commission_settlement_engine_screen.dart';
+import 'features/cms/presentation/pricing_rules_screen.dart';
 
 // --- IMPORTING PUBLIC CONTENT PAGES ---
 import 'features/customer_app/faq/presentation/faq_screen.dart';
@@ -258,7 +258,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/support',
-        builder: (context, state) => const CustomerSupportScreen(),
+        redirect: (_, __) => '/faq', // merged into /faq
       ),
       GoRoute(
         path: '/notifications',
@@ -326,6 +326,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin-central/cms/commission-settlement-engine',
         builder: (context, state) => const CommissionSettlementEngineScreen(),
+      ),
+      GoRoute(
+        path: '/admin-central/cms/pricing-rules',
+        builder: (context, state) => const PricingRulesScreen(),
       ),
 
       // --- PARTNER WORKSHOP DOMAIN ---

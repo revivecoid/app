@@ -227,6 +227,8 @@ class _ContentTabState extends State<_ContentTab> {
   late TextEditingController _heroTitle, _heroSub, _heroCta;
   late TextEditingController _s1t, _s1d, _s2t, _s2d, _s3t, _s3d;
   late TextEditingController _cPhone, _cEmail, _cAddr;
+  // Support / FAQ page CMS fields
+  late TextEditingController _supTitle, _supSub, _supPhone, _supEmail, _supEmergency;
   final _faqQ = <TextEditingController>[], _faqA = <TextEditingController>[];
   int _faqCnt = 3;
   bool _dirty = false;
@@ -246,6 +248,11 @@ class _ContentTabState extends State<_ContentTab> {
     _cPhone = TextEditingController(text: widget.s('contact_phone', fb: '+62 811-1234-5678'));
     _cEmail = TextEditingController(text: widget.s('contact_email', fb: 'hello@revive.co.id'));
     _cAddr = TextEditingController(text: widget.s('contact_address', fb: 'Jakarta, Indonesia'));
+    _supTitle     = TextEditingController(text: widget.s('support_page_title',    fb: 'FAQ & Support'));
+    _supSub       = TextEditingController(text: widget.s('support_page_subtitle', fb: 'Find answers to common questions or reach out to our team.'));
+    _supPhone     = TextEditingController(text: widget.s('support_phone',         fb: '+62 800-123-456'));
+    _supEmail     = TextEditingController(text: widget.s('support_email',         fb: 'support@re-v.co.id'));
+    _supEmergency = TextEditingController(text: widget.s('support_emergency',     fb: '+62 800-TOW-REVIVE'));
     for (int i = 0; i < _faqCnt; i++) {
       _faqQ.add(TextEditingController(text: widget.s('faq_${i}_q')));
       _faqA.add(TextEditingController(text: widget.s('faq_${i}_a')));
@@ -255,7 +262,8 @@ class _ContentTabState extends State<_ContentTab> {
   @override
   void dispose() {
     for (final c in [_heroTitle, _heroSub, _heroCta, _s1t, _s1d, _s2t, _s2d, _s3t, _s3d,
-      _cPhone, _cEmail, _cAddr, ..._faqQ, ..._faqA]) c.dispose();
+      _cPhone, _cEmail, _cAddr, _supTitle, _supSub, _supPhone, _supEmail, _supEmergency,
+      ..._faqQ, ..._faqA]) c.dispose();
     super.dispose();
   }
 
@@ -270,9 +278,14 @@ class _ContentTabState extends State<_ContentTab> {
       widget.onSave('svc_2_desc', _s2d.text, cat: 'services'),
       widget.onSave('svc_3_title', _s3t.text, cat: 'services'),
       widget.onSave('svc_3_desc', _s3d.text, cat: 'services'),
-      widget.onSave('contact_phone', _cPhone.text, cat: 'contact'),
-      widget.onSave('contact_email', _cEmail.text, cat: 'contact'),
-      widget.onSave('contact_address', _cAddr.text, cat: 'contact'),
+      widget.onSave('contact_phone',          _cPhone.text,     cat: 'contact'),
+      widget.onSave('contact_email',          _cEmail.text,     cat: 'contact'),
+      widget.onSave('contact_address',        _cAddr.text,      cat: 'contact'),
+      widget.onSave('support_page_title',     _supTitle.text,   cat: 'support'),
+      widget.onSave('support_page_subtitle',  _supSub.text,     cat: 'support'),
+      widget.onSave('support_phone',          _supPhone.text,   cat: 'support'),
+      widget.onSave('support_email',          _supEmail.text,   cat: 'support'),
+      widget.onSave('support_emergency',      _supEmergency.text, cat: 'support'),
     ];
     for (int i = 0; i < _faqCnt; i++) {
       saves.add(widget.onSave('faq_${i}_q', _faqQ[i].text, cat: 'faq'));
@@ -333,6 +346,18 @@ class _ContentTabState extends State<_ContentTab> {
             const SizedBox(height: 8),
             _Field(cs: cs, label: 'Description', ctrl: [_s1d, _s2d, _s3d][i], hint: 'Service description', maxLines: 2, onChange: _mark),
           ],
+        ]),
+        const SizedBox(height: 16),
+        _Card(cs: cs, title: 'FAQ & Support Page', icon: Icons.support_agent_outlined, children: [
+          _Field(cs: cs, label: 'Page Title',    ctrl: _supTitle,     hint: 'FAQ & Support',  onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Page Subtitle', ctrl: _supSub,       hint: 'Subtitle text', maxLines: 2, onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Phone Number',  ctrl: _supPhone,     hint: '+62 800-xxx-xxx', onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Email',         ctrl: _supEmail,     hint: 'support@re-v.co.id', onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Emergency / Towing Hotline', ctrl: _supEmergency, hint: '+62 800-TOW-REVIVE', onChange: _mark),
         ]),
         const SizedBox(height: 16),
         _Card(cs: cs, title: 'FAQ Items', icon: Icons.quiz_outlined, children: [

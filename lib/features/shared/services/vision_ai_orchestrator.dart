@@ -65,7 +65,7 @@ class VisionResponsePayload {
     required this.estimatedDaysToRepair,
   });
 
-  factory VisionResponsePayload.fromJson(Map<String, dynamic> json) {
+  static Future<VisionResponsePayload> fromJsonAsync(Map<String, dynamic> json) async {
     final meta = json['analysis_metadata'] ?? {};
     final assessment = json['assessment'] ?? {};
     final financial = json['financial_estimation'] ?? {};
@@ -73,10 +73,10 @@ class VisionResponsePayload {
     final panelsData = assessment['damaged_panels_detail'] as List<dynamic>? ?? [];
     final panelsList = panelsData.map((e) => PanelDamageDetail.fromJson(e as Map<String, dynamic>)).toList();
 
-    // Deterministic price calculation overriding AI hallucination
+    // Deterministic price calculation — reads from live DB, overriding AI hallucination
     double deterministicCost = 0.0;
     for (final panel in panelsList) {
-      deterministicCost += PricingMatrix.calculateCost(panel.panelName, panel.panelSeverity);
+      deterministicCost += await PricingMatrix.calculateCost(panel.panelName, panel.panelSeverity);
     }
 
     return VisionResponsePayload(
@@ -237,7 +237,7 @@ Return precise counts for dents, scratches, and broken panels in the exact follo
       final jsonResponse = jsonDecode(response.body);
       final rawContentString = jsonResponse['choices'][0]['message']['content'];
       final parsedJson = jsonDecode(rawContentString);
-      return VisionResponsePayload.fromJson(parsedJson);
+      return VisionResponsePayload.fromJsonAsync(parsedJson);
     } catch (e) {
       throw FormatException('Invalid JSON string structure returned from OpenAI endpoint: $e');
     }
@@ -283,7 +283,7 @@ Return precise counts for dents, scratches, and broken panels in the exact follo
       final jsonResponse = jsonDecode(response.body);
       final rawContentString = jsonResponse['candidates'][0]['content']['parts'][0]['text'];
       final parsedJson = jsonDecode(rawContentString);
-      return VisionResponsePayload.fromJson(parsedJson);
+      return VisionResponsePayload.fromJsonAsync(parsedJson);
     } catch (e) {
       throw FormatException('Invalid JSON string structure returned from Gemini endpoint: $e');
     }

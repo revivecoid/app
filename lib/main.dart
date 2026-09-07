@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/shared/services/pricing_matrix.dart';
 
 void main() async {
   // 1. Ensure Flutter engine is fully initialized before async network bindings run
@@ -23,7 +24,11 @@ void main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-  // 4. Run the App inside a ProviderScope (Required by Riverpod for State Management)
+  // 4. Pre-warm the PricingMatrix cache so the first AI estimation request
+  //    has no extra latency. Runs in the background — does not block launch.
+  PricingMatrix.preload();
+
+  // 5. Run the App inside a ProviderScope (Required by Riverpod for State Management)
   runApp(
     const ProviderScope(
       child: ReVApp(),
