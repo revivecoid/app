@@ -196,13 +196,14 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
       PricingMatrix.invalidateCache();
       setState(() { _isSaving = false; _isDirty = false; });
       if (mounted) {
+        final savedCs = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: const Row(children: [
             Icon(Icons.check_circle_outline, color: Colors.white),
             SizedBox(width: 8),
             Text('Pricing rules berhasil disimpan'),
           ]),
-          backgroundColor: cs.primary,
+          backgroundColor: savedCs.primary,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
@@ -211,9 +212,10 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
       debugPrint('PricingRules save: $e');
       setState(() => _isSaving = false);
       if (mounted) {
+        final errCs = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Gagal menyimpan: $e'),
-          backgroundColor: cs.error,
+          backgroundColor: errCs.error,
           behavior: SnackBarBehavior.floating,
         ));
       }
