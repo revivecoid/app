@@ -195,7 +195,7 @@ class _PartnerCommLinkScreenState extends ConsumerState<PartnerCommLinkScreen> {
 
             // Messages
             Expanded(child: state.isLoading
-              ? const Center(child: CircularProgressIndicator(color: _primary))
+              ? Center(child: CircularProgressIndicator(color: _primary))
               : state.messages.isEmpty
                   ? _EmptyCommState(cs: cs)
                   : _MessageList(messages: state.messages, scrollCtrl: _scrollCtrl, cs: cs),
@@ -230,16 +230,16 @@ class _CommSidebar extends StatelessWidget {
     return Container(
       width: isDesktop ? 272 : 0,
       clipBehavior: Clip.hardEdge,
-      decoration: const BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest),
       child: isDesktop ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // Logo header
         Container(
           height: 64, padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh))),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh))),
           child: Row(children: [
-            Container(width: 30, height: 30, decoration: const BoxDecoration(color: _primaryContainer, shape: BoxShape.circle), child: const Icon(Icons.build_circle, color: _onPrimary, size: 16)),
-            const SizedBox(width: 8),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: const [
+            Container(width: 30, height: 30, decoration: BoxDecoration(color: _primaryContainer, shape: BoxShape.circle), child: Icon(Icons.build_circle, color: _onPrimary, size: 16)),
+            SizedBox(width: 8),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
               Text('re-V', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
               Text('OPS CORE', style: TextStyle(color: _primary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             ]),
@@ -279,7 +279,7 @@ class _SidebarItem extends StatelessWidget {
           ),
           child: Row(children: [
             Icon(icon, color: isActive ? const Color(0xFFFFE1DE) : Theme.of(context).colorScheme.onSurfaceVariant, size: 18),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             Expanded(child: Text(label, style: TextStyle(color: isActive ? const Color(0xFFFFE1DE) : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: isActive ? FontWeight.bold : FontWeight.w500))),
           ]),
         ),
@@ -300,22 +300,22 @@ class _CommHeader extends StatelessWidget {
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
       ),
       child: Row(children: [
         if (!isDesktop) ...[
-          IconButton(icon: const Icon(Icons.arrow_back_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: () => Navigator.pop(context)),
-          const SizedBox(width: 4),
+          IconButton(icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: () => Navigator.pop(context)),
+          SizedBox(width: 4),
         ],
         Container(
           width: 36, height: 36,
           decoration: BoxDecoration(color: _primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.support_agent_rounded, color: _primary, size: 20),
+          child: Icon(Icons.support_agent_rounded, color: _primary, size: 20),
         ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: const [
+        SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
           Text('Commlink — Admin Hotline', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
           Text('Secure channel with Revive Ops Core admin team', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
         ])),
@@ -323,13 +323,13 @@ class _CommHeader extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
           child: Row(children: [
-            Container(width: 7, height: 7, decoration: const BoxDecoration(color: _emerald500, shape: BoxShape.circle)),
-            const SizedBox(width: 5),
-            const Text('ADMIN ONLINE', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4)),
+            Container(width: 7, height: 7, decoration: BoxDecoration(color: _emerald500, shape: BoxShape.circle)),
+            SizedBox(width: 5),
+            Text('ADMIN ONLINE', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4)),
           ]),
         ),
-        const SizedBox(width: 8),
-        IconButton(icon: const Icon(Icons.refresh_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20), tooltip: 'Refresh', onPressed: onRefresh),
+        SizedBox(width: 8),
+        IconButton(icon: Icon(Icons.refresh_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20), tooltip: 'Refresh', onPressed: onRefresh),
       ]),
     );
   }
@@ -357,7 +357,7 @@ class _MessageList extends StatelessWidget {
         return Column(crossAxisAlignment: isAdmin ? CrossAxisAlignment.start : CrossAxisAlignment.end, children: [
           if (showDate) _DateDivider(date: msg.sentAt),
           _MessageBubble(msg: msg, isAdmin: isAdmin),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
         ]);
       },
     );
@@ -381,12 +381,12 @@ class _DateDivider extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(children: [
-        const Expanded(child: Divider(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
+        Expanded(child: Divider(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(_label(), style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
+          child: Text(_label(), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
         ),
-        const Expanded(child: Divider(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
+        Expanded(child: Divider(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
       ]),
     );
   }
@@ -419,15 +419,15 @@ class _MessageBubble extends StatelessWidget {
             Container(
               width: 28, height: 28,
               decoration: BoxDecoration(color: _primary.withValues(alpha: 0.1), shape: BoxShape.circle),
-              child: const Icon(Icons.support_agent_rounded, color: _primary, size: 16),
+              child: Icon(Icons.support_agent_rounded, color: _primary, size: 16),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
           ],
           Flexible(child: Column(
             crossAxisAlignment: isAdmin ? CrossAxisAlignment.start : CrossAxisAlignment.end,
             children: [
               if (isAdmin)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(bottom: 3, left: 2),
                   child: Text('Revive Admin', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
                 ),
@@ -451,9 +451,9 @@ class _MessageBubble extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_time(msg.sentAt), style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
+                    Text(_time(msg.sentAt), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
                     if (!isAdmin) ...[
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Icon(msg.isRead ? Icons.done_all_rounded : Icons.done_rounded, size: 13, color: msg.isRead ? _emerald500 : Theme.of(context).colorScheme.onSurfaceVariant),
                     ],
                   ],
@@ -462,11 +462,11 @@ class _MessageBubble extends StatelessWidget {
             ],
           )),
           if (!isAdmin) ...[
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Container(
               width: 28, height: 28,
-              decoration: const BoxDecoration(color: _primaryContainer, shape: BoxShape.circle),
-              child: const Icon(Icons.person_rounded, color: _onPrimary, size: 16),
+              decoration: BoxDecoration(color: _primaryContainer, shape: BoxShape.circle),
+              child: Icon(Icons.person_rounded, color: _onPrimary, size: 16),
             ),
           ],
         ],
@@ -486,12 +486,12 @@ class _EmptyCommState extends StatelessWidget {
       Container(
         width: 72, height: 72,
         decoration: BoxDecoration(color: _primary.withValues(alpha: 0.08), shape: BoxShape.circle),
-        child: const Icon(Icons.forum_outlined, color: _primary, size: 36),
+        child: Icon(Icons.forum_outlined, color: _primary, size: 36),
       ),
-      const SizedBox(height: 16),
-      const Text('No messages yet', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 6),
-      const Text('Send a message to the Revive Ops admin team.\nThey typically respond within 1 business hour.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5), textAlign: TextAlign.center),
+      SizedBox(height: 16),
+      Text('No messages yet', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+      SizedBox(height: 6),
+      Text('Send a message to the Revive Ops admin team.\nThey typically respond within 1 business hour.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5), textAlign: TextAlign.center),
     ]));
   }
 }
@@ -508,7 +508,7 @@ class _MessageComposer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         border: Border(top: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
       ),
@@ -525,16 +525,16 @@ class _MessageComposer extends StatelessWidget {
             maxLines: 4,
             minLines: 1,
             textInputAction: TextInputAction.newline,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Type a message to admin…',
               hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
               border: InputBorder.none,
               isDense: true,
             ),
-            style: const TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
           ),
         )),
-        const SizedBox(width: 10),
+        SizedBox(width: 10),
         GestureDetector(
           onTap: isSending ? null : onSend,
           child: AnimatedContainer(
@@ -546,8 +546,8 @@ class _MessageComposer extends StatelessWidget {
               boxShadow: isSending ? [] : [BoxShadow(color: _primaryContainer.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))],
             ),
             child: isSending
-                ? const Padding(padding: EdgeInsets.all(10), child: CircularProgressIndicator(color: _primary, strokeWidth: 2))
-                : const Icon(Icons.send_rounded, color: _onPrimary, size: 20),
+                ? Padding(padding: EdgeInsets.all(10), child: CircularProgressIndicator(color: _primary, strokeWidth: 2))
+                : Icon(Icons.send_rounded, color: _onPrimary, size: 20),
           ),
         ),
       ]),

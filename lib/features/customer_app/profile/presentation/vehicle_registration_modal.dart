@@ -80,8 +80,8 @@ class _VehicleRegistrationModalState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 8),
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
               Text(
                   '${_makeCtrl.text} ${_modelCtrl.text} registered to your garage!'),
             ]),
@@ -124,7 +124,7 @@ class _VehicleRegistrationModalState
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
@@ -162,8 +162,8 @@ class _VehicleRegistrationModalState
                             child: Icon(Icons.directions_car,
                                 color: AppColors.primaryContainer, size: 20),
                           ),
-                          const SizedBox(width: 12),
-                          const Column(
+                          SizedBox(width: 12),
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Register New Vehicle',
@@ -179,15 +179,15 @@ class _VehicleRegistrationModalState
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
 
                       // Vehicle Type
-                      const Text('Vehicle Type',
+                      Text('Vehicle Type',
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
@@ -225,7 +225,7 @@ class _VehicleRegistrationModalState
                           }).toList(),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Make & Model
                       Row(
@@ -240,7 +240,7 @@ class _VehicleRegistrationModalState
                                   v!.trim().isEmpty ? 'Required' : null,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             child: TextFormField(
                               controller: _modelCtrl,
@@ -253,7 +253,7 @@ class _VehicleRegistrationModalState
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
 
                       // Year & Plate
                       Row(
@@ -280,7 +280,7 @@ class _VehicleRegistrationModalState
                               },
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             flex: 3,
                             child: TextFormField(
@@ -295,7 +295,7 @@ class _VehicleRegistrationModalState
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
 
                       // Color
                       TextFormField(
@@ -305,7 +305,7 @@ class _VehicleRegistrationModalState
                             icon: Icons.palette),
                         textCapitalization: TextCapitalization.words,
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
 
                       // VIN (optional)
                       TextFormField(
@@ -319,7 +319,7 @@ class _VehicleRegistrationModalState
                           LengthLimitingTextInputFormatter(17),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Insurance toggle
                       Container(
@@ -334,8 +334,8 @@ class _VehicleRegistrationModalState
                           children: [
                             Icon(Icons.shield,
                                 color: AppColors.primaryContainer, size: 20),
-                            const SizedBox(width: 10),
-                            const Expanded(
+                            SizedBox(width: 10),
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -363,7 +363,7 @@ class _VehicleRegistrationModalState
                         ),
                       ),
                       if (_isInsured) ...[
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
                         TextFormField(
                           controller: _insurerCtrl,
                           decoration: _inputDec('Insurance Provider',
@@ -372,7 +372,7 @@ class _VehicleRegistrationModalState
                           textCapitalization: TextCapitalization.words,
                         ),
                       ],
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
 
                       // Submit
                       SizedBox(
@@ -380,17 +380,17 @@ class _VehicleRegistrationModalState
                         child: ElevatedButton.icon(
                           onPressed: _isLoading ? null : _submit,
                           icon: _isLoading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
                                       color: Colors.white, strokeWidth: 2))
-                              : const Icon(Icons.check, size: 18),
+                              : Icon(Icons.check, size: 18),
                           label: Text(
                             _isLoading
                                 ? 'Registering...'
                                 : 'Register Vehicle to Garage',
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                           style: ElevatedButton.styleFrom(
