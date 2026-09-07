@@ -1,9 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'partner_dashboard_controller.dart';
 
-// â”€â”€â”€ Design tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const _primary = Color(0xFFa40016);
 const _primaryContainer = Color(0xFFd10721);
 const _onPrimary = Color(0xFFffffff);
@@ -48,7 +48,7 @@ class _PartnerDashboardMobileState extends ConsumerState<PartnerDashboardMobile>
 
     if (state.isLoading && state.activeJobs.isEmpty) {
       return Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         body: const Center(child: CircularProgressIndicator(color: _primary)),
       );
     }
@@ -72,7 +72,7 @@ class _PartnerDashboardMobileState extends ConsumerState<PartnerDashboardMobile>
     }).toList();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       body: SafeArea(
         child: Column(children: [
           _MobileHeader(
@@ -108,7 +108,7 @@ class _PartnerDashboardMobileState extends ConsumerState<PartnerDashboardMobile>
   }
 }
 
-// â”€â”€â”€ Mobile Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Mobile Header ────────────────────────────────────────────────────────────
 class _MobileHeader extends StatelessWidget {
   final int unreadCount;
   final bool isLive;
@@ -120,16 +120,16 @@ class _MobileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Row(children: [
         Container(width: 28, height: 28, decoration: const BoxDecoration(color: _primaryContainer, shape: BoxShape.circle), child: const Icon(Icons.build_circle, color: _onPrimary, size: 16)),
         const SizedBox(width: 8),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('re-V Partner', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
+          const Text('re-V Partner', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
           Row(children: [
             Container(width: 6, height: 6, decoration: BoxDecoration(color: isLive ? _emerald500 : Colors.orange, shape: BoxShape.circle)),
             const SizedBox(width: 4),
-            Text(isLive ? 'Live Sync' : 'Reconnectingâ€¦', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
+            Text(isLive ? 'Live Sync' : 'Reconnecting…', style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
           ]),
         ]),
         const Spacer(),
@@ -137,15 +137,15 @@ class _MobileHeader extends StatelessWidget {
           isLabelVisible: unreadCount > 0,
           label: Text('$unreadCount', style: const TextStyle(fontSize: 9)),
           backgroundColor: _primaryContainer,
-          child: IconButton(icon: Icon(Icons.forum_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: onCommlink),
+          child: IconButton(icon: const Icon(Icons.forum_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: onCommlink),
         ),
-        IconButton(icon: Icon(Icons.tune_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: onSettings),
+        IconButton(icon: const Icon(Icons.tune_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: onSettings),
       ]),
     );
   }
 }
 
-// â”€â”€â”€ KPI Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── KPI Row ──────────────────────────────────────────────────────────────────
 class _KpiRow extends StatelessWidget {
   final PartnerDashboardState state;
   const _KpiRow({required this.state});
@@ -157,7 +157,7 @@ class _KpiRow extends StatelessWidget {
     final qc = state.activeJobs.where((j) => j.status == '8_awaiting_delivery').length;
 
     return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Row(children: [
         Expanded(child: _MobileKpi(label: 'Active Jobs', value: '$total', color: _primary, icon: Icons.build_outlined)),
@@ -184,7 +184,7 @@ class _MobileKpi extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
-        color: highlight ? color.withValues(alpha: 0.08) : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        color: highlight ? color.withValues(alpha: 0.08) : Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(10),
         border: highlight ? Border.all(color: color.withValues(alpha: 0.3)) : null,
       ),
@@ -193,13 +193,13 @@ class _MobileKpi extends StatelessWidget {
         const SizedBox(height: 4),
         Text(value, style: TextStyle(color: highlight ? color : Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w600), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(label, style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w600), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
       ]),
     );
   }
 }
 
-// â”€â”€â”€ Search Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Search Bar ───────────────────────────────────────────────────────────────
 class _SearchBar extends StatelessWidget {
   final TextEditingController ctrl;
   final ValueChanged<String> onSearch;
@@ -211,21 +211,21 @@ class _SearchBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: Container(
         height: 38,
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(10), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(10), border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(children: [
-          Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 16),
+          const Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 16),
           const SizedBox(width: 8),
           Expanded(child: TextField(
             controller: ctrl,
             onChanged: onSearch,
-            decoration: InputDecoration(
-              hintText: 'Search vehicle, plate, customerâ€¦',
+            decoration: const InputDecoration(
+              hintText: 'Search vehicle, plate, customer…',
               hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
               border: InputBorder.none,
               isDense: true,
             ),
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
+            style: const TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
           )),
         ]),
       ),
@@ -233,7 +233,7 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
-// â”€â”€â”€ Filter Chips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Filter Chips ─────────────────────────────────────────────────────────────
 class _FilterChips extends StatelessWidget {
   final String selected;
   final List<PartnerJobNode> jobs;
@@ -268,16 +268,16 @@ class _FilterChips extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: isActive ? _primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                color: isActive ? _primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
-                border: isActive ? null : Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                border: isActive ? null : Border.all(color: Theme.of(context).colorScheme.surfaceContainerHigh),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Text(f, style: TextStyle(color: isActive ? _onPrimary : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500)),
                 const SizedBox(width: 5),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                  decoration: BoxDecoration(color: isActive ? Colors.white.withValues(alpha: 0.25) : Theme.of(context).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: isActive ? Colors.white.withValues(alpha: 0.25) : Theme.of(context).colorScheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(8)),
                   child: Text('${_count(f)}', style: TextStyle(color: isActive ? _onPrimary : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
               ]),
@@ -289,7 +289,7 @@ class _FilterChips extends StatelessWidget {
   }
 }
 
-// â”€â”€â”€ Job List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Job List ─────────────────────────────────────────────────────────────────
 class _JobList extends StatelessWidget {
   final List<PartnerJobNode> jobs;
   final PartnerDashboardController controller;
@@ -308,9 +308,9 @@ class _JobList extends StatelessWidget {
       return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.emoji_transportation, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
         const SizedBox(height: 12),
-        Text('No Jobs Found', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.bold)),
+        const Text('No Jobs Found', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
-        Text('Try changing your filter or search term.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+        const Text('Try changing your filter or search term.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
       ]));
     }
 
@@ -327,7 +327,7 @@ class _JobList extends StatelessWidget {
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2))],
           ),
@@ -351,23 +351,23 @@ class _JobList extends StatelessWidget {
                 const Spacer(),
                 Icon(Icons.timer_outlined, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 const SizedBox(width: 3),
-                Text(elapsedText, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
+                Text(elapsedText, style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
               ]),
             ),
             // Card body
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${job.carMake} ${job.carModel}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
+                Text('${job.carMake} ${job.carModel}', style: const TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 4),
                 Row(children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(4), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
-                    child: Text(job.licensePlate.toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.2)),
+                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(4), border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
+                    child: Text(job.licensePlate.toUpperCase(), style: const TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.2)),
                   ),
                   const SizedBox(width: 8),
-                  Text('â€¢ ${job.customerName}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                  Text('• ${job.customerName}', style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                 ]),
                 const SizedBox(height: 12),
                 Row(children: [
@@ -414,7 +414,7 @@ class _JobList extends StatelessWidget {
   }
 }
 
-// â”€â”€â”€ Bottom Nav â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Bottom Nav ───────────────────────────────────────────────────────────────
 class _BottomNav extends StatelessWidget {
   final int current;
   final int unread;
@@ -425,7 +425,7 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -2))],
       ),
       child: SafeArea(

@@ -1,15 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Design tokens Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const _primary = Color(0xFFa40016);
 const _primaryContainer = Color(0xFFd10721);
 const _onPrimary = Color(0xFFffffff);
 const _emerald500 = Color(0xFF10B981);
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Data model Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Data model ───────────────────────────────────────────────────────────────
 class _CommMessage {
   final String id;
   final String body;
@@ -33,7 +33,7 @@ class _CommMessage {
       );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ State & notifier Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── State & notifier ─────────────────────────────────────────────────────────
 class _CommLinkState {
   final List<_CommMessage> messages;
   final bool isLoading;
@@ -121,12 +121,12 @@ class _CommLinkNotifier extends StateNotifier<_CommLinkState> {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Provider factory Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Provider factory ─────────────────────────────────────────────────────────
 final _commLinkProvider = StateNotifierProvider.family<_CommLinkNotifier, _CommLinkState, String>(
   (ref, partnerId) => _CommLinkNotifier(partnerId),
 );
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Screen Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Screen ───────────────────────────────────────────────────────────────────
 class PartnerCommLinkScreen extends ConsumerStatefulWidget {
   const PartnerCommLinkScreen({super.key});
 
@@ -183,12 +183,12 @@ class _PartnerCommLinkScreenState extends ConsumerState<PartnerCommLinkScreen> {
       final isDesktop = constraints.maxWidth > 900;
 
       return Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         body: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Ã¢â€â‚¬Ã¢â€â‚¬ Sidebar Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+          // ── Sidebar ────────────────────────────────────────────────────
           _CommSidebar(isDesktop: isDesktop, cs: cs),
 
-          // Ã¢â€â‚¬Ã¢â€â‚¬ Main chat area Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+          // ── Main chat area ─────────────────────────────────────────────
           Expanded(child: Column(children: [
             // Header bar
             _CommHeader(isDesktop: isDesktop, onRefresh: notifier.load, cs: cs),
@@ -219,7 +219,7 @@ class _PartnerCommLinkScreenState extends ConsumerState<PartnerCommLinkScreen> {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Sidebar Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
 class _CommSidebar extends StatelessWidget {
   final bool isDesktop;
   final ColorScheme cs;
@@ -230,16 +230,16 @@ class _CommSidebar extends StatelessWidget {
     return Container(
       width: isDesktop ? 272 : 0,
       clipBehavior: Clip.hardEdge,
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)),
+      decoration: const BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest),
       child: isDesktop ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // Logo header
         Container(
           height: 64, padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant))),
+          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh))),
           child: Row(children: [
             Container(width: 30, height: 30, decoration: const BoxDecoration(color: _primaryContainer, shape: BoxShape.circle), child: const Icon(Icons.build_circle, color: _onPrimary, size: 16)),
             const SizedBox(width: 8),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+            Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: const [
               Text('re-V', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
               Text('OPS CORE', style: TextStyle(color: _primary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             ]),
@@ -288,7 +288,7 @@ class _SidebarItem extends StatelessWidget {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Header Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Header ───────────────────────────────────────────────────────────────────
 class _CommHeader extends StatelessWidget {
   final bool isDesktop;
   final VoidCallback onRefresh;
@@ -300,13 +300,13 @@ class _CommHeader extends StatelessWidget {
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+      decoration: const BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
       ),
       child: Row(children: [
         if (!isDesktop) ...[
-          IconButton(icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: () => Navigator.pop(context)),
+          IconButton(icon: const Icon(Icons.arrow_back_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: () => Navigator.pop(context)),
           const SizedBox(width: 4),
         ],
         Container(
@@ -315,27 +315,27 @@ class _CommHeader extends StatelessWidget {
           child: const Icon(Icons.support_agent_rounded, color: _primary, size: 20),
         ),
         const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text('Commlink â€” Admin Hotline', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: const [
+          Text('Commlink — Admin Hotline', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
           Text('Secure channel with Revive Ops Core admin team', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
         ])),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
+          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
           child: Row(children: [
             Container(width: 7, height: 7, decoration: const BoxDecoration(color: _emerald500, shape: BoxShape.circle)),
             const SizedBox(width: 5),
-            Text('ADMIN ONLINE', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4)),
+            const Text('ADMIN ONLINE', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4)),
           ]),
         ),
         const SizedBox(width: 8),
-        IconButton(icon: Icon(Icons.refresh_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20), tooltip: 'Refresh', onPressed: onRefresh),
+        IconButton(icon: const Icon(Icons.refresh_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20), tooltip: 'Refresh', onPressed: onRefresh),
       ]),
     );
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Message List Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Message List ─────────────────────────────────────────────────────────────
 class _MessageList extends StatelessWidget {
   final List<_CommMessage> messages;
   final ScrollController scrollCtrl;
@@ -381,12 +381,12 @@ class _DateDivider extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(children: [
-        Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
+        const Expanded(child: Divider(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(_label(), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
+          child: Text(_label(), style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
         ),
-        Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
+        const Expanded(child: Divider(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
       ]),
     );
   }
@@ -427,14 +427,14 @@ class _MessageBubble extends StatelessWidget {
             crossAxisAlignment: isAdmin ? CrossAxisAlignment.start : CrossAxisAlignment.end,
             children: [
               if (isAdmin)
-                Padding(
+                const Padding(
                   padding: EdgeInsets.only(bottom: 3, left: 2),
                   child: Text('Revive Admin', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
                 ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isAdmin ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4) : _primaryContainer,
+                  color: isAdmin ? Theme.of(context).colorScheme.surfaceContainerHighest : _primaryContainer,
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(12),
                     topRight: const Radius.circular(12),
@@ -442,7 +442,7 @@ class _MessageBubble extends StatelessWidget {
                     bottomRight: isAdmin ? const Radius.circular(12) : Radius.zero,
                   ),
                   boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 1))],
-                  border: isAdmin ? Border.all(color: Theme.of(context).colorScheme.outlineVariant) : null,
+                  border: isAdmin ? Border.all(color: Theme.of(context).colorScheme.surfaceContainerHigh) : null,
                 ),
                 child: Text(msg.body, style: TextStyle(color: isAdmin ? Theme.of(context).colorScheme.onSurface : _onPrimary, fontSize: 13, height: 1.4)),
               ),
@@ -451,7 +451,7 @@ class _MessageBubble extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_time(msg.sentAt), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
+                    Text(_time(msg.sentAt), style: const TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
                     if (!isAdmin) ...[
                       const SizedBox(width: 4),
                       Icon(msg.isRead ? Icons.done_all_rounded : Icons.done_rounded, size: 13, color: msg.isRead ? _emerald500 : Theme.of(context).colorScheme.onSurfaceVariant),
@@ -475,7 +475,7 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Empty State Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Empty State ──────────────────────────────────────────────────────────────
 class _EmptyCommState extends StatelessWidget {
   final ColorScheme cs;
   const _EmptyCommState({required this.cs});
@@ -489,14 +489,14 @@ class _EmptyCommState extends StatelessWidget {
         child: const Icon(Icons.forum_outlined, color: _primary, size: 36),
       ),
       const SizedBox(height: 16),
-      Text('No messages yet', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+      const Text('No messages yet', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
       const SizedBox(height: 6),
-      Text('Send a message to the Revive Ops admin team.\nThey typically respond within 1 business hour.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5), textAlign: TextAlign.center),
+      const Text('Send a message to the Revive Ops admin team.\nThey typically respond within 1 business hour.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5), textAlign: TextAlign.center),
     ]));
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Message Composer Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Message Composer ─────────────────────────────────────────────────────────
 class _MessageComposer extends StatelessWidget {
   final TextEditingController ctrl;
   final bool isSending;
@@ -508,30 +508,30 @@ class _MessageComposer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+      decoration: const BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh)),
       ),
       child: Row(children: [
         Expanded(child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+            color: Theme.of(context).colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHigh),
           ),
           child: TextField(
             controller: ctrl,
             maxLines: 4,
             minLines: 1,
             textInputAction: TextInputAction.newline,
-            decoration: InputDecoration(
-              hintText: 'Type a message to adminÃ¢â‚¬Â¦',
+            decoration: const InputDecoration(
+              hintText: 'Type a message to admin…',
               hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
               border: InputBorder.none,
               isDense: true,
             ),
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
+            style: const TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
           ),
         )),
         const SizedBox(width: 10),
@@ -541,12 +541,12 @@ class _MessageComposer extends StatelessWidget {
             duration: const Duration(milliseconds: 180),
             width: 44, height: 44,
             decoration: BoxDecoration(
-              color: isSending ? Theme.of(context).colorScheme.outlineVariant : _primaryContainer,
+              color: isSending ? Theme.of(context).colorScheme.surfaceContainerHigh : _primaryContainer,
               shape: BoxShape.circle,
               boxShadow: isSending ? [] : [BoxShadow(color: _primaryContainer.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))],
             ),
             child: isSending
-                ? Padding(padding: EdgeInsets.all(10), child: CircularProgressIndicator(color: _primary, strokeWidth: 2))
+                ? const Padding(padding: EdgeInsets.all(10), child: CircularProgressIndicator(color: _primary, strokeWidth: 2))
                 : const Icon(Icons.send_rounded, color: _onPrimary, size: 20),
           ),
         ),
