@@ -136,6 +136,8 @@ class _FrontendCmsState extends ConsumerState<FrontendContentStudioScreen> {
       case 2: return _PricingTab(cs: cs, rules: _pricing, onUpdate: _updateRule);
       case 3: return _NlpTab(cs: cs, toggles: _nlpToggles, onToggle: (i, v) => setState(() => _nlpToggles[i] = v));
       case 4: return _CommissionTab(cs: cs);
+      case 5: return _AboutCmsTab(cs: cs, s: _s, onSave: _save);
+      case 6: return _PrivacyCmsTab(cs: cs, s: _s, onSave: _save);
       default: return const SizedBox();
     }
   }
@@ -149,8 +151,9 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const icons = [Icons.dashboard_customize_outlined, Icons.folder_special_outlined, Icons.price_change_outlined, Icons.smart_toy_outlined, Icons.payments_outlined];
-    const labels = ['Content Studio', 'Digital Assets', 'Pricing Rules', 'NLP Studio', 'Commissions'];
+    const icons = [Icons.dashboard_customize_outlined, Icons.folder_special_outlined, Icons.price_change_outlined, Icons.smart_toy_outlined, Icons.payments_outlined, Icons.info_outlined, Icons.privacy_tip_outlined];
+    const labels = ['Content Studio', 'Digital Assets', 'Pricing Rules', 'NLP Studio', 'Commissions', 'About Us', 'Privacy Policy'];
+
     return Container(
       color: cs.surfaceContainerLowest,
       child: Column(children: [
@@ -686,4 +689,179 @@ class _Field extends StatelessWidget {
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: cs.outlineVariant)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: cs.primary))))),
   ]);
+}
+
+// --- Tab 5: About Us CMS ---
+class _AboutCmsTab extends StatefulWidget {
+  final ColorScheme cs;
+  final String Function(String, {String fb}) s;
+  final Future<void> Function(String, String, {String cat}) onSave;
+  const _AboutCmsTab({required this.cs, required this.s, required this.onSave});
+  @override State<_AboutCmsTab> createState() => _AboutCmsTabState();
+}
+class _AboutCmsTabState extends State<_AboutCmsTab> {
+  late TextEditingController _title, _tagline, _story, _mission, _vision;
+  late TextEditingController _statPartners, _statRating, _statJobs;
+  bool _dirty = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _title        = TextEditingController(text: widget.s('about_title',   fb: ''));
+    _tagline      = TextEditingController(text: widget.s('about_tagline', fb: ''));
+    _story        = TextEditingController(text: widget.s('about_story',   fb: ''));
+    _mission      = TextEditingController(text: widget.s('about_mission', fb: ''));
+    _vision       = TextEditingController(text: widget.s('about_vision',  fb: ''));
+    _statPartners = TextEditingController(text: widget.s('stat_partners', fb: '38+'));
+    _statRating   = TextEditingController(text: widget.s('stat_rating',   fb: '4.9/5'));
+    _statJobs     = TextEditingController(text: widget.s('stat_jobs',     fb: '12,000+'));
+  }
+
+  @override
+  void dispose() {
+    for (final c in [_title, _tagline, _story, _mission, _vision,
+      _statPartners, _statRating, _statJobs]) c.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveAll() async {
+    await Future.wait([
+      widget.onSave('about_title',   _title.text,        cat: 'about'),
+      widget.onSave('about_tagline', _tagline.text,      cat: 'about'),
+      widget.onSave('about_story',   _story.text,        cat: 'about'),
+      widget.onSave('about_mission', _mission.text,      cat: 'about'),
+      widget.onSave('about_vision',  _vision.text,       cat: 'about'),
+      widget.onSave('stat_partners', _statPartners.text, cat: 'about'),
+      widget.onSave('stat_rating',   _statRating.text,   cat: 'about'),
+      widget.onSave('stat_jobs',     _statJobs.text,     cat: 'about'),
+    ]);
+    setState(() => _dirty = false);
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('About page saved'), backgroundColor: Color(0xFF059669)));
+  }
+
+  void _mark() => setState(() => _dirty = true);
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = widget.cs;
+    return SingleChildScrollView(padding: const EdgeInsets.all(28),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Text('About Us Page', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: cs.onSurface)),
+          const Spacer(),
+          if (_dirty) FilledButton.icon(onPressed: _saveAll, icon: const Icon(Icons.save_rounded, size: 16), label: const Text('Save Changes')),
+        ]),
+        const SizedBox(height: 4),
+        Text('Manage revive.co.id/about', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 24),
+        _Card(cs: cs, title: 'Hero Banner', icon: Icons.info_outlined, children: [
+          _Field(cs: cs, label: 'Title', ctrl: _title, hint: 'Main heading for About page', onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Tagline', ctrl: _tagline, hint: 'Short intro sentence', maxLines: 2, onChange: _mark),
+        ]),
+        const SizedBox(height: 16),
+        _Card(cs: cs, title: 'Stats Row', icon: Icons.bar_chart_rounded, children: [
+          _Field(cs: cs, label: 'Partners',     ctrl: _statPartners, hint: '38+',     onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Rating',       ctrl: _statRating,   hint: '4.9/5',   onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Cars Fixed',   ctrl: _statJobs,     hint: '12,000+', onChange: _mark),
+        ]),
+        const SizedBox(height: 16),
+        _Card(cs: cs, title: 'Content', icon: Icons.article_outlined, children: [
+          _Field(cs: cs, label: 'Our Story', ctrl: _story,   hint: 'Company origin story...', maxLines: 5, onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Mission',   ctrl: _mission, hint: 'Mission statement...',     maxLines: 3, onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Vision',    ctrl: _vision,  hint: 'Vision statement...',      maxLines: 3, onChange: _mark),
+        ]),
+        const SizedBox(height: 80),
+      ]));
+  }
+}
+
+// --- Tab 6: Privacy Policy CMS ---
+class _PrivacyCmsTab extends StatefulWidget {
+  final ColorScheme cs;
+  final String Function(String, {String fb}) s;
+  final Future<void> Function(String, String, {String cat}) onSave;
+  const _PrivacyCmsTab({required this.cs, required this.s, required this.onSave});
+  @override State<_PrivacyCmsTab> createState() => _PrivacyCmsTabState();
+}
+class _PrivacyCmsTabState extends State<_PrivacyCmsTab> {
+  late TextEditingController _pageTitle, _intro, _updated;
+  final _secTitle = <TextEditingController>[];
+  final _secBody  = <TextEditingController>[];
+  static const _n = 8;
+  bool _dirty = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageTitle = TextEditingController(text: widget.s('privacy_page_title', fb: 'Kebijakan Privasi'));
+    _intro     = TextEditingController(text: widget.s('privacy_intro',      fb: ''));
+    _updated   = TextEditingController(text: widget.s('privacy_updated',    fb: 'September 2026'));
+    for (int i = 0; i < _n; i++) {
+      _secTitle.add(TextEditingController(text: widget.s('privacy_${i}_title', fb: '')));
+      _secBody.add(TextEditingController(text: widget.s('privacy_${i}_body',   fb: '')));
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in [_pageTitle, _intro, _updated, ..._secTitle, ..._secBody]) c.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveAll() async {
+    final saves = <Future<void>>[
+      widget.onSave('privacy_page_title', _pageTitle.text, cat: 'legal'),
+      widget.onSave('privacy_intro',      _intro.text,     cat: 'legal'),
+      widget.onSave('privacy_updated',    _updated.text,   cat: 'legal'),
+    ];
+    for (int i = 0; i < _n; i++) {
+      saves.add(widget.onSave('privacy_${i}_title', _secTitle[i].text, cat: 'legal'));
+      saves.add(widget.onSave('privacy_${i}_body',  _secBody[i].text,  cat: 'legal'));
+    }
+    await Future.wait(saves);
+    setState(() => _dirty = false);
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Privacy Policy saved'), backgroundColor: Color(0xFF059669)));
+  }
+
+  void _mark() => setState(() => _dirty = true);
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = widget.cs;
+    return SingleChildScrollView(padding: const EdgeInsets.all(28),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Text('Privacy Policy Page', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: cs.onSurface)),
+          const Spacer(),
+          if (_dirty) FilledButton.icon(onPressed: _saveAll, icon: const Icon(Icons.save_rounded, size: 16), label: const Text('Save Changes')),
+        ]),
+        const SizedBox(height: 4),
+        Text('Manage revive.co.id/privacy', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 24),
+        _Card(cs: cs, title: 'Page Header', icon: Icons.privacy_tip_outlined, children: [
+          _Field(cs: cs, label: 'Page Title',   ctrl: _pageTitle, hint: 'Kebijakan Privasi', onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Last Updated', ctrl: _updated,   hint: 'September 2026',   onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Intro Text',   ctrl: _intro,     hint: 'Opening paragraph...', maxLines: 3, onChange: _mark),
+        ]),
+        const SizedBox(height: 16),
+        for (int i = 0; i < _n; i++) ...[
+          _Card(cs: cs, title: 'Section ${i + 1}', icon: Icons.article_outlined, children: [
+            _Field(cs: cs, label: 'Heading', ctrl: _secTitle[i], hint: 'e.g. 1. Data yang Kami Kumpulkan', onChange: _mark),
+            const SizedBox(height: 12),
+            _Field(cs: cs, label: 'Body',    ctrl: _secBody[i],  hint: 'Section content...',                maxLines: 4, onChange: _mark),
+          ]),
+          const SizedBox(height: 12),
+        ],
+        const SizedBox(height: 80),
+      ]));
+  }
 }
