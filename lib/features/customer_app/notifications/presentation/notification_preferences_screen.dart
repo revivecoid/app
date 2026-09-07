@@ -59,9 +59,12 @@ class _NotificationPreferencesScreenState
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preferensi notifikasi disimpan'),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: Text('Preferensi notifikasi disimpan',
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface)),
+          backgroundColor:
+              Theme.of(context).colorScheme.surfaceContainerHigh,
         ),
       );
     }
@@ -69,10 +72,11 @@ class _NotificationPreferencesScreenState
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final prefsState = ref.watch(notificationPreferencesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: cs.surface,
       appBar: const ReVAppBar(
         title: Text('Pengaturan Notifikasi'),
         showBackButton: true,
@@ -84,10 +88,12 @@ class _NotificationPreferencesScreenState
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (prefs) {
           // Sync controllers once prefs are loaded
-          if (_emailController.text.isEmpty && prefs.emailAddress.isNotEmpty) {
+          if (_emailController.text.isEmpty &&
+              prefs.emailAddress.isNotEmpty) {
             _emailController.text = prefs.emailAddress;
           }
-          if (_waController.text.isEmpty && prefs.whatsappNumber.isNotEmpty) {
+          if (_waController.text.isEmpty &&
+              prefs.whatsappNumber.isNotEmpty) {
             _waController.text = prefs.whatsappNumber;
           }
 
@@ -105,15 +111,16 @@ class _NotificationPreferencesScreenState
                     border: Border.all(
                         color: AppColors.fireRed.withValues(alpha: 0.2)),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.info_outline,
+                      const Icon(Icons.info_outline,
                           color: AppColors.fireRed, size: 18),
-                      SizedBox(width: 10),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'Pilih saluran notifikasi yang ingin Anda aktifkan untuk update status booking kendaraan.',
-                          style: TextStyle(fontSize: 13, color: AppColors.onSurface),
+                          style: TextStyle(
+                              fontSize: 13, color: cs.onSurface),
                         ),
                       ),
                     ],
@@ -121,12 +128,15 @@ class _NotificationPreferencesScreenState
                 ),
                 const SizedBox(height: 20),
 
-                // ── In-App ───────────────────────────────────────────────
+                // ── In-App ─────────────────────────────────────────────
                 _buildChannelCard(
+                  context: context,
+                  cs: cs,
                   icon: Icons.notifications_outlined,
                   iconColor: AppColors.fireRed,
                   title: 'Notifikasi In-App',
-                  subtitle: 'Terima notifikasi langsung di dalam aplikasi Revive.',
+                  subtitle:
+                      'Terima notifikasi langsung di dalam aplikasi Revive.',
                   badge: null,
                   value: prefs.inApp,
                   enabled: false, // always on
@@ -135,8 +145,10 @@ class _NotificationPreferencesScreenState
                 ),
                 const SizedBox(height: 12),
 
-                // ── Email ────────────────────────────────────────────────
+                // ── Email ───────────────────────────────────────────────
                 _buildChannelCard(
+                  context: context,
+                  cs: cs,
                   icon: Icons.email_outlined,
                   iconColor: Colors.blue,
                   title: 'Notifikasi Email',
@@ -145,24 +157,39 @@ class _NotificationPreferencesScreenState
                   value: prefs.email,
                   enabled: true,
                   onChanged: (val) {
-                    ref.read(notificationPreferencesProvider.notifier).update(
-                          prefs.copyWith(email: val),
-                        );
+                    ref
+                        .read(notificationPreferencesProvider.notifier)
+                        .update(prefs.copyWith(email: val));
                   },
                   child: prefs.email
                       ? Padding(
                           padding: const EdgeInsets.only(top: 12),
                           child: TextField(
                             controller: _emailController,
+                            style: TextStyle(color: cs.onSurface),
                             decoration: InputDecoration(
                               labelText: 'Alamat Email',
-                              prefixIcon: const Icon(Icons.alternate_email,
-                                  color: AppColors.onSurfaceVariant),
+                              labelStyle:
+                                  TextStyle(color: cs.onSurfaceVariant),
+                              prefixIcon: Icon(Icons.alternate_email,
+                                  color: cs.onSurfaceVariant),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide:
-                                    const BorderSide(color: AppColors.surfaceContainerHighest),
+                                    BorderSide(color: cs.outlineVariant),
                               ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: cs.outlineVariant),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: cs.primary, width: 2),
+                              ),
+                              fillColor: cs.surfaceContainerLow,
+                              filled: true,
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 12),
                             ),
@@ -173,19 +200,22 @@ class _NotificationPreferencesScreenState
                 ),
                 const SizedBox(height: 12),
 
-                // ── WhatsApp ─────────────────────────────────────────────
+                // ── WhatsApp ────────────────────────────────────────────
                 _buildChannelCard(
+                  context: context,
+                  cs: cs,
                   icon: Icons.chat_outlined,
                   iconColor: const Color(0xFF25D366),
                   title: 'Notifikasi WhatsApp',
-                  subtitle: 'Terima pesan status langsung ke WhatsApp Anda.',
-                  badge: _WaBadge(),
+                  subtitle:
+                      'Terima pesan status langsung ke WhatsApp Anda.',
+                  badge: const _WaBadge(),
                   value: prefs.whatsapp,
                   enabled: true,
                   onChanged: (val) {
-                    ref.read(notificationPreferencesProvider.notifier).update(
-                          prefs.copyWith(whatsapp: val),
-                        );
+                    ref
+                        .read(notificationPreferencesProvider.notifier)
+                        .update(prefs.copyWith(whatsapp: val));
                   },
                   child: prefs.whatsapp
                       ? Padding(
@@ -195,18 +225,40 @@ class _NotificationPreferencesScreenState
                             children: [
                               TextField(
                                 controller: _waController,
+                                style: TextStyle(color: cs.onSurface),
                                 decoration: InputDecoration(
                                   labelText: 'Nomor WhatsApp',
                                   hintText: '0812xxxxxxxx',
-                                  prefixIcon: const Icon(Icons.phone_outlined,
-                                      color: AppColors.onSurfaceVariant),
+                                  labelStyle: TextStyle(
+                                      color: cs.onSurfaceVariant),
+                                  hintStyle: TextStyle(
+                                      color: cs.onSurfaceVariant
+                                          .withValues(alpha: 0.5)),
+                                  prefixIcon: Icon(Icons.phone_outlined,
+                                      color: cs.onSurfaceVariant),
                                   border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                        color: AppColors.surfaceContainerHighest),
+                                    borderRadius:
+                                        BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        color: cs.outlineVariant),
                                   ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 12),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        color: cs.outlineVariant),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        color: cs.primary, width: 2),
+                                  ),
+                                  fillColor: cs.surfaceContainerLow,
+                                  filled: true,
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 12),
                                 ),
                                 keyboardType: TextInputType.phone,
                               ),
@@ -214,20 +266,23 @@ class _NotificationPreferencesScreenState
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF25D366).withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(8),
+                                  color: const Color(0xFF25D366)
+                                      .withValues(alpha: 0.08),
+                                  borderRadius:
+                                      BorderRadius.circular(8),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   children: [
-                                    Icon(Icons.schedule,
-                                        size: 14, color: Color(0xFF25D366)),
-                                    SizedBox(width: 6),
+                                    const Icon(Icons.schedule,
+                                        size: 14,
+                                        color: Color(0xFF25D366)),
+                                    const SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
                                         'WhatsApp Business sedang dalam proses aktivasi. Notifikasi akan aktif setelah proses selesai.',
                                         style: TextStyle(
                                             fontSize: 11,
-                                            color: AppColors.onSurfaceVariant),
+                                            color: cs.onSurfaceVariant),
                                       ),
                                     ),
                                   ],
@@ -275,6 +330,8 @@ class _NotificationPreferencesScreenState
   }
 
   Widget _buildChannelCard({
+    required BuildContext context,
+    required ColorScheme cs,
     required IconData icon,
     required Color iconColor,
     required String title,
@@ -287,10 +344,13 @@ class _NotificationPreferencesScreenState
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: cs.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))
+        boxShadow: [
+          BoxShadow(
+              color: cs.onSurface.withValues(alpha: 0.06),
+              blurRadius: 4,
+              offset: const Offset(0, 1))
         ],
       ),
       padding: const EdgeInsets.all(16),
@@ -317,10 +377,10 @@ class _NotificationPreferencesScreenState
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.onSurface),
+                              color: cs.onSurface),
                         ),
                         if (badge != null) ...[
                           const SizedBox(width: 8),
@@ -330,8 +390,8 @@ class _NotificationPreferencesScreenState
                     ),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.onSurfaceVariant),
+                      style: TextStyle(
+                          fontSize: 12, color: cs.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -351,6 +411,8 @@ class _NotificationPreferencesScreenState
 }
 
 class _WaBadge extends StatelessWidget {
+  const _WaBadge();
+
   @override
   Widget build(BuildContext context) {
     return Container(
