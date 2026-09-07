@@ -37,6 +37,11 @@ import 'features/cms/presentation/digital_asset_manager_screen.dart';
 import 'features/cms/presentation/frontend_content_studio_screen.dart';
 import 'features/cms/presentation/commission_settlement_engine_screen.dart';
 
+// --- IMPORTING PUBLIC CONTENT PAGES ---
+import 'features/customer_app/faq/presentation/faq_screen.dart';
+import 'features/customer_app/about/presentation/about_us_screen.dart';
+import 'features/customer_app/legal/presentation/privacy_policy_screen.dart';
+
 // --- RECOVERY STATE PROVIDER ---
 final passwordRecoveryProvider = StateProvider<bool>((ref) => false);
 
@@ -263,7 +268,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const NotificationPreferencesScreen(),
       ),
 
-      // --- MASTER ADMIN DOMAIN ---
+      // --- PUBLIC CONTENT PAGES ---
+      GoRoute(
+        path: '/faq',
+        builder: (context, state) => const FaqScreen(),
+      ),
+      GoRoute(
+        path: '/about',
+        builder: (context, state) => const AboutUsScreen(),
+      ),
+      GoRoute(
+        path: '/privacy',
+        builder: (context, state) => const PrivacyPolicyScreen(),
+      ),
+
       GoRoute(
         path: '/admin-central',
         builder: (context, state) => const MasterAdminDesktop(),

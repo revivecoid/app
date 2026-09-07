@@ -107,6 +107,8 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               _buildContactSection(theme, cms),
             if (cms['contact_phone'] != null || cms['contact_email'] != null || cms['contact_address'] != null)
               SizedBox(height: 16),
+            _buildQuickLinks(theme),
+            SizedBox(height: 16),
             _buildFooterWidget(theme),
             SizedBox(height: 32),
           ],
@@ -691,7 +693,49 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     );
   }
 
+  Widget _buildQuickLinks(ThemeData theme) {
+    final cs = theme.colorScheme;
+    final links = [
+      {'icon': Icons.quiz_rounded, 'label': 'FAQ', 'route': '/faq', 'sub': 'Pertanyaan umum'},
+      {'icon': Icons.info_outline_rounded, 'label': 'About Us', 'route': '/about', 'sub': 'Tentang Revive'},
+      {'icon': Icons.privacy_tip_outlined, 'label': 'Privacy Policy', 'route': '/privacy', 'sub': 'Kebijakan privasi'},
+    ];
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('TAUTAN PENTING', style: theme.textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
+        Row(children: links.map<Widget>((l) => Expanded(
+          child: InkWell(
+            onTap: () => context.go(l['route'] as String),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHigh.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(children: [
+                Icon(l['icon'] as IconData, size: 20, color: cs.primary),
+                const SizedBox(height: 5),
+                Text(l['label'] as String, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                Text(l['sub'] as String, style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant), textAlign: TextAlign.center),
+              ]),
+            ),
+          ),
+        )).toList()),
+      ]),
+    );
+  }
+
   Widget _buildFooterWidget(ThemeData theme) {
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
