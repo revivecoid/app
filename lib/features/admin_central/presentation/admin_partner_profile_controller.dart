@@ -103,7 +103,7 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
 
       // 3. Fetch Jobs
       final jobsRes = await _supabase.from('repair_jobs').select('''
-        id, status, created_at, updated_at,
+        id, status, created_at, scheduled_date,
         vehicles:vehicle_id (make, model, license_plate),
         profiles:customer_id (full_name)
       ''').eq('partner_id', partnerId);
@@ -117,8 +117,9 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
         if (st == '9_done') {
           past.add(j as Map<String, dynamic>);
           final created = DateTime.tryParse(j['created_at']?.toString() ?? '') ?? DateTime.now();
-          final updated = DateTime.tryParse(j['updated_at']?.toString() ?? '') ?? DateTime.now();
-          totalDays += updated.difference(created).inHours / 24.0;
+          // Approximate velocity using scheduled_date if available, else now
+          final scheduled = DateTime.tryParse(j['scheduled_date']?.toString() ?? '') ?? DateTime.now();
+          totalDays += scheduled.difference(created).inHours / 24.0;
         } else {
           active.add(j as Map<String, dynamic>);
         }
