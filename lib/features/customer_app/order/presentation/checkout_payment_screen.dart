@@ -137,7 +137,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.daysGray),
+                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,7 +260,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.daysGray.withValues(alpha: 0.5)),
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -271,9 +271,9 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
                     Text('Proof Selected: ${state.transferProof!.name}', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                   ] else ...[
-                    const Icon(Icons.cloud_upload, color: AppColors.daysGray, size: 48),
+                    Icon(Icons.cloud_upload, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 48),
                     const SizedBox(height: 8),
-                    const Text('Please upload an image of your transfer receipt.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.daysGray)),
+                    Text('Please upload an image of your transfer receipt.', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 16),
                   ],
                   ElevatedButton.icon(
@@ -305,8 +305,8 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.daysGray.withValues(alpha: 0.5))),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5))),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -359,7 +359,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(flex: 3, child: checkoutForm),
-            Container(width: 1, color: AppColors.daysGray),
+            Container(width: 1, color: Theme.of(context).colorScheme.outlineVariant),
             Expanded(
               flex: 2, 
               child: Align(

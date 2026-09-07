@@ -43,7 +43,7 @@ class CustomerSupportScreen extends StatelessWidget {
                 Text(
                   'Find answers to common questions or reach out to our team.',
                   style: theme.textTheme.titleMedium
-                      ?.copyWith(color: AppColors.daysGray),
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
                 SizedBox(height: 32),
 
@@ -118,7 +118,7 @@ class CustomerSupportScreen extends StatelessWidget {
                             color: AppColors.primaryContainer, size: 24),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -126,10 +126,10 @@ class CustomerSupportScreen extends StatelessWidget {
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
-                                    color: AppColors.sleekBlack)),
-                            Text('+62 800-TOW-REVIVE  ·  WhatsApp preferred',
+                                    color: theme.colorScheme.onSurface)),
+                            Text('+62 800-TOW-REVIVE  \u00b7  WhatsApp preferred',
                                 style: TextStyle(
-                                    fontSize: 12, color: AppColors.daysGray)),
+                                    fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
                           ],
                         ),
                       ),
@@ -237,7 +237,7 @@ class CustomerSupportScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           if (!isDark)
@@ -296,7 +296,7 @@ class CustomerSupportScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),

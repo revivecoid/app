@@ -44,10 +44,11 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
     final state = ref.watch(adminPartnerProfileProvider(widget.partnerId));
     final controller = ref.read(adminPartnerProfileProvider(widget.partnerId).notifier);
 
+    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : AppColors.sleekBlack;
-    final surfaceColor = isDark ? AppColors.surface : Colors.white;
-    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final textColor = cs.onSurface;
+    final surfaceColor = cs.surfaceContainerHighest.withValues(alpha: 0.5);
+    final bgColor = cs.surface;
 
     ref.listen(adminPartnerProfileProvider(widget.partnerId), (prev, next) {
       if (next.successMessage != null && next.successMessage != prev?.successMessage) {
@@ -186,7 +187,7 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
                 children: [
                   Container(
                     padding: const EdgeInsets.all(16),
-                    color: isDark ? Colors.black12 : Colors.grey[100],
+                    color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
                     width: double.infinity,
                     child: Text('Internal Messaging',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: textColor)),
@@ -207,7 +208,7 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
                             decoration: BoxDecoration(
                               color: m.isAdmin
                                   ? AppColors.fireRed
-                                  : (isDark ? Colors.grey[800] : Colors.grey[200]),
+                                  : cs.surfaceContainerHighest,
                               borderRadius: BorderRadius.only(
                                 topLeft: const Radius.circular(12),
                                 topRight: const Radius.circular(12),
@@ -242,7 +243,7 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
                             decoration: InputDecoration(
                               hintText: 'Type a message...',
                               filled: true,
-                              fillColor: isDark ? Colors.black26 : Colors.white,
+                              fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.4),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             ),

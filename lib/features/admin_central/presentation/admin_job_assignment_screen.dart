@@ -69,10 +69,10 @@ class _AdminJobAssignmentScreenState extends ConsumerState<AdminJobAssignmentScr
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? AppColors.background : Colors.grey[50];
-    final surfaceColor = isDark ? AppColors.surface : Colors.white;
-    final textColor = isDark ? Colors.white : AppColors.sleekBlack;
+    final cs = Theme.of(context).colorScheme;
+    final bgColor = cs.surface;
+    final surfaceColor = cs.surfaceContainerHighest.withValues(alpha: 0.5);
+    final textColor = cs.onSurface;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -122,7 +122,7 @@ class _AdminJobAssignmentScreenState extends ConsumerState<AdminJobAssignmentScr
                                       const SizedBox(height: 8),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(color: AppColors.daysGray.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                                        decoration: BoxDecoration(color: cs.outlineVariant.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(4)),
                                         child: Text(jobArea, style: TextStyle(fontWeight: FontWeight.bold, color: textColor, fontSize: 12)),
                                       )
                                     ],

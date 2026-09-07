@@ -40,7 +40,7 @@ class BookingSchedulingScreen extends ConsumerWidget {
                         ),
                         child: ListTile(
                           onTap: () => controller.selectWorkshop(w),
-                          leading: Icon(Icons.build_circle, size: 40, color: AppColors.sleekBlack),
+                          leading: Icon(Icons.build_circle, size: 40, color: Theme.of(context).colorScheme.onSurface),
                           title: Text(w.name, style: TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text('${w.address}\n⭐ ${w.rating} • ${w.distanceKm} km away'),
                           trailing: isSelected ? Icon(Icons.check_circle, color: AppColors.fireRed) : null,
@@ -69,9 +69,9 @@ class BookingSchedulingScreen extends ConsumerWidget {
                                 width: 70,
                                 margin: const EdgeInsets.only(right: 12),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.fireRed : (isDark ? AppColors.sleekBlack : Theme.of(context).colorScheme.surface),
+                                  color: isSelected ? AppColors.fireRed : Theme.of(context).colorScheme.surface,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: isSelected ? AppColors.fireRed : AppColors.daysGray.withValues(alpha: 0.2)),
+                                  border: Border.all(color: isSelected ? AppColors.fireRed : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
                                   boxShadow: [
                                     if (isSelected) BoxShadow(color: AppColors.fireRed.withValues(alpha: 0.3), blurRadius: 8, offset: Offset(0, 4))
                                   ]
@@ -83,7 +83,7 @@ class BookingSchedulingScreen extends ConsumerWidget {
                                       _getWeekday(date.weekday),
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: isWeekend ? AppColors.daysGray : (isSelected ? Theme.of(context).colorScheme.surface : AppColors.daysGray),
+                                        color: isWeekend ? Theme.of(context).colorScheme.onSurfaceVariant : (isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurfaceVariant),
                                       ),
                                     ),
                                     SizedBox(height: 4),
@@ -92,7 +92,7 @@ class BookingSchedulingScreen extends ConsumerWidget {
                                       style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: isWeekend ? AppColors.daysGray : (isSelected ? Theme.of(context).colorScheme.surface : (isDark ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface)),
+                                        color: isWeekend ? Theme.of(context).colorScheme.onSurfaceVariant : (isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface),
                                       ),
                                     ),
                                   ],
@@ -117,10 +117,10 @@ class BookingSchedulingScreen extends ConsumerWidget {
                               selected: isSelected,
                               selectedColor: AppColors.fireRed.withValues(alpha: 0.1),
                               labelStyle: TextStyle(
-                                color: isSelected ? AppColors.fireRed : (isDark ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface),
+                                color: isSelected ? AppColors.fireRed : Theme.of(context).colorScheme.onSurface,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               ),
-                              side: BorderSide(color: isSelected ? AppColors.fireRed : AppColors.daysGray.withValues(alpha: 0.3)),
+                              side: BorderSide(color: isSelected ? AppColors.fireRed : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
                               onSelected: (selected) {
                                 if (selected) controller.selectSlot(slot);
                               },

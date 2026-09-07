@@ -59,15 +59,12 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Theme.of(context).colorScheme.surface : AppColors.sleekBlack;
-    final bgColor = isDark ? AppColors.sleekBlack : Theme.of(context).colorScheme.surfaceContainerLow;
-    final surfaceColor = isDark ? AppColors.surface : Theme.of(context).colorScheme.surface;
+    final cs = Theme.of(context).colorScheme;
 
     return LayoutBuilder(builder: (context, constraints) {
       final isDesktop = constraints.maxWidth > 900;
       Widget inner = Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: cs.surface,
       appBar: ReVAppBar(
         title: Text('Update Password'),
       ),
@@ -78,56 +75,56 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
             padding: const EdgeInsets.all(32),
             margin: const EdgeInsets.symmetric(vertical: 24),
             decoration: BoxDecoration(
-              color: surfaceColor,
+              color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.26) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 20)],
+              boxShadow: [BoxShadow(color: cs.onSurface.withValues(alpha: 0.08), blurRadius: 20)],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.lock_reset, size: 64, color: AppColors.fireRed),
                 SizedBox(height: 16),
-                Text('Secure Your Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor), textAlign: TextAlign.center),
+                Text('Secure Your Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface), textAlign: TextAlign.center),
                 SizedBox(height: 8),
-                Text('Please enter a new password below.', style: TextStyle(color: AppColors.daysGray), textAlign: TextAlign.center),
+                Text('Please enter a new password below.', style: TextStyle(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
                 SizedBox(height: 32),
                 
                 if (_errorMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 16),
-                    color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
-                    child: Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                    color: cs.error.withValues(alpha: 0.1),
+                    child: Text(_errorMessage!, style: TextStyle(color: cs.error, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                   ),
                 
                 if (_successMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 16),
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                    child: Text(_successMessage!, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                    color: cs.primary.withValues(alpha: 0.1),
+                    child: Text(_successMessage!, style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                   ),
 
                 TextField(
                   controller: _passwordController,
-                  style: TextStyle(color: textColor),
+                  style: TextStyle(color: cs.onSurface),
                   decoration: InputDecoration(
                     labelText: 'New Password', 
-                    labelStyle: TextStyle(color: AppColors.daysGray),
+                    labelStyle: TextStyle(color: cs.onSurfaceVariant),
                     border: OutlineInputBorder(),
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.daysGray.withValues(alpha: 0.5)))
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: cs.outlineVariant))
                   ),
                   obscureText: true,
                 ),
                 SizedBox(height: 16),
                 TextField(
                   controller: _confirmPasswordController,
-                  style: TextStyle(color: textColor),
+                  style: TextStyle(color: cs.onSurface),
                   decoration: InputDecoration(
                     labelText: 'Confirm New Password', 
-                    labelStyle: TextStyle(color: AppColors.daysGray),
+                    labelStyle: TextStyle(color: cs.onSurfaceVariant),
                     border: OutlineInputBorder(),
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.daysGray.withValues(alpha: 0.5)))
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: cs.outlineVariant))
                   ),
                   obscureText: true,
                 ),
@@ -139,8 +136,8 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                     onPressed: (_isLoading || _successMessage != null) ? null : _updatePassword,
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed),
                     child: _isLoading 
-                      ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.surface, strokeWidth: 2))
-                      : Text('SAVE PASSWORD', style: TextStyle(color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                      ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: cs.surface, strokeWidth: 2))
+                      : Text('SAVE PASSWORD', style: TextStyle(color: cs.surface, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   ),
                 ),
               ],
