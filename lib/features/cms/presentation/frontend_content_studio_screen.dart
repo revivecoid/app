@@ -227,8 +227,23 @@ class _ContentTabState extends State<_ContentTab> {
   late TextEditingController _heroTitle, _heroSub, _heroCta;
   late TextEditingController _s1t, _s1d, _s2t, _s2d, _s3t, _s3d;
   late TextEditingController _cPhone, _cEmail, _cAddr;
-  // Support / FAQ page CMS fields
+  // Support / FAQ page
   late TextEditingController _supTitle, _supSub, _supPhone, _supEmail, _supEmergency;
+  // Feature highlight
+  late TextEditingController _ftTitle, _ftBody, _ftBadge;
+  // How It Works steps (1-4 title + desc)
+  late TextEditingController _st1t, _st1d, _st2t, _st2d, _st3t, _st3d, _st4t, _st4d;
+  // Trust badges (1-3 value + label)
+  late TextEditingController _b1v, _b1l, _b2v, _b2l, _b3v, _b3l;
+  // Footer
+  late TextEditingController _footer;
+  // About page
+  late TextEditingController _abTitle, _abTagline, _abStory, _abMission, _abVision;
+  late TextEditingController _stPartners, _stRating, _stJobs;
+  // Company values (1-4)
+  late TextEditingController _v1t, _v1s, _v2t, _v2s, _v3t, _v3s, _v4t, _v4s;
+  // Partner CTA
+  late TextEditingController _pcTitle, _pcSub;
   final _faqQ = <TextEditingController>[], _faqA = <TextEditingController>[];
   int _faqCnt = 3;
   bool _dirty = false;
@@ -252,7 +267,43 @@ class _ContentTabState extends State<_ContentTab> {
     _supSub       = TextEditingController(text: widget.s('support_page_subtitle', fb: 'Find answers to common questions or reach out to our team.'));
     _supPhone     = TextEditingController(text: widget.s('support_phone',         fb: '+62 800-123-456'));
     _supEmail     = TextEditingController(text: widget.s('support_email',         fb: 'support@re-v.co.id'));
-    _supEmergency = TextEditingController(text: widget.s('support_emergency',     fb: '+62 800-TOW-REVIVE'));
+    _supEmergency = TextEditingController(text: widget.s('support_emergency', fb: '+62 800-TOW-REVIVE'));
+    // Feature highlight
+    _ftTitle = TextEditingController(text: widget.s('feature_title', fb: 'Jabodetabek Certified Network'));
+    _ftBody  = TextEditingController(text: widget.s('feature_body',  fb: 'Over 38 OEM-compliant spray booths with digitized color-matching precision.'));
+    _ftBadge = TextEditingController(text: widget.s('feature_badge', fb: 'SLA < 48 Hrs'));
+    // How It Works
+    _st1t = TextEditingController(text: widget.s('step_1_title', fb: 'Snap Damage Photos'));
+    _st1d = TextEditingController(text: widget.s('step_1_desc',  fb: 'Take 3 clear photos around your vehicle dents, scratches, or panel gaps.'));
+    _st2t = TextEditingController(text: widget.s('step_2_title', fb: 'Instant AI Assessment'));
+    _st2d = TextEditingController(text: widget.s('step_2_desc',  fb: 'Get sub-millimeter part analysis and fixed-price estimate.'));
+    _st3t = TextEditingController(text: widget.s('step_3_title', fb: 'Select Hub & Bay'));
+    _st3d = TextEditingController(text: widget.s('step_3_desc',  fb: 'Choose your closest certified workshop and lock a priority slot.'));
+    _st4t = TextEditingController(text: widget.s('step_4_title', fb: 'Live Tracking to Handover'));
+    _st4d = TextEditingController(text: widget.s('step_4_desc',  fb: 'Watch real-time telemetry until delivery back to your driveway.'));
+    // Trust badges
+    _b1v = TextEditingController(text: widget.s('badge_1_value', fb: '38+'));       _b1l = TextEditingController(text: widget.s('badge_1_label', fb: 'Partner Bengkel'));
+    _b2v = TextEditingController(text: widget.s('badge_2_value', fb: '4.9/5'));     _b2l = TextEditingController(text: widget.s('badge_2_label', fb: 'Customer Rating'));
+    _b3v = TextEditingController(text: widget.s('badge_3_value', fb: '24 Month'));  _b3l = TextEditingController(text: widget.s('badge_3_label', fb: 'Paint Guarantee'));
+    // Footer
+    _footer = TextEditingController(text: widget.s('footer_copy', fb: '2026 re-V.co.id. Premium Automotive Body Repair, Powered by AI.'));
+    // About
+    _abTitle   = TextEditingController(text: widget.s('about_title',   fb: 'Tentang Revive'));
+    _abTagline = TextEditingController(text: widget.s('about_tagline', fb: 'Memimpin transformasi industri perbaikan otomotif Indonesia.'));
+    _abStory   = TextEditingController(text: widget.s('about_story',   fb: 'Revive lahir dari frustrasi nyata...'));
+    _abMission = TextEditingController(text: widget.s('about_mission', fb: 'Menjadikan perbaikan bodi kendaraan di Indonesia sepenuhnya transparan.'));
+    _abVision  = TextEditingController(text: widget.s('about_vision',  fb: 'Menjadi platform perbaikan otomotif #1 di Asia Tenggara.'));
+    _stPartners = TextEditingController(text: widget.s('stat_partners', fb: '38+'));
+    _stRating   = TextEditingController(text: widget.s('stat_rating',   fb: '4.9/5'));
+    _stJobs     = TextEditingController(text: widget.s('stat_jobs',     fb: '12,000+'));
+    // Values
+    _v1t = TextEditingController(text: widget.s('value_1_title', fb: 'Transparan')); _v1s = TextEditingController(text: widget.s('value_1_sub', fb: 'Estimasi biaya real, tidak ada biaya tersembunyi'));
+    _v2t = TextEditingController(text: widget.s('value_2_title', fb: 'Cepat'));      _v2s = TextEditingController(text: widget.s('value_2_sub', fb: 'Proses digital dari klaim hingga pengambilan kendaraan'));
+    _v3t = TextEditingController(text: widget.s('value_3_title', fb: 'Terpercaya')); _v3s = TextEditingController(text: widget.s('value_3_sub', fb: '90 hari garansi pengerjaan di semua mitra kami'));
+    _v4t = TextEditingController(text: widget.s('value_4_title', fb: 'Inovatif'));   _v4s = TextEditingController(text: widget.s('value_4_sub', fb: 'AI damage detection dan pricing terdepan di industri'));
+    // Partner CTA
+    _pcTitle = TextEditingController(text: widget.s('partner_cta_title', fb: 'Bergabung sebagai Partner Bengkel'));
+    _pcSub   = TextEditingController(text: widget.s('partner_cta_sub',   fb: 'Daftarkan bengkel Anda dan mulai terima order dari Revive.'));
     for (int i = 0; i < _faqCnt; i++) {
       _faqQ.add(TextEditingController(text: widget.s('faq_${i}_q')));
       _faqA.add(TextEditingController(text: widget.s('faq_${i}_a')));
@@ -261,9 +312,20 @@ class _ContentTabState extends State<_ContentTab> {
 
   @override
   void dispose() {
-    for (final c in [_heroTitle, _heroSub, _heroCta, _s1t, _s1d, _s2t, _s2d, _s3t, _s3d,
-      _cPhone, _cEmail, _cAddr, _supTitle, _supSub, _supPhone, _supEmail, _supEmergency,
-      ..._faqQ, ..._faqA]) c.dispose();
+    for (final c in [
+      _heroTitle, _heroSub, _heroCta,
+      _s1t, _s1d, _s2t, _s2d, _s3t, _s3d,
+      _cPhone, _cEmail, _cAddr,
+      _supTitle, _supSub, _supPhone, _supEmail, _supEmergency,
+      _ftTitle, _ftBody, _ftBadge,
+      _st1t, _st1d, _st2t, _st2d, _st3t, _st3d, _st4t, _st4d,
+      _b1v, _b1l, _b2v, _b2l, _b3v, _b3l, _footer,
+      _abTitle, _abTagline, _abStory, _abMission, _abVision,
+      _stPartners, _stRating, _stJobs,
+      _v1t, _v1s, _v2t, _v2s, _v3t, _v3s, _v4t, _v4s,
+      _pcTitle, _pcSub,
+      ..._faqQ, ..._faqA,
+    ]) c.dispose();
     super.dispose();
   }
 
@@ -278,14 +340,50 @@ class _ContentTabState extends State<_ContentTab> {
       widget.onSave('svc_2_desc', _s2d.text, cat: 'services'),
       widget.onSave('svc_3_title', _s3t.text, cat: 'services'),
       widget.onSave('svc_3_desc', _s3d.text, cat: 'services'),
-      widget.onSave('contact_phone',          _cPhone.text,     cat: 'contact'),
-      widget.onSave('contact_email',          _cEmail.text,     cat: 'contact'),
-      widget.onSave('contact_address',        _cAddr.text,      cat: 'contact'),
-      widget.onSave('support_page_title',     _supTitle.text,   cat: 'support'),
-      widget.onSave('support_page_subtitle',  _supSub.text,     cat: 'support'),
-      widget.onSave('support_phone',          _supPhone.text,   cat: 'support'),
-      widget.onSave('support_email',          _supEmail.text,   cat: 'support'),
-      widget.onSave('support_emergency',      _supEmergency.text, cat: 'support'),
+      widget.onSave('contact_phone',         _cPhone.text,       cat: 'contact'),
+      widget.onSave('contact_email',         _cEmail.text,       cat: 'contact'),
+      widget.onSave('contact_address',       _cAddr.text,        cat: 'contact'),
+      widget.onSave('support_page_title',    _supTitle.text,     cat: 'support'),
+      widget.onSave('support_page_subtitle', _supSub.text,       cat: 'support'),
+      widget.onSave('support_phone',         _supPhone.text,     cat: 'support'),
+      widget.onSave('support_email',         _supEmail.text,     cat: 'support'),
+      widget.onSave('support_emergency',     _supEmergency.text, cat: 'support'),
+      widget.onSave('feature_title',         _ftTitle.text,      cat: 'landing'),
+      widget.onSave('feature_body',          _ftBody.text,       cat: 'landing'),
+      widget.onSave('feature_badge',         _ftBadge.text,      cat: 'landing'),
+      widget.onSave('step_1_title',          _st1t.text,         cat: 'landing'),
+      widget.onSave('step_1_desc',           _st1d.text,         cat: 'landing'),
+      widget.onSave('step_2_title',          _st2t.text,         cat: 'landing'),
+      widget.onSave('step_2_desc',           _st2d.text,         cat: 'landing'),
+      widget.onSave('step_3_title',          _st3t.text,         cat: 'landing'),
+      widget.onSave('step_3_desc',           _st3d.text,         cat: 'landing'),
+      widget.onSave('step_4_title',          _st4t.text,         cat: 'landing'),
+      widget.onSave('step_4_desc',           _st4d.text,         cat: 'landing'),
+      widget.onSave('badge_1_value',         _b1v.text,          cat: 'landing'),
+      widget.onSave('badge_1_label',         _b1l.text,          cat: 'landing'),
+      widget.onSave('badge_2_value',         _b2v.text,          cat: 'landing'),
+      widget.onSave('badge_2_label',         _b2l.text,          cat: 'landing'),
+      widget.onSave('badge_3_value',         _b3v.text,          cat: 'landing'),
+      widget.onSave('badge_3_label',         _b3l.text,          cat: 'landing'),
+      widget.onSave('footer_copy',           _footer.text,       cat: 'landing'),
+      widget.onSave('about_title',           _abTitle.text,      cat: 'about'),
+      widget.onSave('about_tagline',         _abTagline.text,    cat: 'about'),
+      widget.onSave('about_story',           _abStory.text,      cat: 'about'),
+      widget.onSave('about_mission',         _abMission.text,    cat: 'about'),
+      widget.onSave('about_vision',          _abVision.text,     cat: 'about'),
+      widget.onSave('stat_partners',         _stPartners.text,   cat: 'about'),
+      widget.onSave('stat_rating',           _stRating.text,     cat: 'about'),
+      widget.onSave('stat_jobs',             _stJobs.text,       cat: 'about'),
+      widget.onSave('value_1_title',         _v1t.text,          cat: 'about'),
+      widget.onSave('value_1_sub',           _v1s.text,          cat: 'about'),
+      widget.onSave('value_2_title',         _v2t.text,          cat: 'about'),
+      widget.onSave('value_2_sub',           _v2s.text,          cat: 'about'),
+      widget.onSave('value_3_title',         _v3t.text,          cat: 'about'),
+      widget.onSave('value_3_sub',           _v3s.text,          cat: 'about'),
+      widget.onSave('value_4_title',         _v4t.text,          cat: 'about'),
+      widget.onSave('value_4_sub',           _v4s.text,          cat: 'about'),
+      widget.onSave('partner_cta_title',     _pcTitle.text,      cat: 'about'),
+      widget.onSave('partner_cta_sub',       _pcSub.text,        cat: 'about'),
     ];
     for (int i = 0; i < _faqCnt; i++) {
       saves.add(widget.onSave('faq_${i}_q', _faqQ[i].text, cat: 'faq'));
@@ -381,6 +479,98 @@ class _ContentTabState extends State<_ContentTab> {
           _Field(cs: cs, label: 'Email', ctrl: _cEmail, hint: 'hello@revive.co.id', onChange: _mark),
           const SizedBox(height: 12),
           _Field(cs: cs, label: 'Address', ctrl: _cAddr, hint: 'City, Country', onChange: _mark),
+        ]),
+        const SizedBox(height: 16),
+        // ── Landing: Feature Highlight ────────────────────────────────────────
+        _Card(cs: cs, title: 'Feature Highlight Card', icon: Icons.auto_awesome_outlined, children: [
+          _Field(cs: cs, label: 'Title',       ctrl: _ftTitle, hint: 'e.g. Jabodetabek Certified Network', onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Body Copy',   ctrl: _ftBody,  hint: 'Description text', maxLines: 3, onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Badge Label', ctrl: _ftBadge, hint: 'e.g. SLA < 48 Hrs', onChange: _mark),
+        ]),
+        const SizedBox(height: 16),
+        // ── Landing: How It Works ────────────────────────────────────────────
+        _Card(cs: cs, title: 'How It Works Steps', icon: Icons.linear_scale_rounded, children: [
+          for (final step in [
+            ('Step 1', _st1t, _st1d), ('Step 2', _st2t, _st2d),
+            ('Step 3', _st3t, _st3d), ('Step 4', _st4t, _st4d),
+          ]) ...[
+            if (step != ('Step 1', _st1t, _st1d)) const SizedBox(height: 16),
+            Text(step.$1, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
+            const SizedBox(height: 8),
+            _Field(cs: cs, label: 'Title',       ctrl: step.$2, hint: 'Step title',       onChange: _mark),
+            const SizedBox(height: 8),
+            _Field(cs: cs, label: 'Description', ctrl: step.$3, hint: 'Step description', maxLines: 2, onChange: _mark),
+          ],
+        ]),
+        const SizedBox(height: 16),
+        // ── Landing: Trust Badges ────────────────────────────────────────────
+        _Card(cs: cs, title: 'Trust Badges', icon: Icons.verified_outlined, children: [
+          for (final badge in [
+            ('Badge 1', _b1v, _b1l), ('Badge 2', _b2v, _b2l), ('Badge 3', _b3v, _b3l),
+          ]) ...[
+            if (badge != ('Badge 1', _b1v, _b1l)) const SizedBox(height: 12),
+            Text(badge.$1, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: _Field(cs: cs, label: 'Value', ctrl: badge.$2, hint: 'e.g. 38+',           onChange: _mark)),
+              const SizedBox(width: 12),
+              Expanded(child: _Field(cs: cs, label: 'Label', ctrl: badge.$3, hint: 'e.g. Partner Bengkel', onChange: _mark)),
+            ]),
+          ],
+        ]),
+        const SizedBox(height: 16),
+        // ── Footer ────────────────────────────────────────────────────────────
+        _Card(cs: cs, title: 'Footer', icon: Icons.horizontal_rule_rounded, children: [
+          _Field(cs: cs, label: 'Copyright Line', ctrl: _footer, hint: '2026 re-V.co.id...', onChange: _mark),
+        ]),
+        const SizedBox(height: 16),
+        // ── About Us page ─────────────────────────────────────────────────────
+        _Card(cs: cs, title: 'About Us Page', icon: Icons.info_outline_rounded, children: [
+          _Field(cs: cs, label: 'Page Title',    ctrl: _abTitle,   hint: 'Tentang Revive', onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Tagline',       ctrl: _abTagline, hint: 'One-liner tagline', maxLines: 2, onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Our Story',     ctrl: _abStory,   hint: 'Company origin story', maxLines: 5, onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Mission',       ctrl: _abMission, hint: 'Misi Kami', maxLines: 3, onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Vision',        ctrl: _abVision,  hint: 'Visi Kami', maxLines: 3, onChange: _mark),
+          const SizedBox(height: 14),
+          Text('Statistics Strip', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: _Field(cs: cs, label: 'Partners',  ctrl: _stPartners, hint: '38+',     onChange: _mark)),
+            const SizedBox(width: 8),
+            Expanded(child: _Field(cs: cs, label: 'Rating',    ctrl: _stRating,   hint: '4.9/5',  onChange: _mark)),
+            const SizedBox(width: 8),
+            Expanded(child: _Field(cs: cs, label: 'Cars Fixed', ctrl: _stJobs,    hint: '12,000+', onChange: _mark)),
+          ]),
+        ]),
+        const SizedBox(height: 16),
+        // ── Company Values ────────────────────────────────────────────────────
+        _Card(cs: cs, title: 'Company Values', icon: Icons.handshake_outlined, children: [
+          for (final v in [
+            ('Value 1', _v1t, _v1s), ('Value 2', _v2t, _v2s),
+            ('Value 3', _v3t, _v3s), ('Value 4', _v4t, _v4s),
+          ]) ...[
+            if (v != ('Value 1', _v1t, _v1s)) const SizedBox(height: 12),
+            Text(v.$1, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: _Field(cs: cs, label: 'Title',    ctrl: v.$2, hint: 'e.g. Transparan', onChange: _mark)),
+              const SizedBox(width: 12),
+              Expanded(child: _Field(cs: cs, label: 'Subtitle', ctrl: v.$3, hint: 'Short description', onChange: _mark)),
+            ]),
+          ],
+        ]),
+        const SizedBox(height: 16),
+        // ── Partner CTA ───────────────────────────────────────────────────────
+        _Card(cs: cs, title: 'Partner CTA Banner', icon: Icons.store_outlined, children: [
+          _Field(cs: cs, label: 'Title',    ctrl: _pcTitle, hint: 'Bergabung sebagai Partner Bengkel', onChange: _mark),
+          const SizedBox(height: 12),
+          _Field(cs: cs, label: 'Subtitle', ctrl: _pcSub,   hint: 'Daftarkan bengkel Anda...', maxLines: 2, onChange: _mark),
         ]),
         const SizedBox(height: 80),
       ]),
