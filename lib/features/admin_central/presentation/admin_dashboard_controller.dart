@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// --- DOMAIN MODELS ---
+// ─── DOMAIN MODELS ────────────────────────────────────────────────────────────
 
 class AdminJobNode {
   final String id;
@@ -11,10 +11,12 @@ class AdminJobNode {
   final String carIdentity;
   final String status;
   final String partnerName;
+  final String? partnerId;
   final DateTime? scheduledDate;
   final DateTime createdAt;
   final DateTime lastUpdatedAt;
   final String? paymentProofUrl;
+  final double? finalPrice;
 
   AdminJobNode({
     required this.id,
@@ -22,23 +24,33 @@ class AdminJobNode {
     required this.carIdentity,
     required this.status,
     required this.partnerName,
+    this.partnerId,
     this.scheduledDate,
     required this.createdAt,
     required this.lastUpdatedAt,
     this.paymentProofUrl,
+    this.finalPrice,
   });
 
-  AdminJobNode copyWith({String? status, DateTime? lastUpdatedAt, String? paymentProofUrl}) {
+  AdminJobNode copyWith({
+    String? status,
+    String? partnerName,
+    String? partnerId,
+    DateTime? lastUpdatedAt,
+    String? paymentProofUrl,
+  }) {
     return AdminJobNode(
       id: id,
       customerName: customerName,
       carIdentity: carIdentity,
       status: status ?? this.status,
-      partnerName: partnerName,
+      partnerName: partnerName ?? this.partnerName,
+      partnerId: partnerId ?? this.partnerId,
       scheduledDate: scheduledDate,
       createdAt: createdAt,
       lastUpdatedAt: lastUpdatedAt ?? this.lastUpdatedAt,
       paymentProofUrl: paymentProofUrl ?? this.paymentProofUrl,
+      finalPrice: finalPrice,
     );
   }
 
@@ -48,6 +60,9 @@ class AdminJobNode {
     if (diff.inHours > 0) return '${diff.inHours}h ${diff.inMinutes % 60}m';
     return '${diff.inMinutes}m';
   }
+
+  bool get isPaid => status == 'completed' || status == '4_paid' || status == '5_scheduled';
+  bool get isUnassigned => partnerId == null || partnerId!.isEmpty;
 }
 
 class CustomerCrmNode {
@@ -101,6 +116,8 @@ class PartnerCrmNode {
   final double avgVelocityDays;
   final int disputeCount;
   final int unreadMessageCount;
+  final String? serviceArea;
+  final int? bayCapacity;
 
   PartnerCrmNode({
     required this.id,
@@ -111,6 +128,8 @@ class PartnerCrmNode {
     required this.avgVelocityDays,
     required this.disputeCount,
     this.unreadMessageCount = 0,
+    this.serviceArea,
+    this.bayCapacity,
   });
 }
 
@@ -122,7 +141,7 @@ class AiConfigNode {
   final double tokenPriceParam;
   final int priorityOrder;
   final String apiBaseUrl;
-  final String payloadFormat; // 'gemini' | 'openai' | 'groq'
+  final String payloadFormat;
 
   AiConfigNode({
     required this.id,
@@ -163,7 +182,13 @@ class BreachAlert {
   });
 }
 
-// --- STATE MANAGEMENT ---
+// ─── SORT / FILTER ────────────────────────────────────────────────────────────
+
+enum AssignSortField { createdAt, customerName, vehicle, assignStatus, paymentStatus }
+enum AssignStatusFilter { all, unassigned, assigned, inProgress }
+enum PaymentStatusFilter { all, pending, paid, overdue }
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
 
 class AdminDashboardState {
   final int currentViewIndex;
@@ -178,6 +203,24 @@ class AdminDashboardState {
   final String? errorMessage;
   final String searchQuery;
 
+  // Live admin identity
+  final String adminName;
+  final String adminRole;
+  final String adminLevel; // 'sysadmin' | 'admin' — future: from profiles.admin_level
+  final String activeHubName;
+
+  // Daily settlement
+  final double dailySettlementAmount;
+  final bool settlementLoading;
+
+  // Assign jobs sort/filter
+  final AssignSortField assignSortField;
+  final bool assignSortAsc;
+  final AssignStatusFilter assignStatusFilter;
+  final PaymentStatusFilter assignPaymentFilter;
+  final DateTime? assignDateFrom;
+  final DateTime? assignDateTo;
+
   AdminDashboardState({
     this.currentViewIndex = 0,
     this.activeJobs = const [],
@@ -190,6 +233,18 @@ class AdminDashboardState {
     this.isLoading = true,
     this.errorMessage,
     this.searchQuery = '',
+    this.adminName = 'Loading...',
+    this.adminRole = '',
+    this.adminLevel = 'admin',
+    this.activeHubName = '—',
+    this.dailySettlementAmount = 0,
+    this.settlementLoading = true,
+    this.assignSortField = AssignSortField.createdAt,
+    this.assignSortAsc = true,
+    this.assignStatusFilter = AssignStatusFilter.all,
+    this.assignPaymentFilter = PaymentStatusFilter.all,
+    this.assignDateFrom,
+    this.assignDateTo,
   });
 
   AdminDashboardState copyWith({
@@ -204,6 +259,18 @@ class AdminDashboardState {
     bool? isLoading,
     String? errorMessage,
     String? searchQuery,
+    String? adminName,
+    String? adminRole,
+    String? adminLevel,
+    String? activeHubName,
+    double? dailySettlementAmount,
+    bool? settlementLoading,
+    AssignSortField? assignSortField,
+    bool? assignSortAsc,
+    AssignStatusFilter? assignStatusFilter,
+    PaymentStatusFilter? assignPaymentFilter,
+    DateTime? assignDateFrom,
+    DateTime? assignDateTo,
   }) {
     return AdminDashboardState(
       currentViewIndex: currentViewIndex ?? this.currentViewIndex,
@@ -217,13 +284,99 @@ class AdminDashboardState {
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage ?? this.errorMessage,
       searchQuery: searchQuery ?? this.searchQuery,
+      adminName: adminName ?? this.adminName,
+      adminRole: adminRole ?? this.adminRole,
+      adminLevel: adminLevel ?? this.adminLevel,
+      activeHubName: activeHubName ?? this.activeHubName,
+      dailySettlementAmount: dailySettlementAmount ?? this.dailySettlementAmount,
+      settlementLoading: settlementLoading ?? this.settlementLoading,
+      assignSortField: assignSortField ?? this.assignSortField,
+      assignSortAsc: assignSortAsc ?? this.assignSortAsc,
+      assignStatusFilter: assignStatusFilter ?? this.assignStatusFilter,
+      assignPaymentFilter: assignPaymentFilter ?? this.assignPaymentFilter,
+      assignDateFrom: assignDateFrom ?? this.assignDateFrom,
+      assignDateTo: assignDateTo ?? this.assignDateTo,
     );
+  }
+
+  // ── Derived: filtered + sorted assign jobs list ──────────────────────────────
+  List<AdminJobNode> get assignJobsFiltered {
+    var jobs = List<AdminJobNode>.from(activeJobs);
+
+    // Status filter
+    switch (assignStatusFilter) {
+      case AssignStatusFilter.unassigned:
+        jobs = jobs.where((j) => j.isUnassigned).toList();
+      case AssignStatusFilter.assigned:
+        jobs = jobs.where((j) => !j.isUnassigned && j.status == '3_booked').toList();
+      case AssignStatusFilter.inProgress:
+        jobs = jobs.where((j) => j.status == '6_in_progress').toList();
+      case AssignStatusFilter.all:
+        break;
+    }
+
+    // Payment filter
+    switch (assignPaymentFilter) {
+      case PaymentStatusFilter.paid:
+        jobs = jobs.where((j) => j.isPaid).toList();
+      case PaymentStatusFilter.pending:
+        jobs = jobs.where((j) => !j.isPaid && j.status != 'overdue').toList();
+      case PaymentStatusFilter.overdue:
+        jobs = jobs.where((j) => j.status == 'overdue').toList();
+      case PaymentStatusFilter.all:
+        break;
+    }
+
+    // Date filter
+    if (assignDateFrom != null) {
+      jobs = jobs.where((j) => j.createdAt.isAfter(assignDateFrom!)).toList();
+    }
+    if (assignDateTo != null) {
+      final to = assignDateTo!.add(const Duration(days: 1));
+      jobs = jobs.where((j) => j.createdAt.isBefore(to)).toList();
+    }
+
+    // Search
+    if (searchQuery.isNotEmpty) {
+      final q = searchQuery.toLowerCase();
+      jobs = jobs.where((j) =>
+        j.customerName.toLowerCase().contains(q) ||
+        j.carIdentity.toLowerCase().contains(q) ||
+        j.id.toLowerCase().contains(q) ||
+        j.partnerName.toLowerCase().contains(q)
+      ).toList();
+    }
+
+    // Sort
+    jobs.sort((a, b) {
+      int cmp;
+      switch (assignSortField) {
+        case AssignSortField.customerName:
+          cmp = a.customerName.compareTo(b.customerName);
+        case AssignSortField.vehicle:
+          cmp = a.carIdentity.compareTo(b.carIdentity);
+        case AssignSortField.assignStatus:
+          cmp = a.status.compareTo(b.status);
+        case AssignSortField.paymentStatus:
+          cmp = (a.isPaid ? 1 : 0).compareTo(b.isPaid ? 1 : 0);
+        case AssignSortField.createdAt:
+          cmp = a.createdAt.compareTo(b.createdAt);
+      }
+      return assignSortAsc ? cmp : -cmp;
+    });
+
+    return jobs;
   }
 }
 
-final adminDashboardProvider = StateNotifierProvider<AdminDashboardController, AdminDashboardState>((ref) {
+// ─── PROVIDER ─────────────────────────────────────────────────────────────────
+
+final adminDashboardProvider =
+    StateNotifierProvider<AdminDashboardController, AdminDashboardState>((ref) {
   return AdminDashboardController(Supabase.instance.client);
 });
+
+// ─── CONTROLLER ───────────────────────────────────────────────────────────────
 
 class AdminDashboardController extends StateNotifier<AdminDashboardState> {
   final SupabaseClient _supabase;
@@ -247,36 +400,124 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       await Future.wait([
+        _fetchAdminProfile(),
         _fetchActiveJobs(),
         _fetchCrmData(),
         _fetchAiConfigs(),
+        _fetchDailySettlement(),
       ]);
       _subscribeToJobMutations();
       _startExceptionPolling();
       _subscribeToUnreadMessages();
       state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Failed to initialize master command center: $e');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to initialize master command center: $e',
+      );
     }
   }
+
+  // ── Admin profile ─────────────────────────────────────────────────────────
+
+  Future<void> _fetchAdminProfile() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      final res = await _supabase
+          .from('profiles')
+          .select('full_name, role, hub_id')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (res == null) return;
+
+      final fullName = res['full_name']?.toString() ?? user.email ?? 'Admin';
+      final role = res['role']?.toString() ?? 'master_admin';
+
+      // Fetch hub name if hub_id is set
+      String hubName = '—';
+      final hubId = res['hub_id']?.toString();
+      if (hubId != null && hubId.isNotEmpty) {
+        final hubRes = await _supabase
+            .from('partners')
+            .select('shop_name')
+            .eq('id', hubId)
+            .maybeSingle();
+        hubName = hubRes?['shop_name']?.toString() ?? '—';
+      } else {
+        // Default: pick first active partner as active hub display
+        final firstPartner = await _supabase
+            .from('partners')
+            .select('shop_name')
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle();
+        hubName = firstPartner?['shop_name']?.toString() ?? '—';
+      }
+
+      if (!mounted) return;
+      state = state.copyWith(
+        adminName: fullName,
+        adminRole: role,
+        adminLevel: 'admin', // future: from profiles.admin_level when column exists
+        activeHubName: hubName,
+      );
+    } catch (e) {
+      debugPrint('Admin profile fetch error: $e');
+    }
+  }
+
+  // ── Daily settlement ──────────────────────────────────────────────────────
+
+  Future<void> _fetchDailySettlement() async {
+    try {
+      state = state.copyWith(settlementLoading: true);
+      final today = DateTime.now();
+      final todayStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+      final res = await _supabase
+          .from('repair_jobs')
+          .select('final_price')
+          .eq('status', 'completed')
+          .gte('created_at', '${todayStr}T00:00:00')
+          .lte('created_at', '${todayStr}T23:59:59');
+
+      double total = 0;
+      for (final row in (res as List)) {
+        final price = row['final_price'];
+        if (price != null) {
+          total += (price as num).toDouble();
+        }
+      }
+
+      if (!mounted) return;
+      state = state.copyWith(
+        dailySettlementAmount: total,
+        settlementLoading: false,
+      );
+    } catch (e) {
+      debugPrint('Settlement fetch error: $e');
+      state = state.copyWith(settlementLoading: false);
+    }
+  }
+
+  // ── Jobs ──────────────────────────────────────────────────────────────────
 
   void _subscribeToUnreadMessages() {
     _messageSub = _supabase
         .from('partner_messages')
-        .stream(primaryKey: ['id'])
-        .listen((data) {
+        .stream(primaryKey: ['id']).listen((data) {
       final currentUserId = _supabase.auth.currentUser?.id;
       final Map<String, int> counts = {};
-      
       for (final row in data) {
         if (row['sender_id'] != currentUserId && row['is_read'] == false) {
           final pId = row['partner_id'] as String;
           counts[pId] = (counts[pId] ?? 0) + 1;
         }
       }
-      
       if (!mounted) return;
-      
       final updatedPartners = state.partners.map((p) {
         final count = counts[p.id] ?? 0;
         return PartnerCrmNode(
@@ -288,40 +529,38 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
           avgVelocityDays: p.avgVelocityDays,
           disputeCount: p.disputeCount,
           unreadMessageCount: count,
+          serviceArea: p.serviceArea,
+          bayCapacity: p.bayCapacity,
         );
       }).toList();
-      
       state = state.copyWith(partners: updatedPartners);
     });
   }
 
-  void changeView(int index) {
-    state = state.copyWith(currentViewIndex: index);
-  }
+  void changeView(int index) => state = state.copyWith(currentViewIndex: index);
 
-  void setSearchQuery(String query) {
-    state = state.copyWith(searchQuery: query);
-  }
-
-  // --- VIEW A: MATRIX & REALTIME STREAM ---
+  void setSearchQuery(String query) => state = state.copyWith(searchQuery: query);
 
   Future<void> _fetchActiveJobs() async {
-    // Left Join profile, vehicle, and partner names natively
     final response = await _supabase.from('repair_jobs').select('''
-      id, status, scheduled_date, created_at,
+      id, status, scheduled_date, created_at, partner_id, final_price,
       profiles:customer_id (full_name),
       vehicles:vehicle_id (make, model, license_plate),
       partners:partner_id (shop_name),
       repair_photos (step_context, r2_file_key)
-    ''').neq('status', '9_done'); // Only track active
+    ''').neq('status', '9_done');
 
-    final cdnBucketPath = _supabase.storage.from('revive-photos').getPublicUrl('');
+    final cdnBucketPath =
+        _supabase.storage.from('revive-photos').getPublicUrl('');
 
     final List<AdminJobNode> jobs = (response as List).map((job) {
-      final customerData = job['profiles'] as Map<String, dynamic>? ?? {};
-      final vehicleData = job['vehicles'] as Map<String, dynamic>? ?? {};
-      final partnerData = job['partners'] as Map<String, dynamic>? ?? {};
-      
+      final customerData =
+          job['profiles'] as Map<String, dynamic>? ?? {};
+      final vehicleData =
+          job['vehicles'] as Map<String, dynamic>? ?? {};
+      final partnerData =
+          job['partners'] as Map<String, dynamic>? ?? {};
+
       final photos = (job['repair_photos'] as List?) ?? [];
       String? proofUrl;
       for (final p in photos) {
@@ -334,15 +573,24 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
 
       return AdminJobNode(
         id: job['id'].toString(),
-        customerName: customerData['full_name']?.toString() ?? 'Unknown User',
-        carIdentity: '${vehicleData['make'] ?? ''} ${vehicleData['model'] ?? ''} - ${vehicleData['license_plate'] ?? ''}',
+        customerName:
+            customerData['full_name']?.toString() ?? 'Unknown User',
+        carIdentity:
+            '${vehicleData['make'] ?? ''} ${vehicleData['model'] ?? ''} - ${vehicleData['license_plate'] ?? ''}',
         status: job['status'].toString(),
-        partnerName: partnerData['shop_name']?.toString() ?? 'Unassigned',
-        scheduledDate: job['scheduled_date'] != null ? DateTime.parse(job['scheduled_date'].toString()) : null,
+        partnerName:
+            partnerData['shop_name']?.toString() ?? 'Unassigned',
+        partnerId: job['partner_id']?.toString(),
+        scheduledDate: job['scheduled_date'] != null
+            ? DateTime.parse(job['scheduled_date'].toString())
+            : null,
         createdAt: DateTime.parse(job['created_at'].toString()),
-        // If we had a state_changed_at col we'd use it, simulating via now if unknown
-        lastUpdatedAt: DateTime.now().subtract(const Duration(hours: 1)),
+        lastUpdatedAt:
+            DateTime.now().subtract(const Duration(hours: 1)),
         paymentProofUrl: proofUrl,
+        finalPrice: job['final_price'] != null
+            ? (job['final_price'] as num).toDouble()
+            : null,
       );
     }).toList();
 
@@ -360,28 +608,27 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
           callback: (payload) {
             final jobId = payload.newRecord['id'].toString();
             final newStatus = payload.newRecord['status'].toString();
-
-            // 1. Update UI Matrix State
-            final existingJobIndex = state.activeJobs.indexWhere((j) => j.id == jobId);
+            final existingJobIndex =
+                state.activeJobs.indexWhere((j) => j.id == jobId);
             if (existingJobIndex != -1) {
               final job = state.activeJobs[existingJobIndex];
-              final updatedJobs = List<AdminJobNode>.from(state.activeJobs);
+              final updatedJobs =
+                  List<AdminJobNode>.from(state.activeJobs);
               updatedJobs[existingJobIndex] = job.copyWith(
                 status: newStatus,
                 lastUpdatedAt: DateTime.now(),
               );
-
-              // 2. Evaluate Global Toast Exception rule for View C
               List<String> newToasts = List.from(state.toastQueue);
               if (newStatus == '7_finished') {
-                newToasts.add('CRITICAL CHECKOUT: Job $jobId (${job.customerName}) has finished repairs. Needs validation.');
+                newToasts.add(
+                    'CRITICAL CHECKOUT: Job $jobId (${job.customerName}) finished. Needs validation.');
               } else if (newStatus == '8_awaiting_delivery') {
-                newToasts.add('DISPATCH READY: Job $jobId is awaiting customer delivery protocol.');
+                newToasts.add(
+                    'DISPATCH READY: Job $jobId awaiting delivery protocol.');
               }
-
-              state = state.copyWith(activeJobs: updatedJobs, toastQueue: newToasts);
+              state = state.copyWith(
+                  activeJobs: updatedJobs, toastQueue: newToasts);
             } else {
-              // It's a new job entering active pipeline, re-fetch joins
               _fetchActiveJobs();
             }
           },
@@ -390,54 +637,138 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
 
   Future<void> overrideJobStatus(String jobId, String newStatus) async {
     try {
-      await _supabase.from('repair_jobs').update({'status': newStatus}).eq('id', jobId);
-      // Realtime listener catches this and updates the UI Matrix automatically.
+      await _supabase
+          .from('repair_jobs')
+          .update({'status': newStatus}).eq('id', jobId);
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Manual override failed: $e');
+      state =
+          state.copyWith(errorMessage: 'Manual override failed: $e');
     }
   }
 
   void popToast() {
     if (state.toastQueue.isNotEmpty) {
-      final updatedQueue = List<String>.from(state.toastQueue)..removeAt(0);
+      final updatedQueue =
+          List<String>.from(state.toastQueue)..removeAt(0);
       state = state.copyWith(toastQueue: updatedQueue);
     }
   }
 
-  // --- VIEW B: CRM PORTAL ---
+  // ── Assign Jobs ───────────────────────────────────────────────────────────
+
+  Future<void> assignJobToPartner(
+      String jobId, String partnerId, String partnerName) async {
+    try {
+      await _supabase.from('repair_jobs').update({
+        'partner_id': partnerId,
+        'status': '3_booked',
+      }).eq('id', jobId);
+
+      final idx = state.activeJobs.indexWhere((j) => j.id == jobId);
+      if (idx != -1) {
+        final updated = List<AdminJobNode>.from(state.activeJobs);
+        updated[idx] = state.activeJobs[idx].copyWith(
+          status: '3_booked',
+          partnerName: partnerName,
+          partnerId: partnerId,
+          lastUpdatedAt: DateTime.now(),
+        );
+        state = state.copyWith(activeJobs: updated);
+      }
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Assignment failed: $e');
+    }
+  }
+
+  Future<void> unassignJob(String jobId) async {
+    try {
+      await _supabase.from('repair_jobs').update({
+        'partner_id': null,
+        'status': '2_estimated',
+      }).eq('id', jobId);
+
+      final idx = state.activeJobs.indexWhere((j) => j.id == jobId);
+      if (idx != -1) {
+        final updated = List<AdminJobNode>.from(state.activeJobs);
+        updated[idx] = state.activeJobs[idx].copyWith(
+          status: '2_estimated',
+          partnerName: 'Unassigned',
+          partnerId: '',
+          lastUpdatedAt: DateTime.now(),
+        );
+        state = state.copyWith(activeJobs: updated);
+      }
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Unassign failed: $e');
+    }
+  }
+
+  // ── Assign sort / filter ──────────────────────────────────────────────────
+
+  void setAssignSort(AssignSortField field) {
+    if (state.assignSortField == field) {
+      state = state.copyWith(assignSortAsc: !state.assignSortAsc);
+    } else {
+      state =
+          state.copyWith(assignSortField: field, assignSortAsc: true);
+    }
+  }
+
+  void setAssignStatusFilter(AssignStatusFilter f) =>
+      state = state.copyWith(assignStatusFilter: f);
+
+  void setAssignPaymentFilter(PaymentStatusFilter f) =>
+      state = state.copyWith(assignPaymentFilter: f);
+
+  void setAssignDateRange(DateTime? from, DateTime? to) =>
+      state = state.copyWith(assignDateFrom: from, assignDateTo: to);
+
+  // ── CRM ───────────────────────────────────────────────────────────────────
 
   Future<void> _fetchCrmData() async {
-    // 1. Fetch Profiles explicitly marked as customer
-    final profilesRes = await _supabase.from('profiles').select().eq('role', 'customer');
-    final List<CustomerCrmNode> loadedCustomers = (profilesRes as List).map((p) {
+    final profilesRes = await _supabase
+        .from('profiles')
+        .select()
+        .eq('role', 'customer');
+    final List<CustomerCrmNode> loadedCustomers =
+        (profilesRes as List).map((p) {
       return CustomerCrmNode(
         id: p['id'].toString(),
         fullName: p['full_name']?.toString() ?? 'Unregistered',
         email: p['email'].toString(),
         phone: p['phone']?.toString() ?? 'N/A',
-        lifetimeValue: 0.0, // Aggregate logic omitted for speed, structurally typed
-        activeJobs: 1,      // Computed property simulation
+        lifetimeValue: 0.0,
+        activeJobs: 1,
         adminNotes: 'Standard account.',
       );
     }).toList();
 
-    // 2. Fetch Partner Health
-    final partnersRes = await _supabase.from('partners').select();
-    final List<PartnerCrmNode> loadedPartners = (partnersRes as List).map((p) {
+    final partnersRes =
+        await _supabase.from('partners').select();
+    final List<PartnerCrmNode> loadedPartners =
+        (partnersRes as List).map((p) {
       return PartnerCrmNode(
         id: p['id'].toString(),
         shopName: p['shop_name'].toString(),
         tier: p['tier']?.toString() ?? 'standard',
         isActive: p['is_active'] as bool? ?? true,
-        activeVolume: state.activeJobs.where((j) => j.partnerName == p['shop_name'].toString()).length,
+        activeVolume: state.activeJobs
+            .where((j) =>
+                j.partnerName == p['shop_name'].toString())
+            .length,
         avgVelocityDays: 4.2,
         disputeCount: 0,
+        serviceArea: p['service_area']?.toString(),
+        bayCapacity: p['bay_capacity'] as int?,
       );
     }).toList();
 
-    // 3. Fetch Pending Applications
-    final appsRes = await _supabase.from('partner_applications').select().eq('status', 'pending');
-    final List<PartnerApplicationNode> loadedApplications = (appsRes as List).map((a) {
+    final appsRes = await _supabase
+        .from('partner_applications')
+        .select()
+        .eq('status', 'pending');
+    final List<PartnerApplicationNode> loadedApplications =
+        (appsRes as List).map((a) {
       return PartnerApplicationNode(
         id: a['id'].toString(),
         shopName: a['shop_name'].toString(),
@@ -450,44 +781,55 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       );
     }).toList();
 
-    state = state.copyWith(customers: loadedCustomers, partners: loadedPartners, pendingApplications: loadedApplications);
+    state = state.copyWith(
+      customers: loadedCustomers,
+      partners: loadedPartners,
+      pendingApplications: loadedApplications,
+    );
   }
 
   Future<void> approvePartnerApplication(String applicationId) async {
     try {
-      final res = await _supabase.functions.invoke(
-        'approve-partner',
-        body: {'applicationId': applicationId},
-      );
+      final res = await _supabase.functions
+          .invoke('approve-partner', body: {'applicationId': applicationId});
       if (res.status == 200) {
-        // Remove from pending list
-        final updatedApps = state.pendingApplications.where((a) => a.id != applicationId).toList();
+        final updatedApps = state.pendingApplications
+            .where((a) => a.id != applicationId)
+            .toList();
         state = state.copyWith(pendingApplications: updatedApps);
-        // Refresh CRM data to see the new partner
         _fetchCrmData();
       } else {
         throw Exception(res.data['error'] ?? 'Unknown error');
       }
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to approve application: $e');
+      state = state.copyWith(
+          errorMessage: 'Failed to approve application: $e');
     }
   }
 
   Future<void> declinePartnerApplication(String applicationId) async {
     try {
-      await _supabase.from('partner_applications').update({'status': 'rejected'}).eq('id', applicationId);
-      // Remove from pending list
-      final updatedApps = state.pendingApplications.where((a) => a.id != applicationId).toList();
+      await _supabase
+          .from('partner_applications')
+          .update({'status': 'rejected'}).eq('id', applicationId);
+      final updatedApps = state.pendingApplications
+          .where((a) => a.id != applicationId)
+          .toList();
       state = state.copyWith(pendingApplications: updatedApps);
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to decline application: $e');
+      state = state.copyWith(
+          errorMessage: 'Failed to decline application: $e');
     }
   }
 
-  Future<void> togglePartnerStatus(String partnerId, bool isActive) async {
+  Future<void> togglePartnerStatus(
+      String partnerId, bool isActive) async {
     try {
-      await _supabase.from('partners').update({'is_active': isActive}).eq('id', partnerId);
-      final index = state.partners.indexWhere((p) => p.id == partnerId);
+      await _supabase
+          .from('partners')
+          .update({'is_active': isActive}).eq('id', partnerId);
+      final index =
+          state.partners.indexWhere((p) => p.id == partnerId);
       if (index != -1) {
         final updated = List<PartnerCrmNode>.from(state.partners);
         final old = updated[index];
@@ -500,36 +842,38 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
           avgVelocityDays: old.avgVelocityDays,
           disputeCount: old.disputeCount,
           unreadMessageCount: old.unreadMessageCount,
+          serviceArea: old.serviceArea,
+          bayCapacity: old.bayCapacity,
         );
         state = state.copyWith(partners: updated);
       }
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to toggle partner capacity mode: $e');
+      state = state.copyWith(
+          errorMessage: 'Failed to toggle partner status: $e');
     }
   }
 
   void removePartnerLocal(String partnerId) {
-    final updated = state.partners.where((p) => p.id != partnerId).toList();
+    final updated =
+        state.partners.where((p) => p.id != partnerId).toList();
     state = state.copyWith(partners: updated);
   }
 
-  // --- VIEW C: GLOBAL EXCEPTION & LATE SCHEDULE WARNING LOGIC ---
+  // ── Exception Polling ─────────────────────────────────────────────────────
 
   void _startExceptionPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       _evaluateLateBreaches();
     });
-    _evaluateLateBreaches(); // Initial run
+    _evaluateLateBreaches();
   }
 
   void _evaluateLateBreaches() {
     final now = DateTime.now();
     final List<BreachAlert> detectedBreaches = [];
-
     for (final job in state.activeJobs) {
       if (job.scheduledDate != null) {
-        // Condition 1: Car not admitted 2 hours past scheduled time
         if (job.status == '3_booked' || job.status == '4_paid') {
           if (now.difference(job.scheduledDate!).inHours >= 2) {
             detectedBreaches.add(BreachAlert(
@@ -541,8 +885,6 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
           }
         }
       }
-      
-      // Condition 2: Stuck in progress for unusually long (simulated > 10 days)
       if (job.status == '6_in_progress') {
         if (now.difference(job.createdAt).inDays > 10) {
           detectedBreaches.add(BreachAlert(
@@ -554,13 +896,10 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
         }
       }
     }
-
     state = state.copyWith(breaches: detectedBreaches);
   }
 
-  // --- VIEW D: AI ENGINE CONSOLE ---
-  // ai_config is a multi-row model registry ordered by priority_order.
-  // priority_order 1 = primary active engine, 2+ = ordered fallbacks.
+  // ── AI Engine ─────────────────────────────────────────────────────────────
 
   Future<void> _fetchAiConfigs() async {
     try {
@@ -570,26 +909,16 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
           .order('priority_order', ascending: true);
 
       final List<AiConfigNode> configs = (res as List).map((c) {
-        // Pricing reference (admin display only — actual billing tracked server-side)
         final provider = c['provider']?.toString() ?? '';
-        final modelName = c['model_name']?.toString() ?? '';
-        
-        double price = 0.0;
-        if (modelName.toLowerCase().contains('free')) {
-          price = 0.000;
-        } else {
-          price = switch (provider) {
-            'OpenAI'        => 0.005,  // GPT-4o vision ~$0.005/image
-            'Google Gemini' => 0.000,  // Gemini 3.5 Flash — free tier
-            'Groq'          => 0.000,  // Groq llama vision — free tier
-            _               => 0.000,
-          };
-        }
+        double price = switch (provider) {
+          'OpenAI' => 0.005,
+          _ => 0.000,
+        };
 
         return AiConfigNode(
           id: c['id'].toString(),
           modelName: c['model_name'].toString(),
-          provider: c['provider'].toString(),
+          provider: provider,
           isActive: c['is_active'] as bool? ?? false,
           tokenPriceParam: price,
           priorityOrder: c['priority_order'] as int? ?? 99,
@@ -601,34 +930,26 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       state = state.copyWith(aiConfigs: configs);
     } catch (e) {
       debugPrint('🚨 AI Config fetch error: $e');
-      state = state.copyWith(errorMessage: 'Failed to load AI engine config: $e');
     }
   }
 
   Future<void> setActiveAiModel(String targetConfigId) async {
-    // Per system design spec section 3: Only one model is active at a time.
-    // Deactivate all → activate the selected UUID row.
     try {
-      // Batch deactivate all models first (safe: no-op if already false)
       await _supabase
           .from('ai_config')
           .update({'is_active': false, 'updated_at': DateTime.now().toIso8601String()})
           .neq('id', targetConfigId);
-
-      // Activate the selected model
       await _supabase
           .from('ai_config')
           .update({'is_active': true, 'updated_at': DateTime.now().toIso8601String()})
           .eq('id', targetConfigId);
-
-      // Optimistic local state update (no re-fetch needed)
       final updatedConfigs = state.aiConfigs.map((c) {
         return c.copyWith(isActive: c.id == targetConfigId);
       }).toList();
       state = state.copyWith(aiConfigs: updatedConfigs);
     } catch (e) {
       debugPrint('🚨 AI hot-swap failure: $e');
-      state = state.copyWith(errorMessage: 'Failed to hot-swap AI routing engine: $e');
+      state = state.copyWith(errorMessage: 'Failed to hot-swap AI engine: $e');
     }
   }
 }

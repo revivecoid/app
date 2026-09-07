@@ -269,8 +269,43 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MasterAdminDesktop(),
       ),
       GoRoute(
+        // Assign Jobs Hub is now inline in MasterAdminDesktop — redirect back
         path: '/admin-central/assign',
-        builder: (context, state) => const AdminJobAssignmentScreen(),
+        redirect: (context, state) => '/admin-central',
+      ),
+      GoRoute(
+        path: '/admin-central/users',
+        builder: (context, state) => Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: Center(
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.manage_accounts_outlined, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              const SizedBox(height: 16),
+              Text('User Accounts', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
+              const SizedBox(height: 8),
+              Text('Sysadmin-only · Under construction', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 24),
+              TextButton(onPressed: () => context.go('/admin-central'), child: const Text('Back to Admin Central')),
+            ]),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin-central/frontend-settings',
+        builder: (context, state) => Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: Center(
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.palette_outlined, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              const SizedBox(height: 16),
+              Text('Frontend Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
+              const SizedBox(height: 8),
+              Text('Sysadmin-only · Under construction', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 24),
+              TextButton(onPressed: () => context.go('/admin-central'), child: const Text('Back to Admin Central')),
+            ]),
+          ),
+        ),
       ),
       GoRoute(
         path: '/admin-central/partner/:id',

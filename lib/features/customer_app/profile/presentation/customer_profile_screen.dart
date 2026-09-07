@@ -101,7 +101,7 @@ class CustomerProfileScreen extends ConsumerWidget {
     final initials = _initials(userName.isNotEmpty ? userName : userEmail);
 
     return Scaffold(
-      backgroundColor: AppColors.workspaceLight,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
