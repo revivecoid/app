@@ -201,6 +201,7 @@ class AdminDashboardState {
   final List<String> toastQueue;
   final bool isLoading;
   final String? errorMessage;
+  final String? successMessage;
   final String searchQuery;
 
   // Live admin identity
@@ -232,6 +233,7 @@ class AdminDashboardState {
     this.toastQueue = const [],
     this.isLoading = true,
     this.errorMessage,
+    this.successMessage,
     this.searchQuery = '',
     this.adminName = 'Loading...',
     this.adminRole = '',
@@ -258,6 +260,7 @@ class AdminDashboardState {
     List<String>? toastQueue,
     bool? isLoading,
     String? errorMessage,
+    String? successMessage,
     String? searchQuery,
     String? adminName,
     String? adminRole,
@@ -283,6 +286,7 @@ class AdminDashboardState {
       toastQueue: toastQueue ?? this.toastQueue,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage ?? this.errorMessage,
+      successMessage: successMessage ?? this.successMessage,
       searchQuery: searchQuery ?? this.searchQuery,
       adminName: adminName ?? this.adminName,
       adminRole: adminRole ?? this.adminRole,
@@ -687,11 +691,10 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
   Future<void> assignJobToPartner(
       String jobId, String partnerId, String partnerName) async {
     try {
-      await _supabase.rpc('admin_assign_job', params: {
-        'p_job_id': jobId,
-        'p_partner_id': partnerId,
-        'p_status': '3_booked',
-      });
+      await _supabase.from('repair_jobs').update({
+        'partner_id': partnerId,
+        'status': '3_booked',
+      }).eq('id', jobId);
 
       final idx = state.activeJobs.indexWhere((j) => j.id == jobId);
       if (idx != -1) {
@@ -702,7 +705,10 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
           partnerId: partnerId,
           lastUpdatedAt: DateTime.now(),
         );
-        state = state.copyWith(activeJobs: updated);
+        state = state.copyWith(
+          activeJobs: updated,
+          successMessage: 'Job assigned to $partnerName',
+        );
       }
       debugPrint('✅ Job $jobId assigned to $partnerName');
     } catch (e) {
@@ -713,9 +719,10 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
 
   Future<void> unassignJob(String jobId) async {
     try {
-      await _supabase.rpc('admin_unassign_job', params: {
-        'p_job_id': jobId,
-      });
+      await _supabase.from('repair_jobs').update({
+        'partner_id': null,
+        'status': '2_estimated',
+      }).eq('id', jobId);
 
       final idx = state.activeJobs.indexWhere((j) => j.id == jobId);
       if (idx != -1) {
@@ -726,7 +733,10 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
           partnerId: '',
           lastUpdatedAt: DateTime.now(),
         );
-        state = state.copyWith(activeJobs: updated);
+        state = state.copyWith(
+          activeJobs: updated,
+          successMessage: 'Job unassigned',
+        );
       }
       debugPrint('✅ Job $jobId unassigned');
     } catch (e) {

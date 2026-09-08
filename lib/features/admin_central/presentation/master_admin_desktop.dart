@@ -1599,10 +1599,40 @@ class _AssignJobsContentState
 
   @override
   Widget build(BuildContext context) {
+    // Surface assignment success / error as snackbars
+    ref.listen<AdminDashboardState>(adminDashboardProvider, (prev, next) {
+      if (next.successMessage != null &&
+          next.successMessage != prev?.successMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(children: [
+            const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(next.successMessage!),
+          ]),
+          backgroundColor: const Color(0xFF059669),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 3),
+        ));
+      }
+      if (next.errorMessage != null &&
+          next.errorMessage != prev?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(child: Text(next.errorMessage!)),
+          ]),
+          backgroundColor: cs.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 5),
+        ));
+      }
+    });
+
     final jobs = state.assignJobsFiltered;
-    final partners = state.partners
-        .where((p) => p.isActive)
-        .toList();
+    final partners = state.partners.where((p) => p.isActive).toList();
 
     return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
