@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 
@@ -651,7 +650,6 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     final b2v = _cmsL(cms, 'badge_2_value', fallback: '4.9/5', isId: isId);
     final b2l = _cmsL(cms, 'badge_2_label', fallback: isId ? 'Rating Pelanggan' : 'Customer Rating', isId: isId);
     final b3v = _cmsL(cms, 'badge_3_value', fallback: '12K+', isId: isId);
-    final b3l = _cmsL(cms, 'badge_3_label', fallback: isId ? 'Kendaraan Diperbaiki' : 'Cars Repaired', isId: isId);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
