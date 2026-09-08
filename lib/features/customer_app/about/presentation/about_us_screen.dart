@@ -1,7 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 
 class AboutUsScreen extends ConsumerStatefulWidget {
@@ -14,8 +16,15 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
   bool _loading = true;
   Map<String, String> _s = {};
 
-  String _get(String k, {required String fb}) =>
-      (_s[k] != null && _s[k]!.isNotEmpty) ? _s[k]! : fb;
+  // Returns the ID-localized value when active locale is 'id', else EN value.
+  String _cmsL(String k, {required String fb}) {
+    final isId = ref.read(localeProvider).languageCode == 'id';
+    if (isId) {
+      final idVal = _s['${k}_id'];
+      if (idVal != null && idVal.isNotEmpty) return idVal;
+    }
+    return (_s[k] != null && _s[k]!.isNotEmpty) ? _s[k]! : fb;
+  }
 
   @override
   void initState() { super.initState(); _load(); }
@@ -33,6 +42,7 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    ref.watch(localeProvider); // rebuild on locale change
 
     return Scaffold(
       appBar: const ReVAppBar(title: Text('About Us'), showBackButton: true),
@@ -46,12 +56,12 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     // Header
                     Text(
-                      _get('about_title', fb: 'Tentang Revive'),
+                      _cmsL('about_title', fb: 'Tentang Revive'),
                       style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _get('about_tagline', fb: 'Memimpin transformasi industri perbaikan otomotif Indonesia dengan teknologi AI dan jaringan bengkel terpercaya.'),
+                      _cmsL('about_tagline', fb: 'Memimpin transformasi industri perbaikan otomotif Indonesia dengan teknologi AI dan jaringan bengkel terpercaya.'),
                       style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 32),
@@ -65,11 +75,11 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
                         border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
                       ),
                       child: Row(children: [
-                        _StatItem(theme: theme, value: _get('stat_partners', fb: '38+'), label: 'Partner Bengkel'),
+                        _StatItem(theme: theme, value: _cmsL('stat_partners', fb: '38+'), label: 'Partner Bengkel'),
                         _Divider(),
-                        _StatItem(theme: theme, value: _get('stat_rating', fb: '4.9/5'), label: 'Rating Pelanggan'),
+                        _StatItem(theme: theme, value: _cmsL('stat_rating', fb: '4.9/5'), label: 'Rating Pelanggan'),
                         _Divider(),
-                        _StatItem(theme: theme, value: _get('stat_jobs', fb: '12,000+'), label: 'Kendaraan Diperbaiki'),
+                        _StatItem(theme: theme, value: _cmsL('stat_jobs', fb: '12,000+'), label: 'Kendaraan Diperbaiki'),
                       ]),
                     ),
                     const SizedBox(height: 24),
@@ -79,7 +89,7 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
                         style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     _buildCard(theme, isDark,
-                        _get('about_story', fb: 'Revive lahir dari frustrasi nyata: proses klaim asuransi yang rumit, estimasi biaya yang tidak transparan, dan sulitnya menemukan bengkel terpercaya. Kami membangun solusi end-to-end yang menggabungkan AI, jaringan mitra terverifikasi, dan dashboard real-time untuk memastikan setiap pemilik kendaraan mendapat layanan terbaik dengan harga yang jujur.')),
+                        _cmsL('about_story', fb: 'Revive lahir dari frustrasi nyata: proses klaim asuransi yang rumit, estimasi biaya yang tidak transparan, dan sulitnya menemukan bengkel terpercaya. Kami membangun solusi end-to-end yang menggabungkan AI, jaringan mitra terverifikasi, dan dashboard real-time untuk memastikan setiap pemilik kendaraan mendapat layanan terbaik dengan harga yang jujur.')),
                     const SizedBox(height: 24),
 
                     // Mission & Vision
@@ -87,9 +97,9 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
                         style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     _buildLabelCard(theme, isDark, Icons.rocket_launch_rounded, 'Misi Kami',
-                        _get('about_mission', fb: 'Menjadikan perbaikan bodi kendaraan di Indonesia sepenuhnya transparan, cepat, dan dapat diakses oleh semua orang — dari proses klaim asuransi hingga garansi hasil kerja.')),
+                        _cmsL('about_mission', fb: 'Menjadikan perbaikan bodi kendaraan di Indonesia sepenuhnya transparan, cepat, dan dapat diakses oleh semua orang — dari proses klaim asuransi hingga garansi hasil kerja.')),
                     _buildLabelCard(theme, isDark, Icons.visibility_rounded, 'Visi Kami',
-                        _get('about_vision', fb: 'Menjadi platform perbaikan otomotif #1 di Asia Tenggara dengan teknologi AI terdepan dan ekosistem bengkel mitra yang paling dipercaya.')),
+                        _cmsL('about_vision', fb: 'Menjadi platform perbaikan otomotif #1 di Asia Tenggara dengan teknologi AI terdepan dan ekosistem bengkel mitra yang paling dipercaya.')),
                     const SizedBox(height: 24),
 
                     // Values
@@ -102,14 +112,22 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
                       ),
-                      child: Column(children: [
-                        _ValueTile(theme: theme, icon: Icons.verified_rounded, title: 'Transparan', sub: 'Estimasi biaya real, tidak ada biaya tersembunyi'),
+                       child: Column(children: [
+                        _ValueTile(theme: theme, icon: Icons.verified_rounded,
+                            title: _cmsL('value_1_title', fb: 'Transparan'),
+                            sub:   _cmsL('value_1_sub',   fb: 'Estimasi biaya real, tidak ada biaya tersembunyi')),
                         Divider(height: 1, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
-                        _ValueTile(theme: theme, icon: Icons.bolt_rounded, title: 'Cepat', sub: 'Proses digital dari klaim hingga pengambilan kendaraan'),
+                        _ValueTile(theme: theme, icon: Icons.bolt_rounded,
+                            title: _cmsL('value_2_title', fb: 'Cepat'),
+                            sub:   _cmsL('value_2_sub',   fb: 'Proses digital dari klaim hingga pengambilan kendaraan')),
                         Divider(height: 1, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
-                        _ValueTile(theme: theme, icon: Icons.handshake_rounded, title: 'Terpercaya', sub: '90 hari garansi pengerjaan di semua mitra kami'),
+                        _ValueTile(theme: theme, icon: Icons.handshake_rounded,
+                            title: _cmsL('value_3_title', fb: 'Terpercaya'),
+                            sub:   _cmsL('value_3_sub',   fb: '90 hari garansi pengerjaan di semua mitra kami')),
                         Divider(height: 1, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
-                        _ValueTile(theme: theme, icon: Icons.smart_toy_rounded, title: 'Inovatif', sub: 'AI damage detection & pricing terdepan di industri'),
+                        _ValueTile(theme: theme, icon: Icons.smart_toy_rounded,
+                            title: _cmsL('value_4_title', fb: 'Inovatif'),
+                            sub:   _cmsL('value_4_sub',   fb: 'AI damage detection & pricing terdepan di industri')),
                       ]),
                     ),
                     const SizedBox(height: 32),
@@ -133,15 +151,15 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
                         ),
                         const SizedBox(width: 16),
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Bergabung sebagai Partner Bengkel',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: theme.colorScheme.onSurface)),
-                          Text('Daftarkan bengkel Anda dan mulai terima order dari Revive.',
-                              style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+                           Text(_cmsL('partner_cta_title', fb: 'Bergabung sebagai Partner Bengkel'),
+                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: theme.colorScheme.onSurface)),
+                           Text(_cmsL('partner_cta_sub', fb: 'Daftarkan bengkel Anda dan mulai terima order dari Revive.'),
+                               style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
                         ])),
                         TextButton(
                           onPressed: () {},
-                          child: const Text('Daftar',
-                              style: TextStyle(color: AppColors.primaryContainer, fontWeight: FontWeight.bold)),
+                          child: Text(_cmsL('cta_register', fb: 'Daftar'),
+                              style: const TextStyle(color: AppColors.primaryContainer, fontWeight: FontWeight.bold)),
                         ),
                       ]),
                     ),

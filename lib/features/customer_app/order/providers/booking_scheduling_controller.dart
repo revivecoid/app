@@ -1,3 +1,7 @@
+// [FUTURE FEATURE] Customer Workshop Selection
+// This provider, model, and controller are preserved for when the customer-facing
+// workshop picker (BookingSchedulingScreen) is re-enabled. Do not delete.
+// See: booking_scheduling_screen.dart (commented-out _BookingSchedulingScreenLive)
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class WorkshopNode {

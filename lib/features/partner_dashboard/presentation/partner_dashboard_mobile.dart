@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import 'partner_dashboard_controller.dart';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -125,7 +126,7 @@ class _MobileHeader extends StatelessWidget {
         Container(width: 28, height: 28, decoration: BoxDecoration(color: _primaryContainer, shape: BoxShape.circle), child: Icon(Icons.build_circle, color: _onPrimary, size: 16)),
         SizedBox(width: 8),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('re-V Partner', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(AppL.of(context)!.partnerPortal, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
           Row(children: [
             Container(width: 6, height: 6, decoration: BoxDecoration(color: isLive ? _emerald500 : Colors.orange, shape: BoxShape.circle)),
             SizedBox(width: 4),
@@ -308,9 +309,9 @@ class _JobList extends StatelessWidget {
       return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.emoji_transportation, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
         SizedBox(height: 12),
-        Text('No Jobs Found', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.bold)),
-        SizedBox(height: 6),
-        Text('Try changing your filter or search term.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+        Text(AppL.of(context)!.partnerNoJobsFound, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Text(AppL.of(context)!.partnerNoJobsFoundSub, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
       ]));
     }
 
@@ -381,7 +382,7 @@ class _JobList extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       icon: Icon(Icons.photo_camera_outlined, size: 14),
-                      label: Text('Photo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      label: Text(AppL.of(context)!.partnerPhotoBtn, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () => controller.captureAndUploadProgressPhoto(job.id, job.status),
                     ),
                   )),

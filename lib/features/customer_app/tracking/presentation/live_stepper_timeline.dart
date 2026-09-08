@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import 'job_stream_controller.dart';
 
 // ─── Status → step index mapping ───────────────────────────────────────────
@@ -17,29 +18,41 @@ const _statusSteps = [
   '9_done',
 ];
 
-const _stepLabels = [
-  'Intake & Submission',
-  'AI Evaluated',
-  'Schedule Booked',
-  'Payment Confirmed',
-  'Vehicle Admitted',
-  'Active Body & Painting',
-  'Quality Control Passed',
-  'Ready for Pickup / Valet',
-  'Handover Complete',
-];
+// Step labels and descriptions are resolved at runtime via AppL.
+// See _stepLabel(l, index) / _stepDesc(l, index) helpers below.
 
-const _stepDescriptions = [
-  'Your repair request has been received and your vehicle details registered.',
-  'Our AI has evaluated the damage and produced a cost estimate for your review.',
-  'Your appointment slot has been secured at the partner workshop.',
-  'Payment received and confirmed. Your vehicle is queued for admission.',
-  'Your vehicle has been admitted to the workshop bay and work is starting soon.',
-  'Active bodywork and painting operations are underway on your vehicle.',
-  'Repair work complete. Your vehicle is undergoing our 32-point quality audit.',
-  'Your vehicle is ready for collection or valet pickup.',
-  'Handover complete. Thank you for choosing Revive!',
-];
+String _stepLabel(AppL l, int i) {
+  const keys = [
+    'trackingStepIntake', 'trackingStepEvaluated', 'trackingStepBooked',
+    'trackingStepPaid', 'trackingStepAdmitted', 'trackingStepActive',
+    'trackingStepQC', 'trackingStepReady', 'trackingStepDone',
+  ];
+  switch (i) {
+    case 0: return l.trackingStepIntake;
+    case 1: return l.trackingStepEvaluated;
+    case 2: return l.trackingStepBooked;
+    case 3: return l.trackingStepPaid;
+    case 4: return l.trackingStepAdmitted;
+    case 5: return l.trackingStepActive;
+    case 6: return l.trackingStepQC;
+    case 7: return l.trackingStepReady;
+    default: return l.trackingStepDone;
+  }
+}
+
+String _stepDesc(AppL l, int i) {
+  switch (i) {
+    case 0: return l.trackingDescIntake;
+    case 1: return l.trackingDescEvaluated;
+    case 2: return l.trackingDescBooked;
+    case 3: return l.trackingDescPaid;
+    case 4: return l.trackingDescAdmitted;
+    case 5: return l.trackingDescActive;
+    case 6: return l.trackingDescQC;
+    case 7: return l.trackingDescReady;
+    default: return l.trackingDescDone;
+  }
+}
 
 // ─── Main Screen ────────────────────────────────────────────────────────────
 class LiveStepperTimeline extends ConsumerWidget {
@@ -70,7 +83,7 @@ class LiveStepperTimeline extends ConsumerWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Live Tracker', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
+            Text(AppL.of(context)!.trackingLiveTracker, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
             Text(
               jobId.length > 8 ? '#${jobId.substring(0, 8).toUpperCase()}' : '#$jobId',
               style: TextStyle(fontSize: 11, color: AppColors.fireRed, letterSpacing: 1.0),
@@ -171,7 +184,7 @@ class _TrackerBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Service Progress', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
+                Text(AppL.of(context)!.trackingStatus, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
                 SizedBox(height: 4),
                 Text(
                   'Step ${currentStepIndex + 1} of ${_statusSteps.length}',
@@ -185,8 +198,8 @@ class _TrackerBody extends StatelessWidget {
                           ? _StepState.active
                           : _StepState.pending;
                   return _TimelineStep(
-                    label: _stepLabels[i],
-                    description: _stepDescriptions[i],
+                    label: _stepLabel(AppL.of(context)!, i),
+                    description: _stepDesc(AppL.of(context)!, i),
                     state: stepStatus,
                     isLast: i == _statusSteps.length - 1,
                     textColor: textColor,
@@ -209,7 +222,7 @@ class _TrackerBody extends StatelessWidget {
                   children: [
                     Icon(Icons.camera_alt, color: AppColors.fireRed, size: 18),
                     SizedBox(width: 8),
-                    Text('Workshop Photo Stream', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
+                    Text(AppL.of(context)!.trackingWorkshop, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
                   ],
                 ),
                 SizedBox(height: 12),

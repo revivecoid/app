@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../app_router.dart';
 
 class UpdatePasswordScreen extends ConsumerStatefulWidget {
@@ -21,13 +22,14 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
   String? _successMessage;
 
   Future<void> _updatePassword() async {
+    final l = AppL.of(context)!;
     if (_passwordController.text != _confirmPasswordController.text) {
-      setState(() => _errorMessage = 'Passwords do not match');
+      setState(() => _errorMessage = l.passwordNoMatch);
       return;
     }
 
     if (_passwordController.text.length < 6) {
-      setState(() => _errorMessage = 'Password must be at least 6 characters');
+      setState(() => _errorMessage = l.passwordTooShort);
       return;
     }
 
@@ -38,7 +40,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
         UserAttributes(password: _passwordController.text),
       );
       
-      setState(() => _successMessage = 'Password updated successfully!');
+      setState(() => _successMessage = AppL.of(context)!.passwordSuccess);
       
       // Clear the recovery state
       ref.read(passwordRecoveryProvider.notifier).state = false;
@@ -51,7 +53,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
     } on AuthException catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (e) {
-      setState(() => _errorMessage = 'Failed to update password: $e');
+      setState(() => _errorMessage = '${AppL.of(context)!.somethingWentWrong} $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -66,7 +68,8 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
       Widget inner = Scaffold(
       backgroundColor: cs.surface,
       appBar: ReVAppBar(
-        title: Text('Update Password'),
+        title: Text(AppL.of(context)!.passwordUpdateTitle),
+        showBackButton: true,
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -84,9 +87,14 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
               children: [
                 Icon(Icons.lock_reset, size: 64, color: AppColors.fireRed),
                 SizedBox(height: 16),
-                Text('Secure Your Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface), textAlign: TextAlign.center),
-                SizedBox(height: 8),
-                Text('Please enter a new password below.', style: TextStyle(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
+                Builder(builder: (context) {
+                  final l = AppL.of(context)!;
+                  return Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(l.passwordSecureAccount, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface), textAlign: TextAlign.center),
+                    SizedBox(height: 8),
+                    Text(l.passwordEnterNew, style: TextStyle(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
+                  ]);
+                }),
                 SizedBox(height: 32),
                 
                 if (_errorMessage != null)
@@ -109,7 +117,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                   controller: _passwordController,
                   style: TextStyle(color: cs.onSurface),
                   decoration: InputDecoration(
-                    labelText: 'New Password', 
+                    labelText: AppL.of(context)!.passwordNew, 
                     labelStyle: TextStyle(color: cs.onSurfaceVariant),
                     border: OutlineInputBorder(),
                     enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: cs.outlineVariant))
@@ -121,7 +129,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                   controller: _confirmPasswordController,
                   style: TextStyle(color: cs.onSurface),
                   decoration: InputDecoration(
-                    labelText: 'Confirm New Password', 
+                    labelText: AppL.of(context)!.passwordConfirm, 
                     labelStyle: TextStyle(color: cs.onSurfaceVariant),
                     border: OutlineInputBorder(),
                     enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: cs.outlineVariant))
@@ -137,7 +145,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed),
                     child: _isLoading 
                       ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: cs.surface, strokeWidth: 2))
-                      : Text('SAVE PASSWORD', style: TextStyle(color: cs.surface, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                      : Text(AppL.of(context)!.passwordSave, style: TextStyle(color: cs.surface, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   ),
                 ),
               ],

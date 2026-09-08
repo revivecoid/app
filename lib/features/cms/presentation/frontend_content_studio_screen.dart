@@ -223,59 +223,62 @@ class _ContentTab extends StatefulWidget {
 }
 
 class _ContentTabState extends State<_ContentTab> {
+  // ── EN (primary) controllers ──────────────────────────────────────────────
   late TextEditingController _heroTitle, _heroSub, _heroCta;
   late TextEditingController _s1t, _s1d, _s2t, _s2d, _s3t, _s3d;
   late TextEditingController _cPhone, _cEmail, _cAddr;
-  // Support / FAQ page
   late TextEditingController _supTitle, _supSub, _supPhone, _supEmail, _supEmergency;
-  // Feature highlight
   late TextEditingController _ftTitle, _ftBody, _ftBadge;
-  // How It Works steps (1-4 title + desc)
   late TextEditingController _st1t, _st1d, _st2t, _st2d, _st3t, _st3d, _st4t, _st4d;
-  // Trust badges (1-3 value + label)
   late TextEditingController _b1v, _b1l, _b2v, _b2l, _b3v, _b3l;
-  // Footer
   late TextEditingController _footer;
-  // About page
   late TextEditingController _abTitle, _abTagline, _abStory, _abMission, _abVision;
   late TextEditingController _stPartners, _stRating, _stJobs;
-  // Company values (1-4)
   late TextEditingController _v1t, _v1s, _v2t, _v2s, _v3t, _v3s, _v4t, _v4s;
-  // Partner CTA
   late TextEditingController _pcTitle, _pcSub;
-  // Privacy Policy page
   late TextEditingController _ppTitle, _ppUpdated, _ppIntro;
-  // 8 privacy sections (title + body)
   final List<TextEditingController> _ppST = [], _ppSB = [];
   final _faqQ = <TextEditingController>[], _faqA = <TextEditingController>[];
+  // ── ID (Indonesian) controllers ───────────────────────────────────────────
+  late TextEditingController _heroTitleId, _heroSubId, _heroCtaId;
+  late TextEditingController _s1tId, _s1dId, _s2tId, _s2dId, _s3tId, _s3dId;
+  late TextEditingController _supTitleId, _supSubId;
+  late TextEditingController _ftTitleId, _ftBodyId;
+  late TextEditingController _st1tId, _st1dId, _st2tId, _st2dId, _st3tId, _st3dId, _st4tId, _st4dId;
+  late TextEditingController _b1lId, _b2lId, _b3lId;
+  late TextEditingController _abTitleId, _abTaglineId, _abStoryId, _abMissionId, _abVisionId;
+  late TextEditingController _v1tId, _v1sId, _v2tId, _v2sId, _v3tId, _v3sId, _v4tId, _v4sId;
+  late TextEditingController _pcTitleId, _pcSubId;
+  late TextEditingController _ppTitleId, _ppIntroId;
+  final List<TextEditingController> _ppSTId = [], _ppSBId = [];
+  final _faqQId = <TextEditingController>[], _faqAId = <TextEditingController>[];
   int _faqCnt = 3;
   bool _dirty = false;
 
   @override
   void initState() {
     super.initState();
+    // ── EN controllers ─────────────────────────────────────────────────────
     _heroTitle = TextEditingController(text: widget.s('hero_title', fb: 'Damage Repaired. Trust Restored.'));
-    _heroSub = TextEditingController(text: widget.s('hero_subtitle', fb: 'Premium car body repair - fast, transparent, guaranteed.'));
-    _heroCta = TextEditingController(text: widget.s('hero_cta', fb: 'Get Free Estimate'));
+    _heroSub   = TextEditingController(text: widget.s('hero_subtitle', fb: 'Premium car body repair - fast, transparent, guaranteed.'));
+    _heroCta   = TextEditingController(text: widget.s('hero_cta', fb: 'Get Free Estimate'));
     _s1t = TextEditingController(text: widget.s('svc_1_title', fb: 'Damage Assessment'));
-    _s1d = TextEditingController(text: widget.s('svc_1_desc', fb: 'AI-powered photo scanning estimates repair cost instantly.'));
+    _s1d = TextEditingController(text: widget.s('svc_1_desc',  fb: 'AI-powered photo scanning estimates repair cost instantly.'));
     _s2t = TextEditingController(text: widget.s('svc_2_title', fb: 'Workshop Dispatch'));
-    _s2d = TextEditingController(text: widget.s('svc_2_desc', fb: 'We assign the best partner workshop near you.'));
+    _s2d = TextEditingController(text: widget.s('svc_2_desc',  fb: 'We assign the best partner workshop near you.'));
     _s3t = TextEditingController(text: widget.s('svc_3_title', fb: 'Quality Guarantee'));
-    _s3d = TextEditingController(text: widget.s('svc_3_desc', fb: '90-day workmanship warranty on every repair.'));
-    _cPhone = TextEditingController(text: widget.s('contact_phone', fb: '+62 811-1234-5678'));
-    _cEmail = TextEditingController(text: widget.s('contact_email', fb: 'hello@revive.co.id'));
-    _cAddr = TextEditingController(text: widget.s('contact_address', fb: 'Jakarta, Indonesia'));
+    _s3d = TextEditingController(text: widget.s('svc_3_desc',  fb: '90-day workmanship warranty on every repair.'));
+    _cPhone = TextEditingController(text: widget.s('contact_phone',   fb: '+62 811-1234-5678'));
+    _cEmail = TextEditingController(text: widget.s('contact_email',   fb: 'hello@revive.co.id'));
+    _cAddr  = TextEditingController(text: widget.s('contact_address', fb: 'Jakarta, Indonesia'));
     _supTitle     = TextEditingController(text: widget.s('support_page_title',    fb: 'FAQ & Support'));
     _supSub       = TextEditingController(text: widget.s('support_page_subtitle', fb: 'Find answers to common questions or reach out to our team.'));
     _supPhone     = TextEditingController(text: widget.s('support_phone',         fb: '+62 800-123-456'));
     _supEmail     = TextEditingController(text: widget.s('support_email',         fb: 'support@re-v.co.id'));
-    _supEmergency = TextEditingController(text: widget.s('support_emergency', fb: '+62 800-TOW-REVIVE'));
-    // Feature highlight
+    _supEmergency = TextEditingController(text: widget.s('support_emergency',     fb: '+62 800-TOW-REVIVE'));
     _ftTitle = TextEditingController(text: widget.s('feature_title', fb: 'Jabodetabek Certified Network'));
     _ftBody  = TextEditingController(text: widget.s('feature_body',  fb: 'Over 38 OEM-compliant spray booths with digitized color-matching precision.'));
     _ftBadge = TextEditingController(text: widget.s('feature_badge', fb: 'SLA < 48 Hrs'));
-    // How It Works
     _st1t = TextEditingController(text: widget.s('step_1_title', fb: 'Snap Damage Photos'));
     _st1d = TextEditingController(text: widget.s('step_1_desc',  fb: 'Take 3 clear photos around your vehicle dents, scratches, or panel gaps.'));
     _st2t = TextEditingController(text: widget.s('step_2_title', fb: 'Instant AI Assessment'));
@@ -284,50 +287,90 @@ class _ContentTabState extends State<_ContentTab> {
     _st3d = TextEditingController(text: widget.s('step_3_desc',  fb: 'Choose your closest certified workshop and lock a priority slot.'));
     _st4t = TextEditingController(text: widget.s('step_4_title', fb: 'Live Tracking to Handover'));
     _st4d = TextEditingController(text: widget.s('step_4_desc',  fb: 'Watch real-time telemetry until delivery back to your driveway.'));
-    // Trust badges
-    _b1v = TextEditingController(text: widget.s('badge_1_value', fb: '38+'));       _b1l = TextEditingController(text: widget.s('badge_1_label', fb: 'Partner Bengkel'));
-    _b2v = TextEditingController(text: widget.s('badge_2_value', fb: '4.9/5'));     _b2l = TextEditingController(text: widget.s('badge_2_label', fb: 'Customer Rating'));
-    _b3v = TextEditingController(text: widget.s('badge_3_value', fb: '24 Month'));  _b3l = TextEditingController(text: widget.s('badge_3_label', fb: 'Paint Guarantee'));
-    // Footer
-    _footer = TextEditingController(text: widget.s('footer_copy', fb: '2026 re-V.co.id. Premium Automotive Body Repair, Powered by AI.'));
-    // About
-    _abTitle   = TextEditingController(text: widget.s('about_title',   fb: 'Tentang Revive'));
-    _abTagline = TextEditingController(text: widget.s('about_tagline', fb: 'Memimpin transformasi industri perbaikan otomotif Indonesia.'));
-    _abStory   = TextEditingController(text: widget.s('about_story',   fb: 'Revive lahir dari frustrasi nyata...'));
-    _abMission = TextEditingController(text: widget.s('about_mission', fb: 'Menjadikan perbaikan bodi kendaraan di Indonesia sepenuhnya transparan.'));
-    _abVision  = TextEditingController(text: widget.s('about_vision',  fb: 'Menjadi platform perbaikan otomotif #1 di Asia Tenggara.'));
+    _b1v = TextEditingController(text: widget.s('badge_1_value', fb: '38+'));      _b1l = TextEditingController(text: widget.s('badge_1_label', fb: 'Partner Bengkel'));
+    _b2v = TextEditingController(text: widget.s('badge_2_value', fb: '4.9/5'));    _b2l = TextEditingController(text: widget.s('badge_2_label', fb: 'Customer Rating'));
+    _b3v = TextEditingController(text: widget.s('badge_3_value', fb: '24 Month')); _b3l = TextEditingController(text: widget.s('badge_3_label', fb: 'Paint Guarantee'));
+    _footer    = TextEditingController(text: widget.s('footer_copy',       fb: '2026 re-V.co.id. Premium Automotive Body Repair, Powered by AI.'));
+    _abTitle   = TextEditingController(text: widget.s('about_title',       fb: 'About Revive'));
+    _abTagline = TextEditingController(text: widget.s('about_tagline',     fb: 'Leading the transformation of Indonesia automotive repair.'));
+    _abStory   = TextEditingController(text: widget.s('about_story',       fb: 'Revive was born from real frustration...'));
+    _abMission = TextEditingController(text: widget.s('about_mission',     fb: 'Making vehicle body repair in Indonesia fully transparent.'));
+    _abVision  = TextEditingController(text: widget.s('about_vision',      fb: 'To become the #1 automotive repair platform in Southeast Asia.'));
     _stPartners = TextEditingController(text: widget.s('stat_partners', fb: '38+'));
     _stRating   = TextEditingController(text: widget.s('stat_rating',   fb: '4.9/5'));
     _stJobs     = TextEditingController(text: widget.s('stat_jobs',     fb: '12,000+'));
-    // Values
-    _v1t = TextEditingController(text: widget.s('value_1_title', fb: 'Transparan')); _v1s = TextEditingController(text: widget.s('value_1_sub', fb: 'Estimasi biaya real, tidak ada biaya tersembunyi'));
-    _v2t = TextEditingController(text: widget.s('value_2_title', fb: 'Cepat'));      _v2s = TextEditingController(text: widget.s('value_2_sub', fb: 'Proses digital dari klaim hingga pengambilan kendaraan'));
-    _v3t = TextEditingController(text: widget.s('value_3_title', fb: 'Terpercaya')); _v3s = TextEditingController(text: widget.s('value_3_sub', fb: '90 hari garansi pengerjaan di semua mitra kami'));
-    _v4t = TextEditingController(text: widget.s('value_4_title', fb: 'Inovatif'));   _v4s = TextEditingController(text: widget.s('value_4_sub', fb: 'AI damage detection dan pricing terdepan di industri'));
-    // Partner CTA
-    _pcTitle = TextEditingController(text: widget.s('partner_cta_title', fb: 'Bergabung sebagai Partner Bengkel'));
-    _pcSub   = TextEditingController(text: widget.s('partner_cta_sub',   fb: 'Daftarkan bengkel Anda dan mulai terima order dari Revive.'));
-    // Privacy Policy
-    _ppTitle   = TextEditingController(text: widget.s('privacy_page_title', fb: 'Kebijakan Privasi'));
-    _ppUpdated = TextEditingController(text: widget.s('privacy_updated',    fb: 'Terakhir diperbarui: September 2026'));
-    _ppIntro   = TextEditingController(text: widget.s('privacy_intro',      fb: 'Kami berkomitmen untuk melindungi privasi dan keamanan data pribadi Anda. Kebijakan ini menjelaskan bagaimana Revive Indonesia mengumpulkan, menggunakan, dan melindungi informasi Anda.'));
-    const _ppDefaults = [
-      ('1. Data yang Kami Kumpulkan', 'Kami mengumpulkan informasi yang Anda berikan saat mendaftar (nama, email, nomor telepon), data kendaraan (merek, model, plat nomor), foto kerusakan yang Anda unggah, dan data penggunaan aplikasi secara anonim untuk meningkatkan layanan.'),
-      ('2. Penggunaan Data', 'Data Anda digunakan untuk memproses estimasi kerusakan AI, menghubungkan Anda dengan bengkel partner terdekat, mengirimkan pembaruan status perbaikan, memproses pembayaran dan klaim asuransi, serta meningkatkan akurasi model AI kami.'),
-      ('3. Keamanan Data', 'Seluruh data disimpan di infrastruktur Supabase dengan enkripsi AES-256. Kami tidak pernah menjual data pribadi Anda kepada pihak ketiga. Akses data dibatasi hanya untuk keperluan layanan yang Anda gunakan.'),
-      ('4. Berbagi Data dengan Pihak Ketiga', 'Data minimal yang diperlukan dibagikan kepada bengkel partner yang Anda pilih untuk keperluan perbaikan, serta kepada perusahaan asuransi jika Anda mengajukan klaim. Semua mitra terikat perjanjian kerahasiaan data.'),
-      ('5. Hak Pengguna', 'Anda berhak mengakses, memperbaiki, atau menghapus data pribadi Anda kapan saja melalui halaman profil. Untuk permintaan penghapusan akun, hubungi privacy@revive.co.id dan kami akan memprosesnya dalam 30 hari kerja.'),
-      ('6. Cookie dan Pelacakan', 'Aplikasi web kami menggunakan cookie sesi untuk autentikasi dan preferensi tema. Tidak ada cookie pelacakan pihak ketiga atau iklan yang digunakan di platform kami.'),
-      ('7. Perubahan Kebijakan', 'Kebijakan ini dapat diperbarui sewaktu-waktu. Perubahan material akan diberitahukan melalui email terdaftar Anda minimal 14 hari sebelum berlaku. Penggunaan layanan setelah tanggal efektif dianggap sebagai persetujuan atas perubahan tersebut.'),
-      ('8. Kontak', 'Untuk pertanyaan terkait privasi data, hubungi kami di: privacy@revive.co.id atau melalui fitur Support di aplikasi kami.'),
+    _v1t = TextEditingController(text: widget.s('value_1_title', fb: 'Transparent')); _v1s = TextEditingController(text: widget.s('value_1_sub', fb: 'Real cost estimate, no hidden fees'));
+    _v2t = TextEditingController(text: widget.s('value_2_title', fb: 'Fast'));         _v2s = TextEditingController(text: widget.s('value_2_sub', fb: 'Digital process from claim to vehicle pickup'));
+    _v3t = TextEditingController(text: widget.s('value_3_title', fb: 'Trusted'));      _v3s = TextEditingController(text: widget.s('value_3_sub', fb: '90-day workmanship guarantee across all our partners'));
+    _v4t = TextEditingController(text: widget.s('value_4_title', fb: 'Innovative'));   _v4s = TextEditingController(text: widget.s('value_4_sub', fb: 'AI damage detection and pricing leading the industry'));
+    _pcTitle = TextEditingController(text: widget.s('partner_cta_title', fb: 'Join as a Workshop Partner'));
+    _pcSub   = TextEditingController(text: widget.s('partner_cta_sub',   fb: 'Register your workshop and start receiving orders from Revive.'));
+    _ppTitle   = TextEditingController(text: widget.s('privacy_page_title', fb: 'Privacy Policy'));
+    _ppUpdated = TextEditingController(text: widget.s('privacy_updated',    fb: 'Last updated: September 2026'));
+    _ppIntro   = TextEditingController(text: widget.s('privacy_intro',      fb: 'We are committed to protecting the privacy and security of your personal data.'));
+    const ppDefaultsEn = [
+      ('1. Data We Collect', 'We collect information you provide when registering (name, email, phone number), vehicle data (make, model, license plate), damage photos you upload, and anonymous app usage data to improve the service.'),
+      ('2. Use of Data', 'Your data is used to process AI damage estimates, connect you with the nearest partner workshop, send repair status updates, process payments and insurance claims, and improve the accuracy of our AI model.'),
+      ('3. Data Security', 'All data is stored on Supabase infrastructure with AES-256 encryption. We never sell your personal data to third parties. Data access is restricted only to the services you use.'),
+      ('4. Sharing Data with Third Parties', 'Minimal necessary data is shared with the partner workshop you select for repair purposes, and with insurance companies if you file a claim. All partners are bound by data confidentiality agreements.'),
+      ('5. User Rights', 'You have the right to access, correct, or delete your personal data at any time via the profile page. For account deletion requests, contact privacy@revive.co.id and we will process it within 30 business days.'),
+      ('6. Cookies and Tracking', 'Our web app uses session cookies for authentication and theme preferences. No third-party tracking or advertising cookies are used on our platform.'),
+      ('7. Policy Changes', 'This policy may be updated at any time. Material changes will be communicated via your registered email at least 14 days before taking effect.'),
+      ('8. Contact', 'For privacy data enquiries, contact us at: privacy@revive.co.id or via the Support feature in our application.'),
     ];
     for (int i = 0; i < 8; i++) {
-      _ppST.add(TextEditingController(text: widget.s('privacy_${i}_title', fb: _ppDefaults[i].$1)));
-      _ppSB.add(TextEditingController(text: widget.s('privacy_${i}_body',  fb: _ppDefaults[i].$2)));
+      _ppST.add(TextEditingController(text: widget.s('privacy_${i}_title', fb: ppDefaultsEn[i].$1)));
+      _ppSB.add(TextEditingController(text: widget.s('privacy_${i}_body',  fb: ppDefaultsEn[i].$2)));
     }
     for (int i = 0; i < _faqCnt; i++) {
       _faqQ.add(TextEditingController(text: widget.s('faq_${i}_q')));
       _faqA.add(TextEditingController(text: widget.s('faq_${i}_a')));
+    }
+    // ── ID controllers ─────────────────────────────────────────────────────
+    _heroTitleId = TextEditingController(text: widget.s('hero_title_id',    fb: 'Body Repair Jadi Mudah.'));
+    _heroSubId   = TextEditingController(text: widget.s('hero_subtitle_id', fb: 'Estimasi perbaikan bodi instan & pelacakan real-time.'));
+    _heroCtaId   = TextEditingController(text: widget.s('hero_cta_id',     fb: 'Dapatkan Estimasi AI Gratis'));
+    _s1tId = TextEditingController(text: widget.s('svc_1_title_id', fb: 'Penilaian Kerusakan'));
+    _s1dId = TextEditingController(text: widget.s('svc_1_desc_id',  fb: 'Pemindaian foto bertenaga AI memperkirakan biaya perbaikan secara instan.'));
+    _s2tId = TextEditingController(text: widget.s('svc_2_title_id', fb: 'Penugasan Bengkel'));
+    _s2dId = TextEditingController(text: widget.s('svc_2_desc_id',  fb: 'Kami menugaskan bengkel mitra terbaik di dekat Anda.'));
+    _s3tId = TextEditingController(text: widget.s('svc_3_title_id', fb: 'Garansi Kualitas'));
+    _s3dId = TextEditingController(text: widget.s('svc_3_desc_id',  fb: 'Garansi pengerjaan 90 hari untuk setiap perbaikan.'));
+    _supTitleId = TextEditingController(text: widget.s('support_page_title_id',    fb: 'FAQ & Dukungan'));
+    _supSubId   = TextEditingController(text: widget.s('support_page_subtitle_id', fb: 'Temukan jawaban atas pertanyaan umum atau hubungi tim kami.'));
+    _ftTitleId = TextEditingController(text: widget.s('feature_title_id', fb: 'Jaringan Tersertifikasi Jabodetabek'));
+    _ftBodyId  = TextEditingController(text: widget.s('feature_body_id',  fb: 'Lebih dari 38 spray booth OEM-compliant dengan presisi color-matching digital.'));
+    _st1tId = TextEditingController(text: widget.s('step_1_title_id', fb: 'Foto Kerusakan'));
+    _st1dId = TextEditingController(text: widget.s('step_1_desc_id',  fb: 'Ambil 3 foto jelas di sekitar penyok, goresan, atau celah panel kendaraan.'));
+    _st2tId = TextEditingController(text: widget.s('step_2_title_id', fb: 'Penilaian AI Instan'));
+    _st2dId = TextEditingController(text: widget.s('step_2_desc_id',  fb: 'Dapatkan analisis bagian sub-milimeter dan estimasi harga tetap.'));
+    _st3tId = TextEditingController(text: widget.s('step_3_title_id', fb: 'Pilih Hub & Bay'));
+    _st3dId = TextEditingController(text: widget.s('step_3_desc_id',  fb: 'Pilih bengkel tersertifikasi terdekat dan kunci reservasi slot prioritas.'));
+    _st4tId = TextEditingController(text: widget.s('step_4_title_id', fb: 'Pelacakan Live Hingga Serah Terima'));
+    _st4dId = TextEditingController(text: widget.s('step_4_desc_id',  fb: 'Pantau persiapan real-time, pengecatan booth, dan telemetri kontrol kualitas.'));
+    _b1lId = TextEditingController(text: widget.s('badge_1_label_id', fb: 'Bengkel Mitra'));
+    _b2lId = TextEditingController(text: widget.s('badge_2_label_id', fb: 'Rating Pelanggan'));
+    _b3lId = TextEditingController(text: widget.s('badge_3_label_id', fb: 'Garansi Cat'));
+    _abTitleId   = TextEditingController(text: widget.s('about_title_id',   fb: 'Tentang Revive'));
+    _abTaglineId = TextEditingController(text: widget.s('about_tagline_id', fb: 'Memimpin transformasi industri perbaikan otomotif Indonesia.'));
+    _abStoryId   = TextEditingController(text: widget.s('about_story_id',   fb: 'Revive lahir dari frustrasi nyata...'));
+    _abMissionId = TextEditingController(text: widget.s('about_mission_id', fb: 'Menjadikan perbaikan bodi kendaraan di Indonesia sepenuhnya transparan.'));
+    _abVisionId  = TextEditingController(text: widget.s('about_vision_id',  fb: 'Menjadi platform perbaikan otomotif #1 di Asia Tenggara.'));
+    _v1tId = TextEditingController(text: widget.s('value_1_title_id', fb: 'Transparan')); _v1sId = TextEditingController(text: widget.s('value_1_sub_id', fb: 'Estimasi biaya real, tidak ada biaya tersembunyi'));
+    _v2tId = TextEditingController(text: widget.s('value_2_title_id', fb: 'Cepat'));      _v2sId = TextEditingController(text: widget.s('value_2_sub_id', fb: 'Proses digital dari klaim hingga pengambilan kendaraan'));
+    _v3tId = TextEditingController(text: widget.s('value_3_title_id', fb: 'Terpercaya')); _v3sId = TextEditingController(text: widget.s('value_3_sub_id', fb: '90 hari garansi pengerjaan di semua mitra kami'));
+    _v4tId = TextEditingController(text: widget.s('value_4_title_id', fb: 'Inovatif'));   _v4sId = TextEditingController(text: widget.s('value_4_sub_id', fb: 'AI damage detection dan pricing terdepan di industri'));
+    _pcTitleId = TextEditingController(text: widget.s('partner_cta_title_id', fb: 'Bergabung sebagai Partner Bengkel'));
+    _pcSubId   = TextEditingController(text: widget.s('partner_cta_sub_id',   fb: 'Daftarkan bengkel Anda dan mulai terima order dari Revive.'));
+    _ppTitleId = TextEditingController(text: widget.s('privacy_page_title_id', fb: 'Kebijakan Privasi'));
+    _ppIntroId = TextEditingController(text: widget.s('privacy_intro_id',      fb: 'Kami berkomitmen untuk melindungi privasi dan keamanan data pribadi Anda.'));
+    for (int i = 0; i < 8; i++) {
+      _ppSTId.add(TextEditingController(text: widget.s('privacy_${i}_title_id', fb: '')));
+      _ppSBId.add(TextEditingController(text: widget.s('privacy_${i}_body_id',  fb: '')));
+    }
+    for (int i = 0; i < _faqCnt; i++) {
+      _faqQId.add(TextEditingController(text: widget.s('faq_${i}_q_id')));
+      _faqAId.add(TextEditingController(text: widget.s('faq_${i}_a_id')));
     }
   }
 
@@ -335,34 +378,44 @@ class _ContentTabState extends State<_ContentTab> {
   void dispose() {
     for (final c in [
       _heroTitle, _heroSub, _heroCta,
+      _heroTitleId, _heroSubId, _heroCtaId,
       _s1t, _s1d, _s2t, _s2d, _s3t, _s3d,
+      _s1tId, _s1dId, _s2tId, _s2dId, _s3tId, _s3dId,
       _cPhone, _cEmail, _cAddr,
       _supTitle, _supSub, _supPhone, _supEmail, _supEmergency,
+      _supTitleId, _supSubId,
       _ftTitle, _ftBody, _ftBadge,
+      _ftTitleId, _ftBodyId,
       _st1t, _st1d, _st2t, _st2d, _st3t, _st3d, _st4t, _st4d,
-      _b1v, _b1l, _b2v, _b2l, _b3v, _b3l, _footer,
+      _st1tId, _st1dId, _st2tId, _st2dId, _st3tId, _st3dId, _st4tId, _st4dId,
+      _b1v, _b1l, _b2v, _b2l, _b3v, _b3l,
+      _b1lId, _b2lId, _b3lId,
+      _footer,
       _abTitle, _abTagline, _abStory, _abMission, _abVision,
+      _abTitleId, _abTaglineId, _abStoryId, _abMissionId, _abVisionId,
       _stPartners, _stRating, _stJobs,
       _v1t, _v1s, _v2t, _v2s, _v3t, _v3s, _v4t, _v4s,
-      _pcTitle, _pcSub,
-      _ppTitle, _ppUpdated, _ppIntro,
-      ..._ppST, ..._ppSB,
-      ..._faqQ, ..._faqA,
+      _v1tId, _v1sId, _v2tId, _v2sId, _v3tId, _v3sId, _v4tId, _v4sId,
+      _pcTitle, _pcSub, _pcTitleId, _pcSubId,
+      _ppTitle, _ppUpdated, _ppIntro, _ppTitleId, _ppIntroId,
+      ..._ppST, ..._ppSB, ..._ppSTId, ..._ppSBId,
+      ..._faqQ, ..._faqA, ..._faqQId, ..._faqAId,
     ]) c.dispose();
     super.dispose();
   }
 
   Future<void> _saveAll() async {
     final saves = <Future<void>>[
-      widget.onSave('hero_title', _heroTitle.text, cat: 'hero'),
-      widget.onSave('hero_subtitle', _heroSub.text, cat: 'hero'),
-      widget.onSave('hero_cta', _heroCta.text, cat: 'hero'),
-      widget.onSave('svc_1_title', _s1t.text, cat: 'services'),
-      widget.onSave('svc_1_desc', _s1d.text, cat: 'services'),
-      widget.onSave('svc_2_title', _s2t.text, cat: 'services'),
-      widget.onSave('svc_2_desc', _s2d.text, cat: 'services'),
-      widget.onSave('svc_3_title', _s3t.text, cat: 'services'),
-      widget.onSave('svc_3_desc', _s3d.text, cat: 'services'),
+      // ── EN ─────────────────────────────────────────────────────────────────
+      widget.onSave('hero_title',    _heroTitle.text, cat: 'hero'),
+      widget.onSave('hero_subtitle', _heroSub.text,   cat: 'hero'),
+      widget.onSave('hero_cta',      _heroCta.text,   cat: 'hero'),
+      widget.onSave('svc_1_title',   _s1t.text, cat: 'services'),
+      widget.onSave('svc_1_desc',    _s1d.text, cat: 'services'),
+      widget.onSave('svc_2_title',   _s2t.text, cat: 'services'),
+      widget.onSave('svc_2_desc',    _s2d.text, cat: 'services'),
+      widget.onSave('svc_3_title',   _s3t.text, cat: 'services'),
+      widget.onSave('svc_3_desc',    _s3d.text, cat: 'services'),
       widget.onSave('contact_phone',         _cPhone.text,       cat: 'contact'),
       widget.onSave('contact_email',         _cEmail.text,       cat: 'contact'),
       widget.onSave('contact_address',       _cAddr.text,        cat: 'contact'),
@@ -371,53 +424,91 @@ class _ContentTabState extends State<_ContentTab> {
       widget.onSave('support_phone',         _supPhone.text,     cat: 'support'),
       widget.onSave('support_email',         _supEmail.text,     cat: 'support'),
       widget.onSave('support_emergency',     _supEmergency.text, cat: 'support'),
-      widget.onSave('feature_title',         _ftTitle.text,      cat: 'landing'),
-      widget.onSave('feature_body',          _ftBody.text,       cat: 'landing'),
-      widget.onSave('feature_badge',         _ftBadge.text,      cat: 'landing'),
-      widget.onSave('step_1_title',          _st1t.text,         cat: 'landing'),
-      widget.onSave('step_1_desc',           _st1d.text,         cat: 'landing'),
-      widget.onSave('step_2_title',          _st2t.text,         cat: 'landing'),
-      widget.onSave('step_2_desc',           _st2d.text,         cat: 'landing'),
-      widget.onSave('step_3_title',          _st3t.text,         cat: 'landing'),
-      widget.onSave('step_3_desc',           _st3d.text,         cat: 'landing'),
-      widget.onSave('step_4_title',          _st4t.text,         cat: 'landing'),
-      widget.onSave('step_4_desc',           _st4d.text,         cat: 'landing'),
-      widget.onSave('badge_1_value',         _b1v.text,          cat: 'landing'),
-      widget.onSave('badge_1_label',         _b1l.text,          cat: 'landing'),
-      widget.onSave('badge_2_value',         _b2v.text,          cat: 'landing'),
-      widget.onSave('badge_2_label',         _b2l.text,          cat: 'landing'),
-      widget.onSave('badge_3_value',         _b3v.text,          cat: 'landing'),
-      widget.onSave('badge_3_label',         _b3l.text,          cat: 'landing'),
-      widget.onSave('footer_copy',           _footer.text,       cat: 'landing'),
-      widget.onSave('about_title',           _abTitle.text,      cat: 'about'),
-      widget.onSave('about_tagline',         _abTagline.text,    cat: 'about'),
-      widget.onSave('about_story',           _abStory.text,      cat: 'about'),
-      widget.onSave('about_mission',         _abMission.text,    cat: 'about'),
-      widget.onSave('about_vision',          _abVision.text,     cat: 'about'),
-      widget.onSave('stat_partners',         _stPartners.text,   cat: 'about'),
-      widget.onSave('stat_rating',           _stRating.text,     cat: 'about'),
-      widget.onSave('stat_jobs',             _stJobs.text,       cat: 'about'),
-      widget.onSave('value_1_title',         _v1t.text,          cat: 'about'),
-      widget.onSave('value_1_sub',           _v1s.text,          cat: 'about'),
-      widget.onSave('value_2_title',         _v2t.text,          cat: 'about'),
-      widget.onSave('value_2_sub',           _v2s.text,          cat: 'about'),
-      widget.onSave('value_3_title',         _v3t.text,          cat: 'about'),
-      widget.onSave('value_3_sub',           _v3s.text,          cat: 'about'),
-      widget.onSave('value_4_title',         _v4t.text,          cat: 'about'),
-      widget.onSave('value_4_sub',           _v4s.text,          cat: 'about'),
-      widget.onSave('partner_cta_title',     _pcTitle.text,      cat: 'about'),
-      widget.onSave('partner_cta_sub',       _pcSub.text,        cat: 'about'),
-      widget.onSave('privacy_page_title',    _ppTitle.text,      cat: 'legal'),
-      widget.onSave('privacy_updated',       _ppUpdated.text,    cat: 'legal'),
-      widget.onSave('privacy_intro',         _ppIntro.text,      cat: 'legal'),
+      widget.onSave('feature_title',  _ftTitle.text, cat: 'landing'),
+      widget.onSave('feature_body',   _ftBody.text,  cat: 'landing'),
+      widget.onSave('feature_badge',  _ftBadge.text, cat: 'landing'),
+      widget.onSave('step_1_title',   _st1t.text,    cat: 'landing'),
+      widget.onSave('step_1_desc',    _st1d.text,    cat: 'landing'),
+      widget.onSave('step_2_title',   _st2t.text,    cat: 'landing'),
+      widget.onSave('step_2_desc',    _st2d.text,    cat: 'landing'),
+      widget.onSave('step_3_title',   _st3t.text,    cat: 'landing'),
+      widget.onSave('step_3_desc',    _st3d.text,    cat: 'landing'),
+      widget.onSave('step_4_title',   _st4t.text,    cat: 'landing'),
+      widget.onSave('step_4_desc',    _st4d.text,    cat: 'landing'),
+      widget.onSave('badge_1_value',  _b1v.text, cat: 'landing'),
+      widget.onSave('badge_1_label',  _b1l.text, cat: 'landing'),
+      widget.onSave('badge_2_value',  _b2v.text, cat: 'landing'),
+      widget.onSave('badge_2_label',  _b2l.text, cat: 'landing'),
+      widget.onSave('badge_3_value',  _b3v.text, cat: 'landing'),
+      widget.onSave('badge_3_label',  _b3l.text, cat: 'landing'),
+      widget.onSave('footer_copy',    _footer.text,    cat: 'landing'),
+      widget.onSave('about_title',    _abTitle.text,   cat: 'about'),
+      widget.onSave('about_tagline',  _abTagline.text, cat: 'about'),
+      widget.onSave('about_story',    _abStory.text,   cat: 'about'),
+      widget.onSave('about_mission',  _abMission.text, cat: 'about'),
+      widget.onSave('about_vision',   _abVision.text,  cat: 'about'),
+      widget.onSave('stat_partners',  _stPartners.text, cat: 'about'),
+      widget.onSave('stat_rating',    _stRating.text,   cat: 'about'),
+      widget.onSave('stat_jobs',      _stJobs.text,     cat: 'about'),
+      widget.onSave('value_1_title',  _v1t.text, cat: 'about'), widget.onSave('value_1_sub', _v1s.text, cat: 'about'),
+      widget.onSave('value_2_title',  _v2t.text, cat: 'about'), widget.onSave('value_2_sub', _v2s.text, cat: 'about'),
+      widget.onSave('value_3_title',  _v3t.text, cat: 'about'), widget.onSave('value_3_sub', _v3s.text, cat: 'about'),
+      widget.onSave('value_4_title',  _v4t.text, cat: 'about'), widget.onSave('value_4_sub', _v4s.text, cat: 'about'),
+      widget.onSave('partner_cta_title', _pcTitle.text, cat: 'about'),
+      widget.onSave('partner_cta_sub',   _pcSub.text,   cat: 'about'),
+      widget.onSave('privacy_page_title', _ppTitle.text,   cat: 'legal'),
+      widget.onSave('privacy_updated',    _ppUpdated.text, cat: 'legal'),
+      widget.onSave('privacy_intro',      _ppIntro.text,   cat: 'legal'),
+      // ── ID ─────────────────────────────────────────────────────────────────
+      widget.onSave('hero_title_id',    _heroTitleId.text, cat: 'hero'),
+      widget.onSave('hero_subtitle_id', _heroSubId.text,   cat: 'hero'),
+      widget.onSave('hero_cta_id',      _heroCtaId.text,   cat: 'hero'),
+      widget.onSave('svc_1_title_id',   _s1tId.text, cat: 'services'),
+      widget.onSave('svc_1_desc_id',    _s1dId.text, cat: 'services'),
+      widget.onSave('svc_2_title_id',   _s2tId.text, cat: 'services'),
+      widget.onSave('svc_2_desc_id',    _s2dId.text, cat: 'services'),
+      widget.onSave('svc_3_title_id',   _s3tId.text, cat: 'services'),
+      widget.onSave('svc_3_desc_id',    _s3dId.text, cat: 'services'),
+      widget.onSave('support_page_title_id',    _supTitleId.text, cat: 'support'),
+      widget.onSave('support_page_subtitle_id', _supSubId.text,   cat: 'support'),
+      widget.onSave('feature_title_id',  _ftTitleId.text, cat: 'landing'),
+      widget.onSave('feature_body_id',   _ftBodyId.text,  cat: 'landing'),
+      widget.onSave('step_1_title_id',   _st1tId.text,    cat: 'landing'),
+      widget.onSave('step_1_desc_id',    _st1dId.text,    cat: 'landing'),
+      widget.onSave('step_2_title_id',   _st2tId.text,    cat: 'landing'),
+      widget.onSave('step_2_desc_id',    _st2dId.text,    cat: 'landing'),
+      widget.onSave('step_3_title_id',   _st3tId.text,    cat: 'landing'),
+      widget.onSave('step_3_desc_id',    _st3dId.text,    cat: 'landing'),
+      widget.onSave('step_4_title_id',   _st4tId.text,    cat: 'landing'),
+      widget.onSave('step_4_desc_id',    _st4dId.text,    cat: 'landing'),
+      widget.onSave('badge_1_label_id',  _b1lId.text, cat: 'landing'),
+      widget.onSave('badge_2_label_id',  _b2lId.text, cat: 'landing'),
+      widget.onSave('badge_3_label_id',  _b3lId.text, cat: 'landing'),
+      widget.onSave('about_title_id',    _abTitleId.text,   cat: 'about'),
+      widget.onSave('about_tagline_id',  _abTaglineId.text, cat: 'about'),
+      widget.onSave('about_story_id',    _abStoryId.text,   cat: 'about'),
+      widget.onSave('about_mission_id',  _abMissionId.text, cat: 'about'),
+      widget.onSave('about_vision_id',   _abVisionId.text,  cat: 'about'),
+      widget.onSave('value_1_title_id',  _v1tId.text, cat: 'about'), widget.onSave('value_1_sub_id', _v1sId.text, cat: 'about'),
+      widget.onSave('value_2_title_id',  _v2tId.text, cat: 'about'), widget.onSave('value_2_sub_id', _v2sId.text, cat: 'about'),
+      widget.onSave('value_3_title_id',  _v3tId.text, cat: 'about'), widget.onSave('value_3_sub_id', _v3sId.text, cat: 'about'),
+      widget.onSave('value_4_title_id',  _v4tId.text, cat: 'about'), widget.onSave('value_4_sub_id', _v4sId.text, cat: 'about'),
+      widget.onSave('partner_cta_title_id', _pcTitleId.text, cat: 'about'),
+      widget.onSave('partner_cta_sub_id',   _pcSubId.text,   cat: 'about'),
+      widget.onSave('privacy_page_title_id', _ppTitleId.text, cat: 'legal'),
+      widget.onSave('privacy_intro_id',      _ppIntroId.text, cat: 'legal'),
     ];
     for (int i = 0; i < 8; i++) {
-      saves.add(widget.onSave('privacy_${i}_title', _ppST[i].text, cat: 'legal'));
-      saves.add(widget.onSave('privacy_${i}_body',  _ppSB[i].text, cat: 'legal'));
+      saves.add(widget.onSave('privacy_${i}_title',    _ppST[i].text,   cat: 'legal'));
+      saves.add(widget.onSave('privacy_${i}_body',     _ppSB[i].text,   cat: 'legal'));
+      saves.add(widget.onSave('privacy_${i}_title_id', _ppSTId[i].text, cat: 'legal'));
+      saves.add(widget.onSave('privacy_${i}_body_id',  _ppSBId[i].text, cat: 'legal'));
     }
     for (int i = 0; i < _faqCnt; i++) {
-      saves.add(widget.onSave('faq_${i}_q', _faqQ[i].text, cat: 'faq'));
-      saves.add(widget.onSave('faq_${i}_a', _faqA[i].text, cat: 'faq'));
+      saves.add(widget.onSave('faq_${i}_q',    _faqQ[i].text,   cat: 'faq'));
+      saves.add(widget.onSave('faq_${i}_a',    _faqA[i].text,   cat: 'faq'));
+      saves.add(widget.onSave('faq_${i}_q_id', _faqQId[i].text, cat: 'faq'));
+      saves.add(widget.onSave('faq_${i}_a_id', _faqAId[i].text, cat: 'faq'));
     }
     await Future.wait(saves);
     setState(() => _dirty = false);
@@ -458,11 +549,11 @@ class _ContentTabState extends State<_ContentTab> {
         ]),
         const SizedBox(height: 16),
         _Card(cs: cs, title: 'Hero Section', icon: Icons.star_rounded, children: [
-          _Field(cs: cs, label: 'Title', ctrl: _heroTitle, hint: 'Main headline', onChange: _mark),
+          _BilingualField(cs: cs, label: 'Title', ctrlEn: _heroTitle, ctrlId: _heroTitleId, hintEn: 'Main headline (EN)', hintId: 'Judul utama (ID)', onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Subtitle', ctrl: _heroSub, hint: 'Hero subtext', maxLines: 2, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Subtitle', ctrlEn: _heroSub, ctrlId: _heroSubId, hintEn: 'Hero subtext (EN)', hintId: 'Subteks hero (ID)', maxLines: 2, onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'CTA Button', ctrl: _heroCta, hint: 'Button text', onChange: _mark),
+          _BilingualField(cs: cs, label: 'CTA Button', ctrlEn: _heroCta, ctrlId: _heroCtaId, hintEn: 'Button text (EN)', hintId: 'Teks tombol (ID)', onChange: _mark),
         ]),
         const SizedBox(height: 16),
         _Card(cs: cs, title: 'Service Cards', icon: Icons.build_circle_outlined, children: [
@@ -470,22 +561,22 @@ class _ContentTabState extends State<_ContentTab> {
             if (i > 0) const SizedBox(height: 16),
             Text('Service ${i + 1}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
             const SizedBox(height: 8),
-            _Field(cs: cs, label: 'Title', ctrl: [_s1t, _s2t, _s3t][i], hint: 'Service name', onChange: _mark),
+            _BilingualField(cs: cs, label: 'Title', ctrlEn: [_s1t, _s2t, _s3t][i], ctrlId: [_s1tId, _s2tId, _s3tId][i], hintEn: 'Service name (EN)', hintId: 'Nama layanan (ID)', onChange: _mark),
             const SizedBox(height: 8),
-            _Field(cs: cs, label: 'Description', ctrl: [_s1d, _s2d, _s3d][i], hint: 'Service description', maxLines: 2, onChange: _mark),
+            _BilingualField(cs: cs, label: 'Description', ctrlEn: [_s1d, _s2d, _s3d][i], ctrlId: [_s1dId, _s2dId, _s3dId][i], hintEn: 'Service description (EN)', hintId: 'Deskripsi layanan (ID)', maxLines: 2, onChange: _mark),
           ],
         ]),
         const SizedBox(height: 16),
         _Card(cs: cs, title: 'FAQ & Support Page', icon: Icons.support_agent_outlined, children: [
-          _Field(cs: cs, label: 'Page Title',    ctrl: _supTitle,     hint: 'FAQ & Support',  onChange: _mark),
+          _BilingualField(cs: cs, label: 'Page Title',    ctrlEn: _supTitle, ctrlId: _supTitleId, hintEn: 'FAQ & Support', hintId: 'FAQ & Dukungan', onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Page Subtitle', ctrl: _supSub,       hint: 'Subtitle text', maxLines: 2, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Page Subtitle', ctrlEn: _supSub,   ctrlId: _supSubId,   hintEn: 'Find answers...', hintId: 'Temukan jawaban...', maxLines: 2, onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Phone Number',  ctrl: _supPhone,     hint: '+62 800-xxx-xxx', onChange: _mark),
+          _Field(cs: cs, label: 'Phone',     ctrl: _supPhone,     hint: '+62 800-xxx-xxx',     onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Email',         ctrl: _supEmail,     hint: 'support@re-v.co.id', onChange: _mark),
+          _Field(cs: cs, label: 'Email',     ctrl: _supEmail,     hint: 'support@re-v.co.id',  onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Emergency / Towing Hotline', ctrl: _supEmergency, hint: '+62 800-TOW-REVIVE', onChange: _mark),
+          _Field(cs: cs, label: 'Emergency', ctrl: _supEmergency, hint: '+62 800-TOW-REVIVE',  onChange: _mark),
         ]),
         const SizedBox(height: 16),
         _Card(cs: cs, title: 'FAQ Items', icon: Icons.quiz_outlined, children: [
@@ -493,13 +584,17 @@ class _ContentTabState extends State<_ContentTab> {
             if (i > 0) const SizedBox(height: 14),
             Text('FAQ ${i + 1}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
             const SizedBox(height: 8),
-            _Field(cs: cs, label: 'Question', ctrl: _faqQ[i], hint: 'e.g. How long does repair take?', onChange: _mark),
+            _BilingualField(cs: cs, label: 'Question', ctrlEn: _faqQ[i], ctrlId: _faqQId[i], hintEn: 'e.g. How long does repair take?', hintId: 'e.g. Berapa lama perbaikan?', onChange: _mark),
             const SizedBox(height: 8),
-            _Field(cs: cs, label: 'Answer', ctrl: _faqA[i], hint: 'Answer text', maxLines: 3, onChange: _mark),
+            _BilingualField(cs: cs, label: 'Answer', ctrlEn: _faqA[i], ctrlId: _faqAId[i], hintEn: 'Answer text (EN)', hintId: 'Teks jawaban (ID)', maxLines: 3, onChange: _mark),
           ],
           const SizedBox(height: 10),
           TextButton.icon(
-            onPressed: () { setState(() { _faqQ.add(TextEditingController()); _faqA.add(TextEditingController()); _faqCnt++; _dirty = true; }); },
+            onPressed: () { setState(() {
+              _faqQ.add(TextEditingController()); _faqA.add(TextEditingController());
+              _faqQId.add(TextEditingController()); _faqAId.add(TextEditingController());
+              _faqCnt++; _dirty = true;
+            }); },
             icon: const Icon(Icons.add, size: 16), label: const Text('Add FAQ')),
         ]),
         const SizedBox(height: 16),
@@ -513,9 +608,9 @@ class _ContentTabState extends State<_ContentTab> {
         const SizedBox(height: 16),
         // ── Landing: Feature Highlight ────────────────────────────────────────
         _Card(cs: cs, title: 'Feature Highlight Card', icon: Icons.auto_awesome_outlined, children: [
-          _Field(cs: cs, label: 'Title',       ctrl: _ftTitle, hint: 'e.g. Jabodetabek Certified Network', onChange: _mark),
+          _BilingualField(cs: cs, label: 'Title',       ctrlEn: _ftTitle, ctrlId: _ftTitleId, hintEn: 'e.g. Jabodetabek Certified Network', hintId: 'e.g. Jaringan Tersertifikasi Jabodetabek', onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Body Copy',   ctrl: _ftBody,  hint: 'Description text', maxLines: 3, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Body Copy',   ctrlEn: _ftBody,  ctrlId: _ftBodyId,  hintEn: 'Description text (EN)', hintId: 'Teks deskripsi (ID)', maxLines: 3, onChange: _mark),
           const SizedBox(height: 12),
           _Field(cs: cs, label: 'Badge Label', ctrl: _ftBadge, hint: 'e.g. SLA < 48 Hrs', onChange: _mark),
         ]),
@@ -523,31 +618,33 @@ class _ContentTabState extends State<_ContentTab> {
         // ── Landing: How It Works ────────────────────────────────────────────
         _Card(cs: cs, title: 'How It Works Steps', icon: Icons.linear_scale_rounded, children: [
           for (final step in [
-            ('Step 1', _st1t, _st1d), ('Step 2', _st2t, _st2d),
-            ('Step 3', _st3t, _st3d), ('Step 4', _st4t, _st4d),
+            ('Step 1', _st1t, _st1d, _st1tId, _st1dId),
+            ('Step 2', _st2t, _st2d, _st2tId, _st2dId),
+            ('Step 3', _st3t, _st3d, _st3tId, _st3dId),
+            ('Step 4', _st4t, _st4d, _st4tId, _st4dId),
           ]) ...[
-            if (step != ('Step 1', _st1t, _st1d)) const SizedBox(height: 16),
+            if (step.$1 != 'Step 1') const SizedBox(height: 16),
             Text(step.$1, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
             const SizedBox(height: 8),
-            _Field(cs: cs, label: 'Title',       ctrl: step.$2, hint: 'Step title',       onChange: _mark),
+            _BilingualField(cs: cs, label: 'Title',       ctrlEn: step.$2, ctrlId: step.$4, hintEn: 'Step title (EN)',       hintId: 'Judul langkah (ID)',       onChange: _mark),
             const SizedBox(height: 8),
-            _Field(cs: cs, label: 'Description', ctrl: step.$3, hint: 'Step description', maxLines: 2, onChange: _mark),
+            _BilingualField(cs: cs, label: 'Description', ctrlEn: step.$3, ctrlId: step.$5, hintEn: 'Step description (EN)', hintId: 'Deskripsi langkah (ID)', maxLines: 2, onChange: _mark),
           ],
         ]),
         const SizedBox(height: 16),
         // ── Landing: Trust Badges ────────────────────────────────────────────
         _Card(cs: cs, title: 'Trust Badges', icon: Icons.verified_outlined, children: [
           for (final badge in [
-            ('Badge 1', _b1v, _b1l), ('Badge 2', _b2v, _b2l), ('Badge 3', _b3v, _b3l),
+            ('Badge 1', _b1v, _b1l, _b1lId),
+            ('Badge 2', _b2v, _b2l, _b2lId),
+            ('Badge 3', _b3v, _b3l, _b3lId),
           ]) ...[
-            if (badge != ('Badge 1', _b1v, _b1l)) const SizedBox(height: 12),
+            if (badge.$1 != 'Badge 1') const SizedBox(height: 12),
             Text(badge.$1, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
             const SizedBox(height: 8),
-            Row(children: [
-              Expanded(child: _Field(cs: cs, label: 'Value', ctrl: badge.$2, hint: 'e.g. 38+',           onChange: _mark)),
-              const SizedBox(width: 12),
-              Expanded(child: _Field(cs: cs, label: 'Label', ctrl: badge.$3, hint: 'e.g. Partner Bengkel', onChange: _mark)),
-            ]),
+            _Field(cs: cs, label: 'Value', ctrl: badge.$2, hint: 'e.g. 38+', onChange: _mark),
+            const SizedBox(height: 8),
+            _BilingualField(cs: cs, label: 'Label', ctrlEn: badge.$3, ctrlId: badge.$4, hintEn: 'e.g. Partner Bengkel (EN)', hintId: 'e.g. Bengkel Mitra (ID)', onChange: _mark),
           ],
         ]),
         const SizedBox(height: 16),
@@ -953,6 +1050,86 @@ class _Field extends StatelessWidget {
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: cs.outlineVariant)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: cs.primary))))),
   ]);
+}
+
+/// Shows two stacked text fields for a bilingual CMS key.
+/// The EN controller maps to [key] and the ID controller maps to [key]_id.
+class _BilingualField extends StatelessWidget {
+  final ColorScheme cs;
+  final String label;
+  final TextEditingController ctrlEn;
+  final TextEditingController ctrlId;
+  final String hintEn;
+  final String hintId;
+  final int maxLines;
+  final VoidCallback onChange;
+
+  const _BilingualField({
+    required this.cs,
+    required this.label,
+    required this.ctrlEn,
+    required this.ctrlId,
+    required this.hintEn,
+    required this.hintId,
+    this.maxLines = 1,
+    required this.onChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SizedBox(width: 110, child: Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Text(label, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)))),
+      Expanded(child: Column(children: [
+        // English field
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1565C0).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(4)),
+            child: const Text('🇬🇧 EN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1565C0)))),
+          const Spacer(),
+        ]),
+        const SizedBox(height: 4),
+        TextField(controller: ctrlEn, maxLines: maxLines, onChanged: (_) => onChange(),
+          style: TextStyle(fontSize: 13, color: cs.onSurface),
+          decoration: InputDecoration(
+            hintText: hintEn,
+            hintStyle: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
+            isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: const Color(0xFF1565C0).withValues(alpha: 0.4))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF1565C0))))),
+        const SizedBox(height: 8),
+        // Indonesian field
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFDC2626).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4)),
+            child: const Text('🇮🇩 ID', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)))),
+          const Spacer(),
+        ]),
+        const SizedBox(height: 4),
+        TextField(controller: ctrlId, maxLines: maxLines, onChanged: (_) => onChange(),
+          style: TextStyle(fontSize: 13, color: cs.onSurface),
+          decoration: InputDecoration(
+            hintText: hintId,
+            hintStyle: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
+            isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: const Color(0xFFDC2626).withValues(alpha: 0.4))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFDC2626))))),
+      ])),
+    ]);
+  }
 }
 
 // --- Tab 5: About Us CMS ---

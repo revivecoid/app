@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import 'partner_dashboard_controller.dart';
 import 'partner_dashboard_mobile.dart';
 
@@ -135,10 +136,10 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Workshop Job Board & Active Pipeline',
-                                          style: TextStyle(color: cs.onSurface, fontSize: 28, fontWeight: FontWeight.bold)),
-                                      SizedBox(height: 4),
-                                      Text('Live repair pipeline — tap any card to advance the stage.',
+                                      Text(AppL.of(context)!.partnerJobBoard,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface)),
+                const SizedBox(height: 4),
+                Text(AppL.of(context)!.partnerJobBoardSub,
                                           style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                                     ],
                                   ),
@@ -266,7 +267,7 @@ class _Sidebar extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('re-V', style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text('OPS CORE', style: TextStyle(color: _primary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                        Text(AppL.of(context)!.partnerOpsCore, style: TextStyle(color: _primary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                       ],
                     ),
                   ],
@@ -287,8 +288,8 @@ class _Sidebar extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('ACTIVE HUB', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                            Text('Workshop Operations', style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text(AppL.of(context)!.partnerActiveHub, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                            Text(AppL.of(context)!.partnerWorkshopOps, style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ),
@@ -344,8 +345,8 @@ class _Sidebar extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('SIGNED IN', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.bold)),
-                      Text('Partner Account', style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text(AppL.of(context)!.partnerSignedIn, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.bold)),
+                      Text(AppL.of(context)!.partnerAccount, style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
@@ -492,7 +493,7 @@ class _Header extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(userName, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
-                  Text('Workshop Partner', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                  Text(AppL.of(context)!.partnerWorkshopPartner, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
                 ],
               ),
               SizedBox(width: 10),
@@ -673,7 +674,7 @@ class _Swimlane extends StatelessWidget {
                 children: [
                   Icon(Icons.inbox_outlined, color: cs.onSurfaceVariant, size: 28),
                   SizedBox(height: 6),
-                  Text('No jobs in this stage', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                  Text(AppL.of(context)!.partnerNoJobsStage, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                 ],
               ),
             )
@@ -776,7 +777,7 @@ class _JobCard extends StatelessWidget {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                               ),
                               icon: Icon(Icons.photo_camera_outlined, size: 13),
-                              label: Text('Photo', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                              label: Text(AppL.of(context)!.partnerPhotoBtn, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                               onPressed: () => controller.captureAndUploadProgressPhoto(job.id, job.status),
                             ),
                           ),
@@ -822,9 +823,9 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(Icons.emoji_transportation, size: 56, color: cs.onSurfaceVariant),
           SizedBox(height: 16),
-          Text('No Active Jobs', style: TextStyle(color: cs.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text('Jobs will appear here once a customer booking is assigned to your workshop.',
+          Text(AppL.of(context)!.partnerNoActiveJobs, style: TextStyle(color: cs.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(AppL.of(context)!.partnerNoActiveJobsSub,
               style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14), textAlign: TextAlign.center),
         ],
       ),

@@ -307,7 +307,7 @@ class AppLEn extends AppL {
   String get faqSubtitle => 'Find answers to common questions';
 
   @override
-  String get faqSearch => 'Search questions…';
+  String get faqSearch => 'How does the AI estimation work?';
 
   @override
   String get faqNoResults => 'No questions found for your search.';
@@ -395,10 +395,74 @@ class AppLEn extends AppL {
   String get orderWorkshop => 'Workshop';
 
   @override
-  String get checkoutTitle => 'Checkout';
+  String get checkoutTitle => 'Checkout & Booking';
+
+  @override
+  String get checkoutLogistics => 'Logistics Configuration';
+
+  @override
+  String get checkoutSelfDeliver => 'Self Delivery';
+
+  @override
+  String get checkoutValetPickup => 'Valet Pickup';
+
+  @override
+  String get checkoutPickupDetails => 'Pickup Location Details';
+
+  @override
+  String get checkoutAddress => 'Full Street Address';
+
+  @override
+  String get checkoutLatitude => 'Latitude';
+
+  @override
+  String get checkoutLongitude => 'Longitude';
+
+  @override
+  String get checkoutSchedule => 'Schedule Intake Date';
+
+  @override
+  String get checkoutVerifiedDate => 'Verified Intake Date';
 
   @override
   String get checkoutPayment => 'Payment Method';
+
+  @override
+  String get checkoutOnlinePayment => 'Online / QR / VA';
+
+  @override
+  String get checkoutBankTransfer => 'Bank Transfer';
+
+  @override
+  String get checkoutTransferProof => 'Transfer Proof';
+
+  @override
+  String get checkoutUploadProof => 'Upload Proof';
+
+  @override
+  String get checkoutChangeFile => 'Change File';
+
+  @override
+  String get checkoutProofSelected => 'Proof Selected';
+
+  @override
+  String get checkoutUploadHint =>
+      'Please upload an image of your transfer receipt.';
+
+  @override
+  String get checkoutAiSummary => 'AI Estimate Summary';
+
+  @override
+  String get checkoutValetFee => '+ Valet Service Fee Applicable';
+
+  @override
+  String get checkoutPayNow => 'PAY NOW (QR / VA)';
+
+  @override
+  String get checkoutConfirmTransfer => 'CONFIRM BOOKING (TRANSFER)';
+
+  @override
+  String get checkoutAwaitingWebhook => 'Awaiting Gateway Webhook…';
 
   @override
   String get checkoutSummary => 'Order Summary';
@@ -407,16 +471,82 @@ class AppLEn extends AppL {
   String get checkoutConfirm => 'Place Order';
 
   @override
-  String get trackingTitle => 'Live Tracking';
+  String get trackingTitle => 'View Repair Tracker';
 
   @override
-  String get trackingStatus => 'Current Status';
+  String get trackingStatus => 'Service Progress';
 
   @override
-  String get trackingWorkshop => 'At Workshop';
+  String get trackingWorkshop => 'Workshop Photo Stream';
 
   @override
   String get trackingEstimatedReady => 'Estimated Ready';
+
+  @override
+  String get trackingLiveTracker => 'Live Tracker';
+
+  @override
+  String get trackingStepIntake => 'Intake & Submission';
+
+  @override
+  String get trackingStepEvaluated => 'AI Evaluated';
+
+  @override
+  String get trackingStepBooked => 'Schedule Booked';
+
+  @override
+  String get trackingStepPaid => 'Payment Confirmed';
+
+  @override
+  String get trackingStepAdmitted => 'Vehicle Admitted';
+
+  @override
+  String get trackingStepActive => 'Active Body & Painting';
+
+  @override
+  String get trackingStepQC => 'Quality Control Passed';
+
+  @override
+  String get trackingStepReady => 'Ready for Pickup / Valet';
+
+  @override
+  String get trackingStepDone => 'Handover Complete';
+
+  @override
+  String get trackingDescIntake =>
+      'Your repair request has been received and your vehicle details registered.';
+
+  @override
+  String get trackingDescEvaluated =>
+      'Our AI has evaluated the damage and produced a cost estimate for your review.';
+
+  @override
+  String get trackingDescBooked =>
+      'Your appointment slot has been secured at the partner workshop.';
+
+  @override
+  String get trackingDescPaid =>
+      'Payment received and confirmed. Your vehicle is queued for admission.';
+
+  @override
+  String get trackingDescAdmitted =>
+      'Your vehicle has been admitted to the workshop bay and work is starting soon.';
+
+  @override
+  String get trackingDescActive =>
+      'Active bodywork and painting operations are underway on your vehicle.';
+
+  @override
+  String get trackingDescQC =>
+      'Repair work complete. Your vehicle is undergoing our 32-point quality audit.';
+
+  @override
+  String get trackingDescReady =>
+      'Your vehicle is ready for collection or valet pickup.';
+
+  @override
+  String get trackingDescDone =>
+      'Handover complete. Thank you for choosing Revive!';
 
   @override
   String get notificationsTitle => 'Notification Preferences';
@@ -440,7 +570,7 @@ class AppLEn extends AppL {
   String get notifRemindersDesc => 'Vehicle service and appointment reminders';
 
   @override
-  String get partnerDashboard => 'Partner Dashboard';
+  String get partnerDashboard => 'Dashboard';
 
   @override
   String get partnerJobs => 'Active Jobs';
@@ -485,13 +615,87 @@ class AppLEn extends AppL {
   String get supportSubtitle => 'We\'re here to help';
 
   @override
+  String get supportHowCanWeHelp => 'How can we help?';
+
+  @override
+  String get supportFindAnswers =>
+      'Find answers to common questions or contact our support team directly.';
+
+  @override
   String get supportChat => 'Chat with Us';
 
   @override
   String get supportEmail => 'Email Support';
 
   @override
-  String get supportPhone => 'Call Support';
+  String get supportPhone => 'Phone';
+
+  @override
+  String get supportLiveChat => 'Live Chat';
+
+  @override
+  String get supportTalkToEstimator => 'Talk to a master estimator';
+
+  @override
+  String get supportOpenChat => 'Open Chat';
+
+  @override
+  String get supportCallUs => 'Call Us';
+
+  @override
+  String get supportCopyNumber => 'Copy Number';
+
+  @override
+  String get supportCopyEmail => 'Copy Email';
+
+  @override
+  String get supportEmergencyTitle => '24/7 Towing & Emergency Hotline';
+
+  @override
+  String get supportBackToProfile => 'Back to My Garage Profile';
+
+  @override
+  String get supportFaqTitle => 'Frequently Asked Questions';
+
+  @override
+  String get supportCopy => 'Copy';
+
+  @override
+  String get passwordUpdateTitle => 'Update Password';
+
+  @override
+  String get passwordSecureAccount => 'Secure Your Account';
+
+  @override
+  String get passwordEnterNew => 'Please enter a new password below.';
+
+  @override
+  String get passwordNew => 'New Password';
+
+  @override
+  String get passwordConfirm => 'Confirm New Password';
+
+  @override
+  String get passwordSave => 'SAVE PASSWORD';
+
+  @override
+  String get passwordNoMatch => 'Passwords do not match';
+
+  @override
+  String get passwordTooShort => 'Password must be at least 6 characters';
+
+  @override
+  String get passwordSuccess => 'Password updated successfully!';
+
+  @override
+  String get workshopBeingAssigned => 'Workshop Being Assigned';
+
+  @override
+  String get workshopAssignedDesc =>
+      'Our team is matching your repair job to the best available workshop. You\'ll be notified once a workshop is assigned.\n\nYou can proceed to complete your booking details below.';
+
+  @override
+  String get continueToCheckout => 'Continue to Checkout';
 
   @override
   String updatedAt(String date) {
@@ -507,4 +711,234 @@ class AppLEn extends AppL {
   String panelCount(int count) {
     return '$count panel';
   }
+
+  @override
+  String get profileAccountTelemetry => 'Account & Telemetry';
+
+  @override
+  String get profileGarageTitle => 'My Digital Garage';
+
+  @override
+  String get profileGarageEmpty => 'Your garage is empty';
+
+  @override
+  String get profileGarageEmptyDesc =>
+      'Register your vehicle to start managing service history, track repairs, and unlock exclusive perks.';
+
+  @override
+  String get profileMember => 'Member';
+
+  @override
+  String get profileReviveMember => 'REVIVE MEMBER';
+
+  @override
+  String get profileMemberPerks => 'Register vehicles to unlock workshop perks';
+
+  @override
+  String get profileSignedInGoogle => 'Signed in with Google';
+
+  @override
+  String get profileJobHistory => 'Job History & Certificates';
+
+  @override
+  String get profileHistoryComing => 'Full history coming soon';
+
+  @override
+  String get profileRegisterVehicle => 'Register New Vehicle to Garage';
+
+  @override
+  String get profileTrackLive => 'Track Live Repair';
+
+  @override
+  String get profileBookService => 'Book a Service';
+
+  @override
+  String get profileTrackOrder => 'Track Order';
+
+  @override
+  String get profileGuarantee => 'Guarantee';
+
+  @override
+  String get profileCompleted => 'Completed';
+
+  @override
+  String get profileLogOut => 'Log Out of Revive ID';
+
+  @override
+  String get profileTelemetryVersion =>
+      'Revive Workshop Telemetry OS v4.2.1-JKT';
+
+  @override
+  String get profileSelectJob => 'Select a job from your history to track it';
+
+  @override
+  String get profileGarageLabel => 'GARAGE PROFILE';
+
+  @override
+  String get partnerPortal => 'Partner Portal';
+
+  @override
+  String get partnerWorkshopProfile => 'My Workshop Profile';
+
+  @override
+  String get partnerContactOps => 'Contact & Operations';
+
+  @override
+  String get partnerPerformanceKpis => 'Performance KPIs';
+
+  @override
+  String get partnerFacilityPhotos => 'Facility Photos';
+
+  @override
+  String get partnerNoPhotos => 'No facility photos uploaded yet.';
+
+  @override
+  String get partnerDocumentStatus => 'Document Status';
+
+  @override
+  String get partnerPendingReview => 'PENDING REVIEW';
+
+  @override
+  String get partnerJobBoard => 'Workshop Job Board & Active Pipeline';
+
+  @override
+  String get partnerJobBoardSub =>
+      'Live repair pipeline — tap any card to advance the stage.';
+
+  @override
+  String get partnerOpsCore => 'OPS CORE';
+
+  @override
+  String get partnerActiveHub => 'ACTIVE HUB';
+
+  @override
+  String get partnerWorkshopOps => 'Workshop Operations';
+
+  @override
+  String get partnerSignedIn => 'SIGNED IN';
+
+  @override
+  String get partnerAccount => 'Partner Account';
+
+  @override
+  String get partnerWorkshopPartner => 'Workshop Partner';
+
+  @override
+  String get partnerNoJobsStage => 'No jobs in this stage';
+
+  @override
+  String get partnerNoActiveJobs => 'No Active Jobs';
+
+  @override
+  String get partnerNoActiveJobsSub =>
+      'Jobs will appear here once a customer booking is assigned to your workshop.';
+
+  @override
+  String get partnerPhotoBtn => 'Photo';
+
+  @override
+  String get partnerNoJobsFound => 'No Jobs Found';
+
+  @override
+  String get partnerNoJobsFoundSub =>
+      'Try changing your filter or search term.';
+
+  @override
+  String get vehicleRegisterTitle => 'Register New Vehicle';
+
+  @override
+  String get vehicleRegisterSub => 'Add a vehicle to your digital garage';
+
+  @override
+  String get vehicleType => 'Vehicle Type';
+
+  @override
+  String get vehicleInsured => 'Vehicle is Insured';
+
+  @override
+  String get vehicleRegistrationFailed => 'Registration failed';
+
+  @override
+  String get vehicleInsuredSub => 'Enable to link an insurance provider';
+
+  @override
+  String get commlinkTitle => 'Commlink — Admin Hotline';
+
+  @override
+  String get commlinkSub => 'Secure channel with Revive Ops Core admin team';
+
+  @override
+  String get commlinkAdminOnline => 'ADMIN ONLINE';
+
+  @override
+  String get commlinkReviveAdmin => 'Revive Admin';
+
+  @override
+  String get commlinkNoMessages => 'No messages yet';
+
+  @override
+  String get commlinkNoMessagesSub =>
+      'Send a message to the Revive Ops admin team.\nThey typically respond within 1 business hour.';
+
+  @override
+  String get estimatorSelectPanels =>
+      'Please capture an image and select panels before continuing.';
+
+  @override
+  String get estimatorLoginRequired =>
+      'Please log in or create an account to secure your booking.';
+
+  @override
+  String get estimatorBookingError => 'Error securing booking';
+
+  @override
+  String get estimatorIntakeImagery => 'INTAKE IMAGERY';
+
+  @override
+  String get estimatorAiVerified => 'AI Verified';
+
+  @override
+  String get estimatorCaptureDamage => 'Capture Damage Photo';
+
+  @override
+  String get estimatorAddPhoto => 'Add Photo';
+
+  @override
+  String get estimatorFromGallery => 'From Gallery';
+
+  @override
+  String get estimatorMaxReached => '5 photos uploaded — maximum reached';
+
+  @override
+  String get estimatorDigitalTwin => 'Digital Twin Analysis';
+
+  @override
+  String get estimatorTapPanels => 'Tap to select affected panels';
+
+  @override
+  String get estimatorLiveTwin => 'Live Twin';
+
+  @override
+  String get estimatorAssessmentReport => 'Damage Assessment Report';
+
+  @override
+  String get estimatorTriageMatrix => 'Computer Vision Triage Matrix';
+
+  @override
+  String get estimatorAssessmentLabel => 'Assessment:';
+
+  @override
+  String get estimatorObservation => 'Observasi: ';
+
+  @override
+  String get estimatorTotalEstimation => 'TOTAL ESTIMATION';
+
+  @override
+  String get estimatorIncludesCoat => 'Includes Color Matching & Clear Coat';
+
+  @override
+  String get estimatorNoAiData => 'No AI damage data available.';
+
+  @override
+  String get estimatorEstimatedTotal => 'ESTIMATED TOTAL';
 }
