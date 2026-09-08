@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import 'partner_profile_controller.dart';
@@ -284,6 +285,15 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       _         => _blue500,
     };
     final statusPending = p['status']?.toString() == 'pending';
+
+    // Google account owner name
+    final user = Supabase.instance.client.auth.currentUser;
+    final ownerName = user?.userMetadata?['full_name']?.toString()
+        ?? user?.userMetadata?['name']?.toString()
+        ?? user?.email
+        ?? '';
+    final avatarUrl = user?.userMetadata?['avatar_url']?.toString();
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -293,13 +303,22 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       ),
       child: Row(
         children: [
+          // Avatar: Google profile picture if available, else storefront icon
           Container(
             width: 72, height: 72,
             decoration: BoxDecoration(
               color: _primaryContainer.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.storefront, size: 36, color: _primaryContainer),
+            clipBehavior: Clip.antiAlias,
+            child: avatarUrl != null && avatarUrl.isNotEmpty
+                ? Image.network(
+                    avatarUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        Icon(Icons.storefront, size: 36, color: _primaryContainer),
+                  )
+                : Icon(Icons.storefront, size: 36, color: _primaryContainer),
           ),
           SizedBox(width: 20),
           Expanded(
@@ -342,6 +361,19 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
                     ],
                   ],
                 ),
+                SizedBox(height: 4),
+                // Account owner name from Google OAuth
+                if (ownerName.isNotEmpty)
+                  Row(
+                    children: [
+                      Icon(Icons.person_outline, size: 13, color: cs.onSurfaceVariant),
+                      SizedBox(width: 4),
+                      Text(
+                        ownerName,
+                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
                 SizedBox(height: 4),
                 Text(
                   p['address']?.toString() ?? 'No address on file',

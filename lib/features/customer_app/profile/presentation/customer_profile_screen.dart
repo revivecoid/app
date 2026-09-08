@@ -1448,10 +1448,17 @@ class CustomerProfileScreen extends ConsumerWidget {
   // ─────────────────────────────────────────────────────────────────────────
 
   Widget _buildAccountTiles(BuildContext context, WidgetRef ref) {
+    // ignore: unused_local_variable
     final alertsOn = ref.watch(whatsappAlertsProvider);
+    final user = Supabase.instance.client.auth.currentUser;
+    final role = (user?.appMetadata['role'] as String?)
+        ?? (user?.userMetadata?['role'] as String?)
+        ?? 'customer';
+    final cs = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -1462,7 +1469,27 @@ class CustomerProfileScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          _tile(context, 
+          // ── Role-specific portal shortcut ────────────────────────────
+          if (role == 'master_admin') ...[
+            _tile(context,
+              icon: Icons.admin_panel_settings_outlined,
+              iconColor: AppColors.fireRed,
+              title: 'Admin Panel',
+              subtitle: 'Open the Revive Ops Core management console',
+              onTap: () => context.go('/admin-central'),
+            ),
+            _divider(),
+          ] else if (role == 'partner_mechanic') ...[
+            _tile(context,
+              icon: Icons.storefront_outlined,
+              iconColor: AppColors.primaryContainer,
+              title: 'Partner Dashboard',
+              subtitle: 'Manage your workshop, jobs & schedule',
+              onTap: () => context.go('/partner-dashboard'),
+            ),
+            _divider(),
+          ],
+          _tile(context,
             icon: Icons.shield,
             iconColor: AppColors.primaryContainer,
             title: 'Saved Insurance Policies',
@@ -1474,9 +1501,9 @@ class CustomerProfileScreen extends ConsumerWidget {
             ),
           ),
           _divider(),
-          _tile(context, 
+          _tile(context,
             icon: Icons.credit_card,
-            iconColor: Theme.of(context).colorScheme.onSurface,
+            iconColor: cs.onSurface,
             title: 'Payment Methods',
             subtitle: 'Add cards, e-wallets, or bank accounts',
             onTap: () => ScaffoldMessenger.of(context).showSnackBar(
@@ -1486,7 +1513,7 @@ class CustomerProfileScreen extends ConsumerWidget {
             ),
           ),
           _divider(),
-          _tile(context, 
+          _tile(context,
             icon: Icons.notifications_active_outlined,
             iconColor: AppColors.fireRed,
             title: 'Pengaturan Notifikasi',
@@ -1494,9 +1521,9 @@ class CustomerProfileScreen extends ConsumerWidget {
             onTap: () => context.push('/notification-settings'),
           ),
           _divider(),
-          _tile(context, 
+          _tile(context,
             icon: Icons.help_center,
-            iconColor: Theme.of(context).colorScheme.onSurface,
+            iconColor: cs.onSurface,
             title: 'Workshop Concierge & FAQ',
             subtitle: '24/7 paint warranty & towing hotlines',
             onTap: () => context.push('/support'),
