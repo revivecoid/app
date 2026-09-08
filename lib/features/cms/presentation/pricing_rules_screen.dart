@@ -275,6 +275,12 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Brightness-adaptive severity colors matching both HTML reference designs
+    final sedangColor = isDark ? cs.tertiary : cs.secondary;
+    final beratColor  = cs.primary;
+    final ringanColor = cs.onSurface;
 
     Widget body;
     if (_isLoading) {
@@ -308,9 +314,10 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
             children: [
               _buildHeader(theme, cs),
               const SizedBox(height: 24),
-              _buildLegend(theme, cs),
+              _buildLegend(theme, cs, sedangColor, beratColor),
               const SizedBox(height: 28),
-              for (final s in _sections) _buildSectionCard(s, theme, cs),
+              for (final s in _sections)
+                _buildSectionCard(s, theme, cs, isDark, sedangColor, beratColor, ringanColor),
               const SizedBox(height: 32),
             ],
           ),
@@ -344,7 +351,7 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
               decoration: BoxDecoration(
                   color: cs.primaryContainer,
                   borderRadius: BorderRadius.circular(8)),
-              child: Row(children: [
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.price_change_outlined, size: 14, color: cs.onPrimaryContainer),
                 const SizedBox(width: 6),
                 Text('CMS',
@@ -379,17 +386,17 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: cs.tertiaryContainer,
+                    color: cs.primaryContainer.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: cs.tertiary.withValues(alpha: 0.6)),
+                    border: Border.all(color: cs.primary.withValues(alpha: 0.4)),
                   ),
                   child: Row(children: [
-                    Icon(Icons.edit_note, size: 14, color: cs.tertiary),
+                    Icon(Icons.edit_note, size: 14, color: cs.primary),
                     const SizedBox(width: 5),
                     Text('Ada perubahan belum disimpan',
                         style: TextStyle(
                             fontSize: 11,
-                            color: cs.onTertiaryContainer,
+                            color: cs.primary,
                             fontWeight: FontWeight.w600)),
                   ]),
                 ),
@@ -418,6 +425,8 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
       ],
     );
   }
+
+
 
   Widget _buildLegend(ThemeData t, ColorScheme cs, Color sedangColor, Color beratColor) {
     final items = [
