@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
+import 'app_settings_sheet.dart';
 
 class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final Widget? title;
@@ -74,6 +75,9 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
             case 'profile':
               context.push('/profile');
               break;
+            case 'settings':
+              AppSettingsSheet.show(context);
+              break;
             case 'logout':
               await Supabase.instance.client.auth.signOut();
               break;
@@ -129,6 +133,15 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   size: 18, color: AppColors.daysGray),
               const SizedBox(width: 10),
               const Text('My Profile'),
+            ]),
+          ),
+          PopupMenuItem(
+            value: 'settings',
+            child: Row(children: [
+              const Icon(Icons.tune_rounded,
+                  size: 18, color: AppColors.daysGray),
+              const SizedBox(width: 10),
+              const Text('Language & Appearance'),
             ]),
           ),
           const PopupMenuDivider(),
