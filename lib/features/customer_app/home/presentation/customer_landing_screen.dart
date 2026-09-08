@@ -724,10 +724,14 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
 
   Widget _buildQuickLinks(ThemeData theme) {
     final cs = theme.colorScheme;
+    final isId = ref.read(localeProvider).languageCode == 'id';
     final links = [
-      {'icon': Icons.quiz_rounded, 'label': 'FAQ', 'route': '/faq', 'sub': 'Pertanyaan umum'},
-      {'icon': Icons.info_outline_rounded, 'label': 'About Us', 'route': '/about', 'sub': 'Tentang Revive'},
-      {'icon': Icons.privacy_tip_outlined, 'label': 'Privacy Policy', 'route': '/privacy', 'sub': 'Kebijakan privasi'},
+      {'icon': Icons.quiz_rounded, 'label': 'FAQ', 'route': '/faq',
+       'sub': isId ? 'Pertanyaan umum' : 'Common questions'},
+      {'icon': Icons.info_outline_rounded, 'label': isId ? 'Tentang Kami' : 'About Us', 'route': '/about',
+       'sub': isId ? 'Tentang Revive' : 'About Revive'},
+      {'icon': Icons.privacy_tip_outlined, 'label': isId ? 'Kebijakan Privasi' : 'Privacy Policy', 'route': '/privacy',
+       'sub': isId ? 'Kebijakan privasi' : 'Data & privacy'},
     ];
     return Container(
       padding: const EdgeInsets.all(16),
@@ -737,7 +741,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('TAUTAN PENTING', style: theme.textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.bold)),
+        Text(isId ? 'TAUTAN PENTING' : 'IMPORTANT LINKS', style: theme.textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         Row(children: links.map<Widget>((l) => Expanded(
           child: InkWell(

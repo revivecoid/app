@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 
@@ -14,9 +13,8 @@ class _PrivacyState extends ConsumerState<PrivacyPolicyScreen> {
   bool _loading = true;
   Map<String, String> _s = {};
 
-  // Locale-aware CMS lookup: uses _id suffixed key when locale is Indonesian.
-  String _cmsL(String k, {required String fb}) {
-    final isId = ref.read(localeProvider).languageCode == 'id';
+  // isId passed from build() where ref.watch drives reactivity
+  String _cmsL(String k, {required bool isId, required String fb}) {
     if (isId) {
       final idVal = _s['${k}_id'];
       if (idVal != null && idVal.isNotEmpty) return idVal;
@@ -78,21 +76,20 @@ class _PrivacyState extends ConsumerState<PrivacyPolicyScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final l = AppL.of(context)!;
     final isId = ref.watch(localeProvider).languageCode == 'id';
     final defaults = isId ? _defaultSectionsId : _defaultSectionsEn;
 
     // Build sections: CMS overrides take priority over locale defaults
     final sections = <(String, String)>[];
     for (int i = 0; i < defaults.length; i++) {
-      final title = _cmsL('privacy_${i}_title', fb: defaults[i].$1);
-      final body  = _cmsL('privacy_${i}_body',  fb: defaults[i].$2);
+      final title = _cmsL('privacy_${i}_title', isId: isId, fb: defaults[i].$1);
+      final body  = _cmsL('privacy_${i}_body',  isId: isId, fb: defaults[i].$2);
       sections.add((title, body));
     }
 
-    final pageTitle   = _cmsL('privacy_page_title', fb: isId ? 'Kebijakan Privasi' : 'Privacy Policy');
-    final pageUpdated = _cmsL('privacy_updated',     fb: isId ? 'Terakhir diperbarui: September 2026' : 'Last updated: September 2026');
-    final pageIntro   = _cmsL('privacy_intro',       fb: isId
+    final pageTitle   = _cmsL('privacy_page_title', isId: isId, fb: isId ? 'Kebijakan Privasi' : 'Privacy Policy');
+    final pageUpdated = _cmsL('privacy_updated',     isId: isId, fb: isId ? 'Terakhir diperbarui: September 2026' : 'Last updated: September 2026');
+    final pageIntro   = _cmsL('privacy_intro',       isId: isId, fb: isId
         ? 'Kami berkomitmen untuk melindungi privasi dan keamanan data pribadi Anda.'
         : 'We are committed to protecting the privacy and security of your personal data.');
 
