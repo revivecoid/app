@@ -889,11 +889,14 @@ class _OpsMatrixContent extends StatelessWidget {
                   const _PulseDot(
                       color: Color(0xFF10b981)),
                   const SizedBox(width: 6),
-                  Text('BCA Settlement Webhook: ',
+                  Text('Realtime sync: ',
                       style: TextStyle(
                           fontSize: 11,
                           color: cs.onSurfaceVariant)),
-                  Text('200 OK (0.12s latency)',
+                  Text(
+                      state.isLoading
+                          ? 'Syncing…'
+                          : '${state.activeJobs.length} job(s) live',
                       style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -1919,7 +1922,7 @@ class _AssignJobsContentState
   }
 }
 
-class _AssignRow extends StatelessWidget {
+class _AssignRow extends StatefulWidget {
   final ColorScheme cs;
   final AdminJobNode job;
   final List<PartnerCrmNode> partners;
@@ -1938,10 +1941,25 @@ class _AssignRow extends StatelessWidget {
       required this.onUnassign});
 
   @override
+  State<_AssignRow> createState() => _AssignRowState();
+}
+
+class _AssignRowState extends State<_AssignRow> {
+  String? _pendingPartnerId;
+  bool _confirming = false;
+
+  ColorScheme get cs => widget.cs;
+
+  @override
   Widget build(BuildContext context) {
+    final job = widget.job;
+    final partners = widget.partners;
+    final hasPending = _pendingPartnerId != null &&
+        _pendingPartnerId != job.partnerId;
+
     return Container(
       decoration: BoxDecoration(
-          color: isSelected
+          color: widget.isSelected
               ? cs.primaryContainer.withValues(alpha: 0.1)
               : Colors.transparent,
           border: Border(
@@ -1953,9 +1971,9 @@ class _AssignRow extends StatelessWidget {
         SizedBox(
             width: 36,
             child: Checkbox(
-              value: isSelected,
+              value: widget.isSelected,
               activeColor: cs.primary,
-              onChanged: (_) => onToggleSelect(),
+              onChanged: (_) => widget.onToggleSelect(),
             )),
         // Job ID
         Expanded(
@@ -1974,10 +1992,7 @@ class _AssignRow extends StatelessWidget {
                 children: [
               Text(
                   job.carIdentity.contains('-')
-                      ? job.carIdentity
-                          .split('-')
-                          .first
-                          .trim()
+                      ? job.carIdentity.split('-').first.trim()
                       : job.carIdentity,
                   style: TextStyle(
                       fontSize: 12,
@@ -1986,10 +2001,7 @@ class _AssignRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis),
               if (job.carIdentity.contains('-'))
                 Text(
-                    job.carIdentity
-                        .split('-')
-                        .last
-                        .trim(),
+                    job.carIdentity.split('-').last.trim(),
                     style: TextStyle(
                         fontSize: 10,
                         color: cs.onSurfaceVariant)),
@@ -2044,7 +2056,7 @@ class _AssignRow extends StatelessWidget {
                     color: job.isPaid
                         ? const Color(0xFF059669)
                         : cs.onSurfaceVariant))),
-        // Assign to
+        // Assign to column — dropdown + confirm button
         Expanded(
             flex: 3,
             child: Align(
@@ -2052,9 +2064,9 @@ class _AssignRow extends StatelessWidget {
                 child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                  if (!job.isUnassigned)
+                  if (!job.isUnassigned && !hasPending)
                     TextButton(
-                        onPressed: onUnassign,
+                        onPressed: widget.onUnassign,
                         child: Text('Unassign',
                             style: TextStyle(
                                 fontSize: 11,
@@ -2067,22 +2079,31 @@ class _AssignRow extends StatelessWidget {
                         isDense: true,
                         contentPadding:
                             const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 6),
+                                horizontal: 8, vertical: 6),
                         border: OutlineInputBorder(
                             borderRadius:
                                 BorderRadius.circular(8),
                             borderSide: BorderSide(
-                                color: cs.outline)),
+                                color: hasPending
+                                    ? cs.primary
+                                    : cs.outline,
+                                width: hasPending ? 1.5 : 1)),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                                color: hasPending
+                                    ? cs.primary
+                                    : cs.outline,
+                                width: hasPending ? 1.5 : 1)),
                         hintText: 'Assign to...',
                         hintStyle: TextStyle(
                             fontSize: 11,
                             color: cs.onSurfaceVariant),
                       ),
                       style: TextStyle(
-                          fontSize: 11,
-                          color: cs.onSurface),
-                      value: job.partnerId,
+                          fontSize: 11, color: cs.onSurface),
+                      value: _pendingPartnerId ?? job.partnerId,
                       items: partners
                           .map((p) => DropdownMenuItem(
                                 value: p.id,
@@ -2096,14 +2117,80 @@ class _AssignRow extends StatelessWidget {
                           .toList(),
                       onChanged: (v) {
                         if (v != null) {
-                          final name = partners
-                              .firstWhere((p) => p.id == v)
-                              .shopName;
-                          onAssign(v, name);
+                          setState(() => _pendingPartnerId = v);
                         }
                       },
                     ),
                   ),
+                  // Confirm button — only shown when a new partner is selected
+                  if (hasPending) ...[
+                    const SizedBox(width: 6),
+                    _confirming
+                        ? SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: cs.primary))
+                        : Tooltip(
+                            message: 'Confirm assignment',
+                            child: InkWell(
+                              borderRadius:
+                                  BorderRadius.circular(6),
+                              onTap: () async {
+                                final pid = _pendingPartnerId!;
+                                final pName = partners
+                                    .firstWhere(
+                                        (p) => p.id == pid)
+                                    .shopName;
+                                setState(
+                                    () => _confirming = true);
+                                await widget.onAssign(
+                                    pid, pName);
+                                if (mounted) {
+                                  setState(() {
+                                    _confirming = false;
+                                    _pendingPartnerId = null;
+                                  });
+                                }
+                              },
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                    color: const Color(
+                                        0xFF059669),
+                                    borderRadius:
+                                        BorderRadius.circular(
+                                            6)),
+                                child: const Icon(
+                                    Icons.check_rounded,
+                                    size: 16,
+                                    color: Colors.white),
+                              ),
+                            ),
+                          ),
+                    // Cancel / clear pending
+                    Tooltip(
+                      message: 'Clear selection',
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: () => setState(
+                            () => _pendingPartnerId = null),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                              color: cs.errorContainer
+                                  .withValues(alpha: 0.5),
+                              borderRadius:
+                                  BorderRadius.circular(6)),
+                          child: Icon(Icons.close_rounded,
+                              size: 14, color: cs.error),
+                        ),
+                      ),
+                    ),
+                  ],
                 ]))),
       ]),
     );
