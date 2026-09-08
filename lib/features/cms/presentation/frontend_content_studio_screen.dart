@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -1141,40 +1141,54 @@ class _AboutCmsTab extends StatefulWidget {
   @override State<_AboutCmsTab> createState() => _AboutCmsTabState();
 }
 class _AboutCmsTabState extends State<_AboutCmsTab> {
-  late TextEditingController _title, _tagline, _story, _mission, _vision;
+  late TextEditingController _titleEn, _titleId;
+  late TextEditingController _taglineEn, _taglineId;
+  late TextEditingController _storyEn, _storyId;
+  late TextEditingController _missionEn, _missionId;
+  late TextEditingController _visionEn, _visionId;
   late TextEditingController _statPartners, _statRating, _statJobs;
   bool _dirty = false;
 
   @override
   void initState() {
     super.initState();
-    _title        = TextEditingController(text: widget.s('about_title',   fb: ''));
-    _tagline      = TextEditingController(text: widget.s('about_tagline', fb: ''));
-    _story        = TextEditingController(text: widget.s('about_story',   fb: ''));
-    _mission      = TextEditingController(text: widget.s('about_mission', fb: ''));
-    _vision       = TextEditingController(text: widget.s('about_vision',  fb: ''));
-    _statPartners = TextEditingController(text: widget.s('stat_partners', fb: '38+'));
-    _statRating   = TextEditingController(text: widget.s('stat_rating',   fb: '4.9/5'));
-    _statJobs     = TextEditingController(text: widget.s('stat_jobs',     fb: '12,000+'));
+    _titleEn      = TextEditingController(text: widget.s('about_title',       fb: 'About Revive'));
+    _titleId      = TextEditingController(text: widget.s('about_title_id',    fb: 'Tentang Revive'));
+    _taglineEn    = TextEditingController(text: widget.s('about_tagline',     fb: "Leading the transformation of Indonesia's automotive repair industry with AI technology and a trusted workshop network."));
+    _taglineId    = TextEditingController(text: widget.s('about_tagline_id',  fb: 'Memimpin transformasi industri perbaikan otomotif Indonesia dengan teknologi AI dan jaringan bengkel terpercaya.'));
+    _storyEn      = TextEditingController(text: widget.s('about_story',       fb: 'Revive was born from a real frustration: complicated insurance claim processes, opaque cost estimates, and the difficulty of finding a trustworthy workshop. We built an end-to-end solution combining AI, a verified partner network, and real-time dashboards to ensure every vehicle owner gets the best service at a fair price.'));
+    _storyId      = TextEditingController(text: widget.s('about_story_id',    fb: 'Revive lahir dari frustrasi nyata: proses klaim asuransi yang rumit, estimasi biaya yang tidak transparan, dan sulitnya menemukan bengkel terpercaya. Kami membangun solusi end-to-end yang menggabungkan AI, jaringan mitra terverifikasi, dan dashboard real-time untuk memastikan setiap pemilik kendaraan mendapat layanan terbaik dengan harga yang jujur.'));
+    _missionEn    = TextEditingController(text: widget.s('about_mission',     fb: 'To make vehicle body repair in Indonesia fully transparent, fast, and accessible to everyone — from insurance claims to work guarantees.'));
+    _missionId    = TextEditingController(text: widget.s('about_mission_id',  fb: 'Menjadikan perbaikan bodi kendaraan di Indonesia sepenuhnya transparan, cepat, dan dapat diakses oleh semua orang — dari proses klaim asuransi hingga garansi hasil kerja.'));
+    _visionEn     = TextEditingController(text: widget.s('about_vision',      fb: 'To become the #1 automotive repair platform in Southeast Asia with leading AI technology and the most trusted partner workshop ecosystem.'));
+    _visionId     = TextEditingController(text: widget.s('about_vision_id',   fb: 'Menjadi platform perbaikan otomotif #1 di Asia Tenggara dengan teknologi AI terdepan dan ekosistem bengkel mitra yang paling dipercaya.'));
+    _statPartners = TextEditingController(text: widget.s('stat_partners',     fb: '38+'));
+    _statRating   = TextEditingController(text: widget.s('stat_rating',       fb: '4.9/5'));
+    _statJobs     = TextEditingController(text: widget.s('stat_jobs',         fb: '12,000+'));
   }
 
   @override
   void dispose() {
-    for (final c in [_title, _tagline, _story, _mission, _vision,
-      _statPartners, _statRating, _statJobs]) c.dispose();
+    for (final c in [_titleEn, _titleId, _taglineEn, _taglineId, _storyEn, _storyId,
+      _missionEn, _missionId, _visionEn, _visionId, _statPartners, _statRating, _statJobs]) c.dispose();
     super.dispose();
   }
 
   Future<void> _saveAll() async {
     await Future.wait([
-      widget.onSave('about_title',   _title.text,        cat: 'about'),
-      widget.onSave('about_tagline', _tagline.text,      cat: 'about'),
-      widget.onSave('about_story',   _story.text,        cat: 'about'),
-      widget.onSave('about_mission', _mission.text,      cat: 'about'),
-      widget.onSave('about_vision',  _vision.text,       cat: 'about'),
-      widget.onSave('stat_partners', _statPartners.text, cat: 'about'),
-      widget.onSave('stat_rating',   _statRating.text,   cat: 'about'),
-      widget.onSave('stat_jobs',     _statJobs.text,     cat: 'about'),
+      widget.onSave('about_title',      _titleEn.text,      cat: 'about'),
+      widget.onSave('about_title_id',   _titleId.text,      cat: 'about'),
+      widget.onSave('about_tagline',    _taglineEn.text,    cat: 'about'),
+      widget.onSave('about_tagline_id', _taglineId.text,    cat: 'about'),
+      widget.onSave('about_story',      _storyEn.text,      cat: 'about'),
+      widget.onSave('about_story_id',   _storyId.text,      cat: 'about'),
+      widget.onSave('about_mission',    _missionEn.text,    cat: 'about'),
+      widget.onSave('about_mission_id', _missionId.text,    cat: 'about'),
+      widget.onSave('about_vision',     _visionEn.text,     cat: 'about'),
+      widget.onSave('about_vision_id',  _visionId.text,     cat: 'about'),
+      widget.onSave('stat_partners',    _statPartners.text, cat: 'about'),
+      widget.onSave('stat_rating',      _statRating.text,   cat: 'about'),
+      widget.onSave('stat_jobs',        _statJobs.text,     cat: 'about'),
     ]);
     setState(() => _dirty = false);
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(
@@ -1194,28 +1208,28 @@ class _AboutCmsTabState extends State<_AboutCmsTab> {
           if (_dirty) FilledButton.icon(onPressed: _saveAll, icon: const Icon(Icons.save_rounded, size: 16), label: const Text('Save Changes')),
         ]),
         const SizedBox(height: 4),
-        Text('Manage revive.co.id/about', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+        Text('Manage revive.co.id/about  ·  EN + ID bilingual', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
         const SizedBox(height: 24),
         _Card(cs: cs, title: 'Hero Banner', icon: Icons.info_outlined, children: [
-          _Field(cs: cs, label: 'Title', ctrl: _title, hint: 'Main heading for About page', onChange: _mark),
+          _BilingualField(cs: cs, label: 'Title',   ctrlEn: _titleEn,   ctrlId: _titleId,   hintEn: 'About Revive',   hintId: 'Tentang Revive', onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Tagline', ctrl: _tagline, hint: 'Short intro sentence', maxLines: 2, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Tagline', ctrlEn: _taglineEn, ctrlId: _taglineId, hintEn: 'Leading transformation...', hintId: 'Memimpin transformasi...', maxLines: 2, onChange: _mark),
         ]),
         const SizedBox(height: 16),
         _Card(cs: cs, title: 'Stats Row', icon: Icons.bar_chart_rounded, children: [
-          _Field(cs: cs, label: 'Partners',     ctrl: _statPartners, hint: '38+',     onChange: _mark),
+          _Field(cs: cs, label: 'Partners (shared)',    ctrl: _statPartners, hint: '38+',     onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Rating',       ctrl: _statRating,   hint: '4.9/5',   onChange: _mark),
+          _Field(cs: cs, label: 'Rating (shared)',      ctrl: _statRating,   hint: '4.9/5',   onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Cars Fixed',   ctrl: _statJobs,     hint: '12,000+', onChange: _mark),
+          _Field(cs: cs, label: 'Cars Fixed (shared)',  ctrl: _statJobs,     hint: '12,000+', onChange: _mark),
         ]),
         const SizedBox(height: 16),
         _Card(cs: cs, title: 'Content', icon: Icons.article_outlined, children: [
-          _Field(cs: cs, label: 'Our Story', ctrl: _story,   hint: 'Company origin story...', maxLines: 5, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Our Story', ctrlEn: _storyEn,   ctrlId: _storyId,   hintEn: 'Company origin story (EN)...', hintId: 'Cerita perusahaan (ID)...', maxLines: 5, onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Mission',   ctrl: _mission, hint: 'Mission statement...',     maxLines: 3, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Mission',   ctrlEn: _missionEn, ctrlId: _missionId, hintEn: 'Mission statement (EN)...',     hintId: 'Pernyataan misi (ID)...',   maxLines: 3, onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Vision',    ctrl: _vision,  hint: 'Vision statement...',      maxLines: 3, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Vision',    ctrlEn: _visionEn,  ctrlId: _visionId,  hintEn: 'Vision statement (EN)...',      hintId: 'Pernyataan visi (ID)...',   maxLines: 3, onChange: _mark),
         ]),
         const SizedBox(height: 80),
       ]));
@@ -1231,39 +1245,77 @@ class _PrivacyCmsTab extends StatefulWidget {
   @override State<_PrivacyCmsTab> createState() => _PrivacyCmsTabState();
 }
 class _PrivacyCmsTabState extends State<_PrivacyCmsTab> {
-  late TextEditingController _pageTitle, _intro, _updated;
-  final _secTitle = <TextEditingController>[];
-  final _secBody  = <TextEditingController>[];
+  late TextEditingController _pageTitleEn, _pageTitleId;
+  late TextEditingController _introEn, _introId;
+  late TextEditingController _updatedEn, _updatedId;
+  final _secTitleEn = <TextEditingController>[];
+  final _secTitleId = <TextEditingController>[];
+  final _secBodyEn  = <TextEditingController>[];
+  final _secBodyId  = <TextEditingController>[];
   static const _n = 8;
   bool _dirty = false;
+
+  static const _enTitles = ['1. Data We Collect','2. Use of Data','3. Data Security','4. Sharing Data with Third Parties','5. User Rights','6. Cookies and Tracking','7. Policy Changes','8. Contact'];
+  static const _enBodies = [
+    'We collect information you provide when registering (name, email, phone number), vehicle data (make, model, license plate), damage photos you upload, and anonymous app usage data to improve the service.',
+    'Your data is used to process AI damage estimates, connect you with the nearest partner workshop, send repair status updates, process payments and insurance claims, and improve the accuracy of our AI model.',
+    'All data is stored on Supabase infrastructure with AES-256 encryption. We never sell your personal data to third parties. Data access is restricted only to the services you use.',
+    'Minimal necessary data is shared with the partner workshop you select for repair purposes, and with insurance companies if you file a claim. All partners are bound by data confidentiality agreements.',
+    'You have the right to access, correct, or delete your personal data at any time via the profile page. For account deletion requests, contact privacy@revive.co.id and we will process it within 30 business days.',
+    'Our web app uses session cookies for authentication and theme preferences. No third-party tracking or advertising cookies are used on our platform.',
+    'This policy may be updated at any time. Material changes will be communicated via your registered email at least 14 days before taking effect.',
+    'For privacy data enquiries, contact us at: privacy@revive.co.id or via the Support feature in our application.',
+  ];
+  static const _idTitles = ['1. Data yang Kami Kumpulkan','2. Penggunaan Data','3. Keamanan Data','4. Berbagi Data dengan Pihak Ketiga','5. Hak Pengguna','6. Cookie dan Pelacakan','7. Perubahan Kebijakan','8. Kontak'];
+  static const _idBodies = [
+    'Kami mengumpulkan informasi yang Anda berikan saat mendaftar (nama, email, nomor telepon), data kendaraan (merek, model, plat nomor), foto kerusakan yang Anda unggah, dan data penggunaan aplikasi secara anonim untuk meningkatkan layanan.',
+    'Data Anda digunakan untuk memproses estimasi kerusakan AI, menghubungkan Anda dengan bengkel partner terdekat, mengirimkan pembaruan status perbaikan, memproses pembayaran dan klaim asuransi, serta meningkatkan akurasi model AI kami.',
+    'Seluruh data disimpan di infrastruktur Supabase dengan enkripsi AES-256. Kami tidak pernah menjual data pribadi Anda kepada pihak ketiga. Akses data dibatasi hanya untuk keperluan layanan yang Anda gunakan.',
+    'Data minimal yang diperlukan dibagikan kepada bengkel partner yang Anda pilih untuk keperluan perbaikan, serta kepada perusahaan asuransi jika Anda mengajukan klaim. Semua mitra terikat perjanjian kerahasiaan data.',
+    'Anda berhak mengakses, memperbaiki, atau menghapus data pribadi Anda kapan saja melalui halaman profil. Untuk permintaan penghapusan akun, hubungi privacy@revive.co.id dan kami akan memprosesnya dalam 30 hari kerja.',
+    'Aplikasi web kami menggunakan cookie sesi untuk autentikasi dan preferensi tema. Tidak ada cookie pelacakan pihak ketiga atau iklan yang digunakan di platform kami.',
+    'Kebijakan ini dapat diperbarui sewaktu-waktu. Perubahan material akan diberitahukan melalui email terdaftar Anda minimal 14 hari sebelum berlaku.',
+    'Untuk pertanyaan terkait privasi data, hubungi kami di: privacy@revive.co.id atau melalui fitur Support di aplikasi kami.',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _pageTitle = TextEditingController(text: widget.s('privacy_page_title', fb: 'Kebijakan Privasi'));
-    _intro     = TextEditingController(text: widget.s('privacy_intro',      fb: ''));
-    _updated   = TextEditingController(text: widget.s('privacy_updated',    fb: 'September 2026'));
+    _pageTitleEn = TextEditingController(text: widget.s('privacy_page_title',    fb: 'Privacy Policy'));
+    _pageTitleId = TextEditingController(text: widget.s('privacy_page_title_id', fb: 'Kebijakan Privasi'));
+    _introEn     = TextEditingController(text: widget.s('privacy_intro',         fb: 'We are committed to protecting the privacy and security of your personal data.'));
+    _introId     = TextEditingController(text: widget.s('privacy_intro_id',      fb: 'Kami berkomitmen untuk melindungi privasi dan keamanan data pribadi Anda.'));
+    _updatedEn   = TextEditingController(text: widget.s('privacy_updated',       fb: 'Last updated: September 2026'));
+    _updatedId   = TextEditingController(text: widget.s('privacy_updated_id',    fb: 'Terakhir diperbarui: September 2026'));
     for (int i = 0; i < _n; i++) {
-      _secTitle.add(TextEditingController(text: widget.s('privacy_${i}_title', fb: '')));
-      _secBody.add(TextEditingController(text: widget.s('privacy_${i}_body',   fb: '')));
+      _secTitleEn.add(TextEditingController(text: widget.s('privacy_${i}_title',    fb: _enTitles[i])));
+      _secTitleId.add(TextEditingController(text: widget.s('privacy_${i}_title_id', fb: _idTitles[i])));
+      _secBodyEn.add( TextEditingController(text: widget.s('privacy_${i}_body',     fb: _enBodies[i])));
+      _secBodyId.add( TextEditingController(text: widget.s('privacy_${i}_body_id',  fb: _idBodies[i])));
     }
   }
 
   @override
   void dispose() {
-    for (final c in [_pageTitle, _intro, _updated, ..._secTitle, ..._secBody]) c.dispose();
+    for (final c in [_pageTitleEn, _pageTitleId, _introEn, _introId, _updatedEn, _updatedId,
+      ..._secTitleEn, ..._secTitleId, ..._secBodyEn, ..._secBodyId]) c.dispose();
     super.dispose();
   }
 
   Future<void> _saveAll() async {
     final saves = <Future<void>>[
-      widget.onSave('privacy_page_title', _pageTitle.text, cat: 'legal'),
-      widget.onSave('privacy_intro',      _intro.text,     cat: 'legal'),
-      widget.onSave('privacy_updated',    _updated.text,   cat: 'legal'),
+      widget.onSave('privacy_page_title',    _pageTitleEn.text, cat: 'legal'),
+      widget.onSave('privacy_page_title_id', _pageTitleId.text, cat: 'legal'),
+      widget.onSave('privacy_intro',         _introEn.text,     cat: 'legal'),
+      widget.onSave('privacy_intro_id',      _introId.text,     cat: 'legal'),
+      widget.onSave('privacy_updated',       _updatedEn.text,   cat: 'legal'),
+      widget.onSave('privacy_updated_id',    _updatedId.text,   cat: 'legal'),
     ];
     for (int i = 0; i < _n; i++) {
-      saves.add(widget.onSave('privacy_${i}_title', _secTitle[i].text, cat: 'legal'));
-      saves.add(widget.onSave('privacy_${i}_body',  _secBody[i].text,  cat: 'legal'));
+      saves.add(widget.onSave('privacy_${i}_title',    _secTitleEn[i].text, cat: 'legal'));
+      saves.add(widget.onSave('privacy_${i}_title_id', _secTitleId[i].text, cat: 'legal'));
+      saves.add(widget.onSave('privacy_${i}_body',     _secBodyEn[i].text,  cat: 'legal'));
+      saves.add(widget.onSave('privacy_${i}_body_id',  _secBodyId[i].text,  cat: 'legal'));
     }
     await Future.wait(saves);
     setState(() => _dirty = false);
@@ -1284,21 +1336,21 @@ class _PrivacyCmsTabState extends State<_PrivacyCmsTab> {
           if (_dirty) FilledButton.icon(onPressed: _saveAll, icon: const Icon(Icons.save_rounded, size: 16), label: const Text('Save Changes')),
         ]),
         const SizedBox(height: 4),
-        Text('Manage revive.co.id/privacy', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+        Text('Manage revive.co.id/privacy  ·  EN + ID bilingual', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
         const SizedBox(height: 24),
         _Card(cs: cs, title: 'Page Header', icon: Icons.privacy_tip_outlined, children: [
-          _Field(cs: cs, label: 'Page Title',   ctrl: _pageTitle, hint: 'Kebijakan Privasi', onChange: _mark),
+          _BilingualField(cs: cs, label: 'Page Title',   ctrlEn: _pageTitleEn, ctrlId: _pageTitleId, hintEn: 'Privacy Policy', hintId: 'Kebijakan Privasi', onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Last Updated', ctrl: _updated,   hint: 'September 2026',   onChange: _mark),
+          _BilingualField(cs: cs, label: 'Last Updated', ctrlEn: _updatedEn,   ctrlId: _updatedId,   hintEn: 'Last updated: September 2026', hintId: 'Terakhir diperbarui: September 2026', onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Intro Text',   ctrl: _intro,     hint: 'Opening paragraph...', maxLines: 3, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Intro Text',   ctrlEn: _introEn,     ctrlId: _introId,     hintEn: 'Opening paragraph (EN)...', hintId: 'Paragraf pembuka (ID)...', maxLines: 3, onChange: _mark),
         ]),
         const SizedBox(height: 16),
         for (int i = 0; i < _n; i++) ...[
           _Card(cs: cs, title: 'Section ${i + 1}', icon: Icons.article_outlined, children: [
-            _Field(cs: cs, label: 'Heading', ctrl: _secTitle[i], hint: 'e.g. 1. Data yang Kami Kumpulkan', onChange: _mark),
+            _BilingualField(cs: cs, label: 'Heading', ctrlEn: _secTitleEn[i], ctrlId: _secTitleId[i], hintEn: _enTitles[i], hintId: _idTitles[i], onChange: _mark),
             const SizedBox(height: 12),
-            _Field(cs: cs, label: 'Body',    ctrl: _secBody[i],  hint: 'Section content...',                maxLines: 4, onChange: _mark),
+            _BilingualField(cs: cs, label: 'Body',    ctrlEn: _secBodyEn[i],  ctrlId: _secBodyId[i],  hintEn: 'Section content (EN)...', hintId: 'Konten bagian (ID)...', maxLines: 4, onChange: _mark),
           ]),
           const SizedBox(height: 12),
         ],
