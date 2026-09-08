@@ -36,7 +36,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.x'
+          # No version pin — always use latest stable so package constraints are met
           channel: stable
           cache: true
 
@@ -74,7 +74,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
           publish_branch: gh-pages
-          # Keep existing files not produced by this build (e.g. custom 404.html)
           keep_files: false
-          # Ensure custom domain is preserved via the CNAME file we copied above
           cname: revive.co.id
