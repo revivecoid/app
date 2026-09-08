@@ -103,7 +103,11 @@ class _SettingsPanelBody extends ConsumerWidget {
           // Done button
           SizedBox(
             width: double.infinity,
-            child: FilledButton.tonal(
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.primary,
+                foregroundColor: cs.onPrimary,
+              ),
               onPressed: () => Navigator.pop(context),
               child: Text(l.done),
             ),
@@ -187,20 +191,20 @@ class _ThemeChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? cs.secondaryContainer : cs.surfaceContainerLow,
+          color: selected ? cs.primaryContainer : cs.surfaceContainerLow,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: selected ? cs.secondary : cs.outlineVariant,
+            color: selected ? cs.primary : cs.outlineVariant,
             width: selected ? 1.5 : 1,
           ),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon, size: 16,
-              color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant),
+              color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant),
           const SizedBox(width: 6),
           Text(label,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+                  color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
         ]),
       ),

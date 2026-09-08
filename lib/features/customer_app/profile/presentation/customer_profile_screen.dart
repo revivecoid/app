@@ -221,7 +221,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                       SizedBox(height: 24),
 
                       // ── Account & Telemetry ───────────────────────────────
-                      Text('Account & Telemetry',
+                      Text(AppL.of(context)!.profileAccountTelemetry,
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -597,7 +597,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                                         color: AppColors.primaryContainer,
                                         size: 12),
                                     SizedBox(width: 4),
-                                    Text('Member',
+                                    Text(AppL.of(context)!.profileMember,
                                         style: TextStyle(
                                             fontSize: 10,
                                             fontWeight: FontWeight.bold,
@@ -624,7 +624,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                                       size: 14,
                                       color: Theme.of(context).colorScheme.onSurfaceVariant)),
                               SizedBox(width: 4),
-                              Text('Signed in with Google',
+                              Text(AppL.of(context)!.profileSignedInGoogle,
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: Theme.of(context).colorScheme.onSurfaceVariant)),
@@ -681,14 +681,13 @@ class CustomerProfileScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('REVIVE MEMBER',
+                            Text(AppL.of(context)!.profileReviveMember,
                                 style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 0.5,
                                     color: Theme.of(context).colorScheme.onSurface)),
-                            Text(
-                                'Register vehicles to unlock workshop perks',
+                            Text(AppL.of(context)!.profileMemberPerks,
                                 style: TextStyle(
                                     fontSize: 11,
                                     color: Theme.of(context).colorScheme.onSurfaceVariant)),
@@ -723,7 +722,7 @@ class CustomerProfileScreen extends ConsumerWidget {
             Icon(Icons.garage,
                 color: AppColors.primaryContainer, size: 20),
             SizedBox(width: 6),
-            Text('My Digital Garage',
+            Text(AppL.of(context)!.profileGarageTitle,
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -771,15 +770,13 @@ class CustomerProfileScreen extends ConsumerWidget {
           Icon(Icons.garage_outlined,
               size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
           SizedBox(height: 12),
-          Text('Your garage is empty',
+          Text(AppL.of(context)!.profileGarageEmpty,
               style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface)),
           SizedBox(height: 4),
-          Text(
-              'Register your vehicle to start managing service history,\n'
-              'track repairs, and unlock exclusive perks.',
+          Text(AppL.of(context)!.profileGarageEmptyDesc,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
@@ -1023,7 +1020,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                     onPressed: () =>
                         context.push('/track/$activeJobId'),
                     icon: Icon(Icons.fmd_good_outlined, size: 16),
-                    label: Text('Track Live Repair',
+                    label: Text(AppL.of(context)!.profileTrackLive,
                         style: TextStyle(fontSize: 13)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryContainer,
@@ -1038,7 +1035,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                     onPressed: () => context.push('/estimator'),
                     icon: Icon(Icons.auto_fix_high,
                         size: 16, color: AppColors.primaryContainer),
-                    label: Text('Book a Service',
+                    label: Text(AppL.of(context)!.profileBookService,
                             style: TextStyle(
                             color: Theme.of(context).colorScheme.onSurface, fontSize: 13)),
                     style: OutlinedButton.styleFrom(
@@ -1092,7 +1089,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                   size: 20, color: AppColors.primaryContainer),
             ),
             SizedBox(width: 10),
-            Text('Register New Vehicle to Garage',
+            Text(AppL.of(context)!.profileRegisterVehicle,
                 style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -1120,7 +1117,7 @@ class CustomerProfileScreen extends ConsumerWidget {
             Icon(Icons.history_edu,
                 color: AppColors.primaryContainer, size: 20),
             SizedBox(width: 6),
-            Text('Job History & Certificates',
+            Text(AppL.of(context)!.profileJobHistory,
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -1133,7 +1130,7 @@ class CustomerProfileScreen extends ConsumerWidget {
               // TODO: navigate to full job history screen
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                    content: Text('Full history coming soon'),
+                    content: Text(AppL.of(context)!.profileHistoryComing),
                     behavior: SnackBarBehavior.floating),
               );
             },
@@ -1253,7 +1250,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                 child: ElevatedButton.icon(
                   onPressed: () => context.push('/track/${job['id']}'),
                   icon: Icon(Icons.fmd_good_outlined, size: 15),
-                  label: Text('Track Order',
+                  label: Text(AppL.of(context)!.profileTrackOrder,
                       style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryContainer,
@@ -1349,7 +1346,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                             color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text('Completed',
+                          child: Text(AppL.of(context)!.profileCompleted,
                               style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -1569,7 +1566,7 @@ class CustomerProfileScreen extends ConsumerWidget {
             onPressed: () => _signOut(context),
             icon: Icon(Icons.logout,
                 color: AppColors.primaryContainer, size: 20),
-            label: Text('Log Out of Revive ID',
+            label: Text(AppL.of(context)!.profileLogOut,
                 style: TextStyle(
                     color: AppColors.primaryContainer,
                     fontSize: 14,
@@ -1584,7 +1581,7 @@ class CustomerProfileScreen extends ConsumerWidget {
           ),
         ),
         SizedBox(height: 12),
-        Text('Revive Workshop Telemetry OS v4.2.1-JKT',
+        Text(AppL.of(context)!.profileTelemetryVersion,
             style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6))),
@@ -1700,7 +1697,7 @@ class CustomerProfileScreen extends ConsumerWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content:
-                      Text('Select a job from your history to track it'),
+                      Text(AppL.of(context)!.profileSelectJob),
                   behavior: SnackBarBehavior.floating,
                 ),
               );

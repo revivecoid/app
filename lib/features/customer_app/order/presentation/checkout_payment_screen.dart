@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/widgets/responsive_layout_guard.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import 'checkout_payment_controller.dart';
 
 class CheckoutPaymentScreen extends ConsumerStatefulWidget {
@@ -103,17 +104,19 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
 
     final checkoutForm = SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
-      child: Column(
+      child: Builder(builder: (ctx) {
+        final l = AppL.of(ctx)!;
+        return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Logistics Configuration', style: Theme.of(context).textTheme.headlineSmall),
+          Text(l.checkoutLogistics, style: Theme.of(ctx).textTheme.headlineSmall),
           const SizedBox(height: 16),
           
           // STRICT REQUIREMENT 3: LOGISTICS STATE MACHINE
           SegmentedButton<DeliveryOption>(
-            segments: const [
-              ButtonSegment(value: DeliveryOption.selfDeliver, label: Text('Self Delivery'), icon: Icon(Icons.directions_car)),
-              ButtonSegment(value: DeliveryOption.pickup, label: Text('Valet Pickup'), icon: Icon(Icons.person_pin_circle)),
+            segments: [
+              ButtonSegment(value: DeliveryOption.selfDeliver, label: Text(AppL.of(ctx)!.checkoutSelfDeliver), icon: const Icon(Icons.directions_car)),
+              ButtonSegment(value: DeliveryOption.pickup, label: Text(AppL.of(ctx)!.checkoutValetPickup), icon: const Icon(Icons.person_pin_circle)),
             ],
             selected: {state.deliveryOption},
             onSelectionChanged: (Set<DeliveryOption> newSelection) {
@@ -142,11 +145,11 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Pickup Location Details', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    Text(AppL.of(ctx)!.checkoutPickupDetails, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(ctx).colorScheme.onSurface)),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _addressController,
-                      decoration: const InputDecoration(labelText: 'Full Street Address', border: OutlineInputBorder()),
+                      decoration: InputDecoration(labelText: AppL.of(ctx)!.checkoutAddress, border: const OutlineInputBorder()),
                       validator: (value) {
                         if (value == null || value.trim().length < 10) return 'Please enter a complete address (min 10 chars)';
                         return null;
@@ -159,7 +162,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _latController,
-                            decoration: const InputDecoration(labelText: 'Latitude', border: OutlineInputBorder()),
+                            decoration: InputDecoration(labelText: AppL.of(ctx)!.checkoutLatitude, border: const OutlineInputBorder()),
                             keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) return null;
@@ -173,7 +176,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _lngController,
-                            decoration: const InputDecoration(labelText: 'Longitude', border: OutlineInputBorder()),
+                            decoration: InputDecoration(labelText: AppL.of(ctx)!.checkoutLongitude, border: const OutlineInputBorder()),
                             keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) return null;
@@ -207,7 +210,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
           const SizedBox(height: 32),
           
           // STRICT REQUIREMENT 4: CALENDAR SCHEDULER
-          Text('Schedule Intake Date', style: Theme.of(context).textTheme.headlineSmall),
+          Text(AppL.of(ctx)!.checkoutSchedule, style: Theme.of(ctx).textTheme.headlineSmall),
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
@@ -224,22 +227,22 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
             ),
           ),
           if (state.scheduledDate != null)
-            Padding(
+              Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Text(
-                'Verified Intake Date: ${state.scheduledDate!.toLocal().toString().split(' ')[0]}',
+                '${AppL.of(ctx)!.checkoutVerifiedDate}: ${state.scheduledDate!.toLocal().toString().split(' ')[0]}',
                 style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold),
               ),
             ),
 
           const SizedBox(height: 32),
 
-          Text('Payment Method', style: Theme.of(context).textTheme.headlineSmall),
+          Text(AppL.of(ctx)!.checkoutPayment, style: Theme.of(ctx).textTheme.headlineSmall),
           const SizedBox(height: 16),
           SegmentedButton<PaymentMethod>(
-            segments: const [
-              ButtonSegment(value: PaymentMethod.onlineGateway, label: Text('Online / QR / VA'), icon: Icon(Icons.qr_code_scanner)),
-              ButtonSegment(value: PaymentMethod.manualTransfer, label: Text('Bank Transfer'), icon: Icon(Icons.account_balance)),
+            segments: [
+              ButtonSegment(value: PaymentMethod.onlineGateway, label: Text(AppL.of(ctx)!.checkoutOnlinePayment), icon: const Icon(Icons.qr_code_scanner)),
+              ButtonSegment(value: PaymentMethod.manualTransfer, label: Text(AppL.of(ctx)!.checkoutBankTransfer), icon: const Icon(Icons.account_balance)),
             ],
             selected: {state.paymentMethod},
             onSelectionChanged: (Set<PaymentMethod> newSelection) {
@@ -254,7 +257,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
           ),
           if (state.paymentMethod == PaymentMethod.manualTransfer) ...[
             const SizedBox(height: 24),
-            Text('Transfer Proof', style: Theme.of(context).textTheme.titleMedium),
+            Text(AppL.of(ctx)!.checkoutTransferProof, style: Theme.of(ctx).textTheme.titleMedium),
             const SizedBox(height: 8),
             Container(
               width: double.infinity,
@@ -268,12 +271,12 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
                   if (state.transferProof != null) ...[
                     const Icon(Icons.check_circle, color: Colors.green, size: 48),
                     const SizedBox(height: 8),
-                    Text('Proof Selected: ${state.transferProof!.name}', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text('${AppL.of(ctx)!.checkoutProofSelected}: ${state.transferProof!.name}', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                   ] else ...[
                     Icon(Icons.cloud_upload, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 48),
                     const SizedBox(height: 8),
-                    Text('Please upload an image of your transfer receipt.', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                    Text(AppL.of(ctx)!.checkoutUploadHint, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 16),
                   ],
                   ElevatedButton.icon(
@@ -290,14 +293,14 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
                       side: const BorderSide(color: AppColors.fireRed),
                     ),
                     icon: const Icon(Icons.upload_file),
-                    label: Text(state.transferProof != null ? 'Change File' : 'Upload Proof'),
+                    label: Text(state.transferProof != null ? AppL.of(ctx)!.checkoutChangeFile : AppL.of(ctx)!.checkoutUploadProof),
                   ),
                 ],
               ),
             ),
           ],
-        ],
-      ),
+        ]);
+      }),
     );
 
     // STRICT REQUIREMENT 2 & 5: Persistent Pricing Panel and Payment Integration
@@ -320,7 +323,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
           ),
           const SizedBox(height: 8),
           if (state.deliveryOption == DeliveryOption.pickup)
-            const Text('+ Valet Service Fee Applicable', style: TextStyle(color: Colors.orangeAccent, fontSize: 12)),
+            Builder(builder: (ctx) => Text(AppL.of(ctx)!.checkoutValetFee, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12))),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: state.isLoading || state.paymentStatus == PaymentStatus.awaitingWebhook
@@ -337,9 +340,12 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
             ),
             child: state.isLoading 
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : state.paymentStatus == PaymentStatus.awaitingWebhook
-                    ? const Text('Awaiting Gateway Webhook...', style: TextStyle(color: Colors.white))
-                    : Text(state.paymentMethod == PaymentMethod.manualTransfer ? 'CONFIRM BOOKING (TRANSFER)' : 'PAY NOW (QR / VA)', style: const TextStyle(fontSize: 16, letterSpacing: 1.2, fontWeight: FontWeight.bold, color: Colors.white)),
+                : Builder(builder: (ctx) {
+                    final l = AppL.of(ctx)!;
+                    return state.paymentStatus == PaymentStatus.awaitingWebhook
+                        ? Text(l.checkoutAwaitingWebhook, style: const TextStyle(color: Colors.white))
+                        : Text(state.paymentMethod == PaymentMethod.manualTransfer ? l.checkoutConfirmTransfer : l.checkoutPayNow, style: const TextStyle(fontSize: 16, letterSpacing: 1.2, fontWeight: FontWeight.bold, color: Colors.white));
+                  }),
           ),
         ],
       ),
@@ -347,7 +353,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
 
     // STRICT REQUIREMENT 2: Responsive Layout implementation
     return Scaffold(
-      appBar: ReVAppBar(title: const Text('Checkout & Booking')),
+      appBar: ReVAppBar(title: Builder(builder: (ctx) => Text(AppL.of(ctx)!.checkoutTitle))),
       body: ResponsiveLayoutGuard(
         mobileWidget: Column(
           children: [
@@ -396,7 +402,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
               Navigator.of(context).pop(); // Close dialog
               context.go('/track/${widget.jobId}');
             },
-            child: const Text('View Repair Tracker'),
+            child: Builder(builder: (ctx) => Text(AppL.of(ctx)!.trackingTitle)),
           ),
         ],
       ),

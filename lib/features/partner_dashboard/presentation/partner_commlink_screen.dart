@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/l10n/app_localizations.dart';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const _primary = Color(0xFFa40016);
@@ -241,7 +242,7 @@ class _CommSidebar extends StatelessWidget {
             SizedBox(width: 8),
             Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
               Text('re-V', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
-              Text('OPS CORE', style: TextStyle(color: _primary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+              Text(AppL.of(context)!.partnerOpsCore, style: TextStyle(color: _primary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             ]),
           ]),
         ),
@@ -316,8 +317,8 @@ class _CommHeader extends StatelessWidget {
         ),
         SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text('Commlink — Admin Hotline', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
-          Text('Secure channel with Revive Ops Core admin team', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
+          Text(AppL.of(context)!.commlinkTitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
+          Text(AppL.of(context)!.commlinkSub, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
         ])),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -325,7 +326,7 @@ class _CommHeader extends StatelessWidget {
           child: Row(children: [
             Container(width: 7, height: 7, decoration: BoxDecoration(color: _emerald500, shape: BoxShape.circle)),
             SizedBox(width: 5),
-            Text('ADMIN ONLINE', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4)),
+            Text(AppL.of(context)!.commlinkAdminOnline, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4)),
           ]),
         ),
         SizedBox(width: 8),
@@ -429,7 +430,7 @@ class _MessageBubble extends StatelessWidget {
               if (isAdmin)
                 Padding(
                   padding: EdgeInsets.only(bottom: 3, left: 2),
-                  child: Text('Revive Admin', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
+                  child: Text(AppL.of(context)!.commlinkReviveAdmin, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
                 ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -489,9 +490,9 @@ class _EmptyCommState extends StatelessWidget {
         child: Icon(Icons.forum_outlined, color: _primary, size: 36),
       ),
       SizedBox(height: 16),
-      Text('No messages yet', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
-      SizedBox(height: 6),
-      Text('Send a message to the Revive Ops admin team.\nThey typically respond within 1 business hour.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5), textAlign: TextAlign.center),
+      Text(AppL.of(context)!.commlinkNoMessages, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+      SizedBox(height: 8),
+      Text(AppL.of(context)!.commlinkNoMessagesSub, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5), textAlign: TextAlign.center),
     ]));
   }
 }

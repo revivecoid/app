@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import 'partner_profile_controller.dart';
 
 // ─── Brand accent colors (theme-invariant) ───────────────────────────────────
@@ -127,7 +128,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
               children: [
                 Icon(Icons.directions_car, color: _primaryContainer, size: 22),
                 SizedBox(width: 10),
-                Text('Partner Portal', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(AppL.of(context)!.partnerPortal, style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
               ],
             ),
           ),
@@ -169,14 +170,14 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       ),
       child: Row(
         children: [
-          Text('My Workshop Profile', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: cs.onSurface)),
+          Text(AppL.of(context)!.partnerWorkshopProfile, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: cs.onSurface)),
           const SizedBox(width: 16),
           FilledButton.tonal(
             onPressed: () => context.go('/partner-dashboard'),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               const Icon(Icons.dashboard_outlined, size: 15),
               const SizedBox(width: 6),
-              const Text('Dashboard', style: TextStyle(fontSize: 13)),
+              Text(AppL.of(context)!.partnerDashboard, style: TextStyle(fontSize: 13)),
             ]),
           ),
           Spacer(),
@@ -212,7 +213,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
               OutlinedButton(
                 style: OutlinedButton.styleFrom(foregroundColor: cs.onSurfaceVariant, side: BorderSide(color: cs.outlineVariant)),
                 onPressed: () => setState(() => _isEditing = false),
-                child: Text('Cancel'),
+                child: Text(AppL.of(context)!.cancel),
               ),
               SizedBox(width: 8),
               ElevatedButton.icon(
@@ -220,7 +221,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
                 icon: state.isSaving
                     ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: cs.surface, strokeWidth: 2))
                     : Icon(Icons.save_outlined, size: 16),
-                label: Text('Save Changes'),
+                label: Text(AppL.of(context)!.saveChanges),
                 onPressed: state.isSaving ? null : () {
                   controller.updateProfile(
                     address: _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text.trim(),
@@ -234,7 +235,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(backgroundColor: _primary, foregroundColor: _onPrimary),
                 icon: Icon(Icons.edit_outlined, size: 16),
-                label: Text('Edit Profile'),
+                label: Text(AppL.of(context)!.edit),
                 onPressed: () {
                   _populateControllers(state.partnerData!);
                   setState(() => _isEditing = true);
@@ -336,7 +337,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: _amber500.withValues(alpha: 0.4)),
                         ),
-                        child: Text('PENDING REVIEW', style: TextStyle(color: _amber500, fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: Text(AppL.of(context)!.partnerPendingReview, style: TextStyle(color: _amber500, fontSize: 11, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ],
@@ -374,7 +375,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Contact & Operations', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
+          Text(AppL.of(context)!.partnerContactOps, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
           SizedBox(height: 16),
           Divider(color: cs.outlineVariant),
           SizedBox(height: 12),
@@ -442,7 +443,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Performance KPIs', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
+          Text(AppL.of(context)!.partnerPerformanceKpis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
           SizedBox(height: 16),
           Divider(color: cs.outlineVariant),
           SizedBox(height: 12),
@@ -489,7 +490,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Facility Photos', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
+          Text(AppL.of(context)!.partnerFacilityPhotos, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
           SizedBox(height: 14),
           state.facilityPhotoUrls.isEmpty
               ? Container(
@@ -500,7 +501,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: cs.outlineVariant, style: BorderStyle.solid),
                   ),
-                  child: Text('No facility photos uploaded yet.', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                  child: Text(AppL.of(context)!.partnerNoPhotos, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                 )
               : SizedBox(
                   height: 120,
@@ -547,7 +548,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Document Status', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
+          Text(AppL.of(context)!.partnerDocumentStatus, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
           SizedBox(height: 14),
           ...docs.map((doc) {
             final hasDoc = p[doc.$2] != null && p[doc.$2].toString().isNotEmpty;

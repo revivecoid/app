@@ -5,10 +5,118 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../providers/booking_scheduling_controller.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// [FUTURE FEATURE] Customer Workshop Selection
+//
+// This screen previously allowed customers to browse and select a workshop
+// from a dummy list before proceeding to checkout.
+//
+// As of Sep 2026: workshop assignment is handled by admin via the Admin Central
+// dashboard (admin_job_assignment_screen.dart). Once the partner network is
+// sufficiently populated with real data, re-enable the widget below and update
+// estimator_screen.dart to route back to '/booking/schedule/:jobId'.
+//
+// State, model, and UI code are fully preserved below in commented form.
+// ─────────────────────────────────────────────────────────────────────────────
+
 class BookingSchedulingScreen extends ConsumerWidget {
   final String jobId;
 
-  BookingSchedulingScreen({super.key, required this.jobId});
+  const BookingSchedulingScreen({super.key, required this.jobId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Keep the provider alive so any stored selection survives navigation
+    // (no-op for now; will be used when this screen is re-enabled).
+    ref.watch(bookingSchedulingControllerProvider);
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final isDesktop = constraints.maxWidth > 900;
+
+      Widget inner = Scaffold(
+        appBar: ReVAppBar(title: const Text('Book Your Repair')),
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      color: AppColors.fireRed.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.admin_panel_settings_outlined,
+                        size: 44, color: AppColors.fireRed),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Workshop Being Assigned',
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Our team is matching your repair job to the best available workshop. '
+                    'You\'ll be notified once a workshop is assigned.\n\n'
+                    'You can proceed to complete your booking details below.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.6,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 40),
+                  ElevatedButton.icon(
+                    onPressed: () => context.push('/checkout/$jobId'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.fireRed,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16, horizontal: 32),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                    label: const Text(
+                      'Continue to Checkout',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      return isDesktop
+          ? Center(
+              child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: inner))
+          : inner;
+    });
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PRESERVED — Customer Workshop Picker (re-enable when partner network is live)
+// ═════════════════════════════════════════════════════════════════════════════
+/*
+
+class _BookingSchedulingScreenLive extends ConsumerWidget {
+  final String jobId;
+
+  _BookingSchedulingScreenLive({super.key, required this.jobId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -59,7 +167,7 @@ class BookingSchedulingScreen extends ConsumerWidget {
                           scrollDirection: Axis.horizontal,
                           itemCount: 14,
                           itemBuilder: (context, index) {
-                            final date = DateTime.now().add(Duration(days: index + 1)); // start tomorrow
+                            final date = DateTime.now().add(Duration(days: index + 1));
                             final isSelected = state.selectedDate?.day == date.day && state.selectedDate?.month == date.month;
                             final isWeekend = date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
                             
@@ -129,7 +237,7 @@ class BookingSchedulingScreen extends ConsumerWidget {
                         ),
                       ],
                     ],
-                    SizedBox(height: 100), // padding for bottom bar
+                    SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -173,3 +281,5 @@ class BookingSchedulingScreen extends ConsumerWidget {
     }
   }
 }
+
+*/

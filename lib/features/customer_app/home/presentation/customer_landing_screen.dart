@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 
 // ── CMS settings provider ──────────────────────────────────────────────────────
@@ -16,8 +18,15 @@ final cmsSettingsProvider = FutureProvider.autoDispose<Map<String, String>>((ref
   return {};
 });
 
-String _cms(Map<String, String> s, String key, {required String fallback}) =>
-    (s[key] != null && s[key]!.isNotEmpty) ? s[key]! : fallback;
+// Locale-aware CMS lookup: checks _id suffixed key when locale is 'id'.
+String _cmsL(Map<String, String> s, String key, {required String fallback, bool isId = false}) {
+  if (isId) {
+    final v = s['${key}_id'];
+    if (v != null && v.isNotEmpty) return v;
+  }
+  final v = s[key];
+  return (v != null && v.isNotEmpty) ? v : fallback;
+}
 
 class CustomerLandingScreen extends ConsumerStatefulWidget {
   CustomerLandingScreen({super.key});
@@ -67,6 +76,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     final activeJobAsync = ref.watch(activeJobProvider);
     final cmsAsync = ref.watch(cmsSettingsProvider);
     final cms = cmsAsync.valueOrNull ?? {};
+    final isId = ref.watch(localeProvider).languageCode == 'id';
 
     return LayoutBuilder(builder: (context, constraints) {
       final isDesktop = constraints.maxWidth > 900;
@@ -78,7 +88,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeroSection(theme, cms),
+            _buildHeroSection(theme, cms, isId),
             SizedBox(height: 16),
             if (isLoggedIn)
               activeJobAsync.when(
@@ -95,16 +105,16 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               ),
             _buildQuickActions(theme),
             SizedBox(height: 16),
-            _buildFeatureHighlight(theme),
+            _buildFeatureHighlight(theme, cms, isId),
             SizedBox(height: 16),
-            _buildHowItWorks(theme),
+            _buildHowItWorks(theme, cms, isId),
             SizedBox(height: 16),
             _buildRecentInspections(theme),
             SizedBox(height: 16),
-            _buildTrustBadges(theme),
+            _buildTrustBadges(theme, cms, isId),
             SizedBox(height: 16),
             if (cms['contact_phone'] != null || cms['contact_email'] != null || cms['contact_address'] != null)
-              _buildContactSection(theme, cms),
+              _buildContactSection(theme, cms, isId),
             if (cms['contact_phone'] != null || cms['contact_email'] != null || cms['contact_address'] != null)
               SizedBox(height: 16),
             _buildQuickLinks(theme),
@@ -119,10 +129,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     });
   }
 
-  Widget _buildHeroSection(ThemeData theme, Map<String, String> cms) {
-    final heroTitle = _cms(cms, 'hero_title', fallback: 'Body Repair\nMade Simple.');
-    final heroSub = _cms(cms, 'hero_subtitle', fallback: 'Instant body repair estimation & real-time tracking. Get your car shining faster, with absolute transparency.');
-    final heroCta = _cms(cms, 'hero_cta', fallback: 'Get Free AI Estimate');
+  Widget _buildHeroSection(ThemeData theme, Map<String, String> cms, bool isId) {
+    final heroTitle = _cmsL(cms, 'hero_title',    fallback: isId ? 'Perbaikan Bodi\nJadi Mudah.'  : 'Body Repair\nMade Simple.',         isId: isId);
+    final heroSub   = _cmsL(cms, 'hero_subtitle', fallback: isId ? 'Estimasi instan berbasis AI & pelacakan real-time. Dapatkan mobil Anda kembali lebih cepat dengan transparansi penuh.' : 'Instant body repair estimation & real-time tracking. Get your car shining faster, with absolute transparency.', isId: isId);
+    final heroCta   = _cmsL(cms, 'hero_cta',      fallback: isId ? 'Estimasi AI Gratis'           : 'Get Free AI Estimate',                isId: isId);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -171,7 +181,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     );
   }
 
-  Widget _buildContactSection(ThemeData theme, Map<String, String> cms) {
+  Widget _buildContactSection(ThemeData theme, Map<String, String> cms, bool isId) {
     final phone = cms['contact_phone'];
     final email = cms['contact_email'];
     final address = cms['contact_address'];
@@ -411,7 +421,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     );
   }
 
-  Widget _buildFeatureHighlight(ThemeData theme) {
+  Widget _buildFeatureHighlight(ThemeData theme, Map<String, String> cms, bool isId) {
+    final ftTitle = _cmsL(cms, 'feature_title', fallback: isId ? 'Jaringan Tersertifikasi Jabodetabek' : 'Jabodetabek Certified Network', isId: isId);
+    final ftBody  = _cmsL(cms, 'feature_body',  fallback: isId ? 'Lebih dari 38 spray booth OEM-compliant dengan presisi color-matching hingga 99,4% akurasi pabrik.' : 'Over 38 OEM-compliant spray booths with digitized color-matching precision down to 99.4% factory accuracy.', isId: isId);
+    final ftBadge = _cmsL(cms, 'feature_badge', fallback: 'SLA < 48 Hrs', isId: isId);
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLowest,
@@ -442,13 +455,13 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('AI TELEMETRY HUB', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.secondary, fontWeight: FontWeight.bold)),
-                    Text('SLA < 48 Hrs', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(ftBadge, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   ],
                 ),
                 SizedBox(height: 8),
-                Text('Jabodetabek Certified Network', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                Text(ftTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                 SizedBox(height: 4),
-                Text('Over 38 OEM-compliant spray booths with digitized color-matching precision down to 99.4% factory accuracy.', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Text(ftBody, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               ],
             ),
           ),
@@ -457,7 +470,22 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     );
   }
 
-  Widget _buildHowItWorks(ThemeData theme) {
+  Widget _buildHowItWorks(ThemeData theme, Map<String, String> cms, bool isId) {
+    // Step fallbacks
+    final steps = [
+      (_cmsL(cms, 'step_1_title', fallback: isId ? 'Foto Kerusakan' : 'Snap Damage Photos', isId: isId),
+       _cmsL(cms, 'step_1_desc',  fallback: isId ? 'Ambil 3 foto jelas seputar penyok, goresan, atau celah panel langsung di web scanner.' : 'Take 3 clear photos around your vehicle dents, scratches, or panel gaps directly in the web scanner.', isId: isId),
+       Icons.photo_camera, '1'),
+      (_cmsL(cms, 'step_2_title', fallback: isId ? 'Penilaian AI Instan' : 'Instant AI Assessment', isId: isId),
+       _cmsL(cms, 'step_2_desc',  fallback: isId ? 'Dapatkan analisis suku cadang sub-milimeter dan estimasi harga tetap yang dijamin.' : 'Get sub-millimeter part analysis and guaranteed fixed-price estimate with parts catalog breakdown.', isId: isId),
+       Icons.smart_toy, '2'),
+      (_cmsL(cms, 'step_3_title', fallback: isId ? 'Pilih Bengkel & Bay' : 'Select Hub & Bay', isId: isId),
+       _cmsL(cms, 'step_3_desc',  fallback: isId ? 'Pilih bengkel tersertifikasi terdekat dan kunci reservasi slot prioritas dengan layanan towing.' : 'Choose your closest certified workshop and lock priority slot reservation with door-to-door towing.', isId: isId),
+       Icons.garage, '3'),
+      (_cmsL(cms, 'step_4_title', fallback: isId ? 'Lacak Langsung hingga Serah Terima' : 'Live Tracking to Handover', isId: isId),
+       _cmsL(cms, 'step_4_desc',  fallback: isId ? 'Pantau real-time persiapan, pengecatan, dan kontrol kualitas hingga pengiriman ke rumah Anda.' : 'Watch real-time prep, booth painting, and quality control telemetry until delivery back to your driveway.', isId: isId),
+       Icons.check_circle, '4'),
+    ];
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -488,13 +516,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
             ],
           ),
           SizedBox(height: 16),
-          _buildStepItem(theme, '1', 'Snap Damage Photos', 'Take 3 clear photos around your vehicle dents, scratches, or panel gaps directly in the web scanner.', Icons.photo_camera),
-          SizedBox(height: 12),
-          _buildStepItem(theme, '2', 'Instant AI Assessment', 'Get sub-millimeter part analysis and guaranteed fixed-price estimate with parts catalog breakdown.', Icons.smart_toy),
-          SizedBox(height: 12),
-          _buildStepItem(theme, '3', 'Select Hub & Bay', 'Choose your closest certified workshop and lock priority slot reservation with door-to-door towing.', Icons.garage),
-          SizedBox(height: 12),
-          _buildStepItem(theme, '4', 'Live Tracking to Handover', 'Watch real-time prep, booth painting, and quality control telemetry until delivery back to your driveway.', Icons.check_circle),
+          for (final step in steps) ...[
+            _buildStepItem(theme, step.$4, step.$1, step.$2, step.$3),
+            SizedBox(height: 12),
+          ],
         ],
       ),
     );
@@ -620,7 +645,13 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     );
   }
 
-  Widget _buildTrustBadges(ThemeData theme) {
+  Widget _buildTrustBadges(ThemeData theme, Map<String, String> cms, bool isId) {
+    final b1v = _cmsL(cms, 'badge_1_value', fallback: '38+', isId: isId);
+    final b1l = _cmsL(cms, 'badge_1_label', fallback: isId ? 'Bengkel Mitra' : 'Partner Hubs', isId: isId);
+    final b2v = _cmsL(cms, 'badge_2_value', fallback: '4.9/5', isId: isId);
+    final b2l = _cmsL(cms, 'badge_2_label', fallback: isId ? 'Rating Pelanggan' : 'Customer Rating', isId: isId);
+    final b3v = _cmsL(cms, 'badge_3_value', fallback: '12K+', isId: isId);
+    final b3l = _cmsL(cms, 'badge_3_label', fallback: isId ? 'Kendaraan Diperbaiki' : 'Cars Repaired', isId: isId);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -634,23 +665,21 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         children: [
           Text('VERIFIED STANDARDS', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
           SizedBox(height: 4),
-          Text('Trusted by Thousands Across Jabodetabek and Bandung', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+          Text(isId ? 'Terpercaya oleh Ribuan Pengemudi di Jabodetabek dan Bandung' : 'Trusted by Thousands Across Jabodetabek and Bandung',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
           SizedBox(height: 16),
-          _buildBadgeItem(theme, 'Certified Partner Hubs', '38+ Centers in Jakarta Bogor Depok Tangerang Bekasi and Bandung', Icons.hub, AppColors.primary),
+          _buildBadgeItem(theme, '$b1v $b1l', isId ? 'Pusat di Jakarta Bogor Depok Tangerang Bekasi dan Bandung' : '38+ Centers in Jakarta Bogor Depok Tangerang Bekasi and Bandung', Icons.hub, AppColors.primary),
           SizedBox(height: 8),
-          _buildBadgeItem(theme, 'Garda Oto & Astra SLA Compliant', 'Direct insurance paperwork integration & warranty', Icons.shield, AppColors.primary),
+          _buildBadgeItem(theme, 'Garda Oto & Astra SLA Compliant', isId ? 'Integrasi langsung asuransi & garansi' : 'Direct insurance paperwork integration & warranty', Icons.shield, AppColors.primary),
           SizedBox(height: 8),
-          _buildBadgeItem(theme, '4.9 / 5 Rating (12,000+ Drivers)', '98.7% on-time delivery metric verified by telemetry', Icons.star, theme.colorScheme.secondary),
+          _buildBadgeItem(theme, '$b2v $b2l ($b3v+ ${isId ? "Pengemudi" : "Drivers"})', isId ? '98,7% metrik pengiriman tepat waktu terverifikasi telemetri' : '98.7% on-time delivery metric verified by telemetry', Icons.star, theme.colorScheme.secondary),
           SizedBox(height: 16),
-          // Partner Registration Link
           Center(
             child: TextButton.icon(
               onPressed: () => context.go('/partner/register'),
               icon: Icon(Icons.handshake),
-              label: Text('Become a Certified Partner Workshop'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.fireRed,
-              ),
+              label: Text(isId ? 'Bergabung sebagai Bengkel Mitra Tersertifikasi' : 'Become a Certified Partner Workshop'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.fireRed),
             ),
           ),
         ],

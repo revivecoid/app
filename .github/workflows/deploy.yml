@@ -1,0 +1,80 @@
+name: Deploy to GitHub Pages (revive.co.id)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Write .env from GitHub Secrets ────────────────────────────────────
+      # The app uses flutter_dotenv which bundles .env as a Flutter asset.
+      # .env is gitignored so we recreate it here from secrets.
+      - name: Create .env file
+        run: |
+          cat > .env << 'EOF'
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          EOF
+          # Also place in assets/ for the bundled copy
+          cp .env assets/.env
+
+      # ── 3. Set up Flutter ────────────────────────────────────────────────────
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.x'
+          channel: stable
+          cache: true
+
+      # ── 4. Install dependencies ───────────────────────────────────────────────
+      - name: Install dependencies
+        run: flutter pub get
+
+      # ── 5. Generate l10n ──────────────────────────────────────────────────────
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      # ── 6. Build Flutter Web ──────────────────────────────────────────────────
+      - name: Build Flutter Web
+        run: |
+          flutter build web \
+            --release \
+            --base-href "/" \
+            --web-renderer canvaskit
+
+      # ── 7. Copy CNAME into build output ──────────────────────────────────────
+      # Prevents GitHub Pages from stripping the custom domain on every deploy.
+      - name: Copy CNAME to build/web
+        run: cp CNAME build/web/CNAME
+
+      # ── 8. Copy assets/.env into build output (flutter_dotenv at runtime) ────
+      - name: Copy .env asset into build
+        run: |
+          mkdir -p build/web/assets
+          cp assets/.env build/web/assets/.env
+
+      # ── 9. Deploy to gh-pages branch ─────────────────────────────────────────
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          publish_branch: gh-pages
+          # Keep existing files not produced by this build (e.g. custom 404.html)
+          keep_files: false
+          # Ensure custom domain is preserved via the CNAME file we copied above
+          cname: revive.co.id

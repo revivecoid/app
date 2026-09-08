@@ -379,11 +379,74 @@
   "orderWorkshop": "Workshop",
   "@orderWorkshop": {},
 
-  "checkoutTitle": "Checkout",
+  "checkoutTitle": "Checkout & Booking",
   "@checkoutTitle": {},
+
+  "checkoutLogistics": "Logistics Configuration",
+  "@checkoutLogistics": {},
+
+  "checkoutSelfDeliver": "Self Delivery",
+  "@checkoutSelfDeliver": {},
+
+  "checkoutValetPickup": "Valet Pickup",
+  "@checkoutValetPickup": {},
+
+  "checkoutPickupDetails": "Pickup Location Details",
+  "@checkoutPickupDetails": {},
+
+  "checkoutAddress": "Full Street Address",
+  "@checkoutAddress": {},
+
+  "checkoutLatitude": "Latitude",
+  "@checkoutLatitude": {},
+
+  "checkoutLongitude": "Longitude",
+  "@checkoutLongitude": {},
+
+  "checkoutSchedule": "Schedule Intake Date",
+  "@checkoutSchedule": {},
+
+  "checkoutVerifiedDate": "Verified Intake Date",
+  "@checkoutVerifiedDate": {},
 
   "checkoutPayment": "Payment Method",
   "@checkoutPayment": {},
+
+  "checkoutOnlinePayment": "Online / QR / VA",
+  "@checkoutOnlinePayment": {},
+
+  "checkoutBankTransfer": "Bank Transfer",
+  "@checkoutBankTransfer": {},
+
+  "checkoutTransferProof": "Transfer Proof",
+  "@checkoutTransferProof": {},
+
+  "checkoutUploadProof": "Upload Proof",
+  "@checkoutUploadProof": {},
+
+  "checkoutChangeFile": "Change File",
+  "@checkoutChangeFile": {},
+
+  "checkoutProofSelected": "Proof Selected",
+  "@checkoutProofSelected": {},
+
+  "checkoutUploadHint": "Please upload an image of your transfer receipt.",
+  "@checkoutUploadHint": {},
+
+  "checkoutAiSummary": "AI Estimate Summary",
+  "@checkoutAiSummary": {},
+
+  "checkoutValetFee": "+ Valet Service Fee Applicable",
+  "@checkoutValetFee": {},
+
+  "checkoutPayNow": "PAY NOW (QR / VA)",
+  "@checkoutPayNow": {},
+
+  "checkoutConfirmTransfer": "CONFIRM BOOKING (TRANSFER)",
+  "@checkoutConfirmTransfer": {},
+
+  "checkoutAwaitingWebhook": "Awaiting Gateway Webhook...",
+  "@checkoutAwaitingWebhook": {},
 
   "checkoutSummary": "Order Summary",
   "@checkoutSummary": {},
@@ -402,6 +465,63 @@
 
   "trackingEstimatedReady": "Estimated Ready",
   "@trackingEstimatedReady": {},
+
+  "trackingLiveTracker": "Live Tracker",
+  "@trackingLiveTracker": {},
+
+  "trackingStepIntake": "Intake & Submission",
+  "@trackingStepIntake": {},
+
+  "trackingStepEvaluated": "AI Evaluated",
+  "@trackingStepEvaluated": {},
+
+  "trackingStepBooked": "Schedule Booked",
+  "@trackingStepBooked": {},
+
+  "trackingStepPaid": "Payment Confirmed",
+  "@trackingStepPaid": {},
+
+  "trackingStepAdmitted": "Vehicle Admitted",
+  "@trackingStepAdmitted": {},
+
+  "trackingStepActive": "Active Body & Painting",
+  "@trackingStepActive": {},
+
+  "trackingStepQC": "Quality Control Passed",
+  "@trackingStepQC": {},
+
+  "trackingStepReady": "Ready for Pickup / Valet",
+  "@trackingStepReady": {},
+
+  "trackingStepDone": "Handover Complete",
+  "@trackingStepDone": {},
+
+  "trackingDescIntake": "Your repair request has been received and your vehicle details registered.",
+  "@trackingDescIntake": {},
+
+  "trackingDescEvaluated": "Our AI has evaluated the damage and produced a cost estimate for your review.",
+  "@trackingDescEvaluated": {},
+
+  "trackingDescBooked": "Your appointment slot has been secured at the partner workshop.",
+  "@trackingDescBooked": {},
+
+  "trackingDescPaid": "Payment received and confirmed. Your vehicle is queued for admission.",
+  "@trackingDescPaid": {},
+
+  "trackingDescAdmitted": "Your vehicle has been admitted to the workshop bay and work is starting soon.",
+  "@trackingDescAdmitted": {},
+
+  "trackingDescActive": "Active bodywork and painting operations are underway on your vehicle.",
+  "@trackingDescActive": {},
+
+  "trackingDescQC": "Repair work complete. Your vehicle is undergoing our 32-point quality audit.",
+  "@trackingDescQC": {},
+
+  "trackingDescReady": "Your vehicle is ready for collection or valet pickup.",
+  "@trackingDescReady": {},
+
+  "trackingDescDone": "Handover complete. Thank you for choosing Revive!",
+  "@trackingDescDone": {},
 
   "notificationsTitle": "Notification Preferences",
   "@notificationsTitle": {},
@@ -469,6 +589,12 @@
   "supportSubtitle": "We're here to help",
   "@supportSubtitle": {},
 
+  "supportHowCanWeHelp": "How can we help you?",
+  "@supportHowCanWeHelp": {},
+
+  "supportFindAnswers": "Find answers to common questions or reach out to our team.",
+  "@supportFindAnswers": {},
+
   "supportChat": "Chat with Us",
   "@supportChat": {},
 
@@ -477,6 +603,72 @@
 
   "supportPhone": "Call Support",
   "@supportPhone": {},
+
+  "supportLiveChat": "Live Chat",
+  "@supportLiveChat": {},
+
+  "supportTalkToEstimator": "Talk to a master estimator",
+  "@supportTalkToEstimator": {},
+
+  "supportOpenChat": "Open Chat",
+  "@supportOpenChat": {},
+
+  "supportCallUs": "Call Us",
+  "@supportCallUs": {},
+
+  "supportCopyNumber": "Copy Number",
+  "@supportCopyNumber": {},
+
+  "supportCopyEmail": "Copy Email",
+  "@supportCopyEmail": {},
+
+  "supportEmergencyTitle": "24/7 Towing & Emergency Hotline",
+  "@supportEmergencyTitle": {},
+
+  "supportBackToProfile": "Back to My Garage Profile",
+  "@supportBackToProfile": {},
+
+  "supportFaqTitle": "Frequently Asked Questions",
+  "@supportFaqTitle": {},
+
+  "supportCopy": "Copy",
+  "@supportCopy": {},
+
+  "passwordUpdateTitle": "Update Password",
+  "@passwordUpdateTitle": {},
+
+  "passwordSecureAccount": "Secure Your Account",
+  "@passwordSecureAccount": {},
+
+  "passwordEnterNew": "Please enter a new password below.",
+  "@passwordEnterNew": {},
+
+  "passwordNew": "New Password",
+  "@passwordNew": {},
+
+  "passwordConfirm": "Confirm New Password",
+  "@passwordConfirm": {},
+
+  "passwordSave": "SAVE PASSWORD",
+  "@passwordSave": {},
+
+  "passwordNoMatch": "Passwords do not match",
+  "@passwordNoMatch": {},
+
+  "passwordTooShort": "Password must be at least 6 characters",
+  "@passwordTooShort": {},
+
+  "passwordSuccess": "Password updated successfully!",
+  "@passwordSuccess": {},
+
+  "workshopBeingAssigned": "Workshop Being Assigned",
+  "@workshopBeingAssigned": {},
+
+  "workshopAssignedDesc": "Our team is matching your repair job to the best available workshop. You'll be notified once a workshop is assigned.\n\nYou can proceed to complete your booking details below.",
+  "@workshopAssignedDesc": {},
+
+  "continueToCheckout": "Continue to Checkout",
+  "@continueToCheckout": {},
 
   "updatedAt": "Updated {date}",
   "@updatedAt": {
@@ -497,5 +689,374 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+
+  "trackingTitle": "View Repair Tracker",
+  "@trackingTitle": {},
+
+  "trackingLiveTracker": "Live Tracker",
+  "@trackingLiveTracker": {},
+
+  "trackingStatus": "Service Progress",
+  "@trackingStatus": {},
+
+  "trackingWorkshop": "Workshop Photo Stream",
+  "@trackingWorkshop": {},
+
+  "trackingStepIntake": "Intake & Submission",
+  "@trackingStepIntake": {},
+
+  "trackingStepEvaluated": "AI Evaluated",
+  "@trackingStepEvaluated": {},
+
+  "trackingStepBooked": "Schedule Booked",
+  "@trackingStepBooked": {},
+
+  "trackingStepPaid": "Payment Confirmed",
+  "@trackingStepPaid": {},
+
+  "trackingStepAdmitted": "Vehicle Admitted",
+  "@trackingStepAdmitted": {},
+
+  "trackingStepActive": "Active Body & Painting",
+  "@trackingStepActive": {},
+
+  "trackingStepQC": "Quality Control Passed",
+  "@trackingStepQC": {},
+
+  "trackingStepReady": "Ready for Pickup / Valet",
+  "@trackingStepReady": {},
+
+  "trackingStepDone": "Handover Complete",
+  "@trackingStepDone": {},
+
+  "trackingDescIntake": "Your repair request has been received and your vehicle details registered.",
+  "@trackingDescIntake": {},
+
+  "trackingDescEvaluated": "Our AI has evaluated the damage and produced a cost estimate for your review.",
+  "@trackingDescEvaluated": {},
+
+  "trackingDescBooked": "Your appointment slot has been secured at the partner workshop.",
+  "@trackingDescBooked": {},
+
+  "trackingDescPaid": "Payment received and confirmed. Your vehicle is queued for admission.",
+  "@trackingDescPaid": {},
+
+  "trackingDescAdmitted": "Your vehicle has been admitted to the workshop bay and work is starting soon.",
+  "@trackingDescAdmitted": {},
+
+  "trackingDescActive": "Active bodywork and painting operations are underway on your vehicle.",
+  "@trackingDescActive": {},
+
+  "trackingDescQC": "Repair work complete. Your vehicle is undergoing our 32-point quality audit.",
+  "@trackingDescQC": {},
+
+  "trackingDescReady": "Your vehicle is ready for collection or valet pickup.",
+  "@trackingDescReady": {},
+
+  "trackingDescDone": "Handover complete. Thank you for choosing Revive!",
+  "@trackingDescDone": {},
+
+  "checkoutTitle": "Checkout & Booking",
+  "@checkoutTitle": {},
+
+  "checkoutLogistics": "Logistics Configuration",
+  "@checkoutLogistics": {},
+
+  "checkoutSelfDeliver": "Self Delivery",
+  "@checkoutSelfDeliver": {},
+
+  "checkoutValetPickup": "Valet Pickup",
+  "@checkoutValetPickup": {},
+
+  "checkoutPickupDetails": "Pickup Location Details",
+  "@checkoutPickupDetails": {},
+
+  "checkoutAddress": "Full Street Address",
+  "@checkoutAddress": {},
+
+  "checkoutLatitude": "Latitude",
+  "@checkoutLatitude": {},
+
+  "checkoutLongitude": "Longitude",
+  "@checkoutLongitude": {},
+
+  "checkoutSchedule": "Schedule Intake Date",
+  "@checkoutSchedule": {},
+
+  "checkoutVerifiedDate": "Verified Intake Date",
+  "@checkoutVerifiedDate": {},
+
+  "checkoutPayment": "Payment Method",
+  "@checkoutPayment": {},
+
+  "checkoutOnlinePayment": "Online / QR / VA",
+  "@checkoutOnlinePayment": {},
+
+  "checkoutBankTransfer": "Bank Transfer",
+  "@checkoutBankTransfer": {},
+
+  "checkoutTransferProof": "Transfer Proof",
+  "@checkoutTransferProof": {},
+
+  "checkoutProofSelected": "Proof Selected",
+  "@checkoutProofSelected": {},
+
+  "checkoutUploadHint": "Please upload an image of your transfer receipt.",
+  "@checkoutUploadHint": {},
+
+  "checkoutUploadProof": "Upload Proof",
+  "@checkoutUploadProof": {},
+
+  "checkoutChangeFile": "Change File",
+  "@checkoutChangeFile": {},
+
+  "checkoutValetFee": "+ Valet Service Fee Applicable",
+  "@checkoutValetFee": {},
+
+  "checkoutAwaitingWebhook": "Awaiting Gateway Webhook…",
+  "@checkoutAwaitingWebhook": {},
+
+  "checkoutPayNow": "PAY NOW (QR / VA)",
+  "@checkoutPayNow": {},
+
+  "checkoutConfirmTransfer": "CONFIRM BOOKING (TRANSFER)",
+  "@checkoutConfirmTransfer": {},
+
+  "faqSearch": "How does the AI estimation work?",
+  "@faqSearch": {},
+
+  "supportHowCanWeHelp": "How can we help?",
+  "@supportHowCanWeHelp": {},
+
+  "supportFindAnswers": "Find answers to common questions or contact our support team directly.",
+  "@supportFindAnswers": {},
+
+  "supportPhone": "Phone",
+  "@supportPhone": {},
+
+  "profileAccountTelemetry": "Account & Telemetry",
+  "@profileAccountTelemetry": {},
+
+  "profileGarageTitle": "My Digital Garage",
+  "@profileGarageTitle": {},
+
+  "profileGarageEmpty": "Your garage is empty",
+  "@profileGarageEmpty": {},
+
+  "profileGarageEmptyDesc": "Register your vehicle to start managing service history, track repairs, and unlock exclusive perks.",
+  "@profileGarageEmptyDesc": {},
+
+  "profileMember": "Member",
+  "@profileMember": {},
+
+  "profileReviveMember": "REVIVE MEMBER",
+  "@profileReviveMember": {},
+
+  "profileMemberPerks": "Register vehicles to unlock workshop perks",
+  "@profileMemberPerks": {},
+
+  "profileSignedInGoogle": "Signed in with Google",
+  "@profileSignedInGoogle": {},
+
+  "profileJobHistory": "Job History & Certificates",
+  "@profileJobHistory": {},
+
+  "profileHistoryComing": "Full history coming soon",
+  "@profileHistoryComing": {},
+
+  "profileRegisterVehicle": "Register New Vehicle to Garage",
+  "@profileRegisterVehicle": {},
+
+  "profileTrackLive": "Track Live Repair",
+  "@profileTrackLive": {},
+
+  "profileBookService": "Book a Service",
+  "@profileBookService": {},
+
+  "profileTrackOrder": "Track Order",
+  "@profileTrackOrder": {},
+
+  "profileGuarantee": "Guarantee",
+  "@profileGuarantee": {},
+
+  "profileCompleted": "Completed",
+  "@profileCompleted": {},
+
+  "profileLogOut": "Log Out of Revive ID",
+  "@profileLogOut": {},
+
+  "profileTelemetryVersion": "Revive Workshop Telemetry OS v4.2.1-JKT",
+  "@profileTelemetryVersion": {},
+
+  "profileSelectJob": "Select a job from your history to track it",
+  "@profileSelectJob": {},
+
+  "profileGarageLabel": "GARAGE PROFILE",
+  "@profileGarageLabel": {},
+
+  "partnerPortal": "Partner Portal",
+  "@partnerPortal": {},
+
+  "partnerWorkshopProfile": "My Workshop Profile",
+  "@partnerWorkshopProfile": {},
+
+  "partnerDashboard": "Dashboard",
+  "@partnerDashboard": {},
+
+  "partnerContactOps": "Contact & Operations",
+  "@partnerContactOps": {},
+
+  "partnerPerformanceKpis": "Performance KPIs",
+  "@partnerPerformanceKpis": {},
+
+  "partnerFacilityPhotos": "Facility Photos",
+  "@partnerFacilityPhotos": {},
+
+  "partnerNoPhotos": "No facility photos uploaded yet.",
+  "@partnerNoPhotos": {},
+
+  "partnerDocumentStatus": "Document Status",
+  "@partnerDocumentStatus": {},
+
+  "partnerPendingReview": "PENDING REVIEW",
+  "@partnerPendingReview": {},
+
+  "partnerJobBoard": "Workshop Job Board & Active Pipeline",
+  "@partnerJobBoard": {},
+
+  "partnerJobBoardSub": "Live repair pipeline — tap any card to advance the stage.",
+  "@partnerJobBoardSub": {},
+
+  "partnerOpsCore": "OPS CORE",
+  "@partnerOpsCore": {},
+
+  "partnerActiveHub": "ACTIVE HUB",
+  "@partnerActiveHub": {},
+
+  "partnerWorkshopOps": "Workshop Operations",
+  "@partnerWorkshopOps": {},
+
+  "partnerSignedIn": "SIGNED IN",
+  "@partnerSignedIn": {},
+
+  "partnerAccount": "Partner Account",
+  "@partnerAccount": {},
+
+  "partnerWorkshopPartner": "Workshop Partner",
+  "@partnerWorkshopPartner": {},
+
+  "partnerNoJobsStage": "No jobs in this stage",
+  "@partnerNoJobsStage": {},
+
+  "partnerNoActiveJobs": "No Active Jobs",
+  "@partnerNoActiveJobs": {},
+
+  "partnerNoActiveJobsSub": "Jobs will appear here once a customer booking is assigned to your workshop.",
+  "@partnerNoActiveJobsSub": {},
+
+  "partnerPhotoBtn": "Photo",
+  "@partnerPhotoBtn": {},
+
+  "partnerNoJobsFound": "No Jobs Found",
+  "@partnerNoJobsFound": {},
+
+  "partnerNoJobsFoundSub": "Try changing your filter or search term.",
+  "@partnerNoJobsFoundSub": {},
+
+  "vehicleRegisterTitle": "Register New Vehicle",
+  "@vehicleRegisterTitle": {},
+
+  "vehicleRegisterSub": "Add a vehicle to your digital garage",
+  "@vehicleRegisterSub": {},
+
+  "vehicleType": "Vehicle Type",
+  "@vehicleType": {},
+
+  "vehicleInsured": "Vehicle is Insured",
+  "@vehicleInsured": {},
+
+  "vehicleRegistrationFailed": "Registration failed",
+  "@vehicleRegistrationFailed": {},
+
+  "vehicleInsuredSub": "Enable to link an insurance provider",
+  "@vehicleInsuredSub": {},
+
+  "commlinkTitle": "Commlink \u2014 Admin Hotline",
+  "@commlinkTitle": {},
+
+  "commlinkSub": "Secure channel with Revive Ops Core admin team",
+  "@commlinkSub": {},
+
+  "commlinkAdminOnline": "ADMIN ONLINE",
+  "@commlinkAdminOnline": {},
+
+  "commlinkReviveAdmin": "Revive Admin",
+  "@commlinkReviveAdmin": {},
+
+  "commlinkNoMessages": "No messages yet",
+  "@commlinkNoMessages": {},
+
+  "commlinkNoMessagesSub": "Send a message to the Revive Ops admin team.\nThey typically respond within 1 business hour.",
+  "@commlinkNoMessagesSub": {},
+
+  "estimatorSelectPanels": "Please capture an image and select panels before continuing.",
+  "@estimatorSelectPanels": {},
+
+  "estimatorLoginRequired": "Please log in or create an account to secure your booking.",
+  "@estimatorLoginRequired": {},
+
+  "estimatorBookingError": "Error securing booking",
+  "@estimatorBookingError": {},
+
+  "estimatorIntakeImagery": "INTAKE IMAGERY",
+  "@estimatorIntakeImagery": {},
+
+  "estimatorAiVerified": "AI Verified",
+  "@estimatorAiVerified": {},
+
+  "estimatorCaptureDamage": "Capture Damage Photo",
+  "@estimatorCaptureDamage": {},
+
+  "estimatorAddPhoto": "Add Photo",
+  "@estimatorAddPhoto": {},
+
+  "estimatorFromGallery": "From Gallery",
+  "@estimatorFromGallery": {},
+
+  "estimatorMaxReached": "5 photos uploaded — maximum reached",
+  "@estimatorMaxReached": {},
+
+  "estimatorDigitalTwin": "Digital Twin Analysis",
+  "@estimatorDigitalTwin": {},
+
+  "estimatorTapPanels": "Tap to select affected panels",
+  "@estimatorTapPanels": {},
+
+  "estimatorLiveTwin": "Live Twin",
+  "@estimatorLiveTwin": {},
+
+  "estimatorAssessmentReport": "Damage Assessment Report",
+  "@estimatorAssessmentReport": {},
+
+  "estimatorTriageMatrix": "Computer Vision Triage Matrix",
+  "@estimatorTriageMatrix": {},
+
+  "estimatorAssessmentLabel": "Assessment:",
+  "@estimatorAssessmentLabel": {},
+
+  "estimatorObservation": "Observasi: ",
+  "@estimatorObservation": {},
+
+  "estimatorTotalEstimation": "TOTAL ESTIMATION",
+  "@estimatorTotalEstimation": {},
+
+  "estimatorIncludesCoat": "Includes Color Matching & Clear Coat",
+  "@estimatorIncludesCoat": {},
+
+  "estimatorNoAiData": "No AI damage data available.",
+  "@estimatorNoAiData": {},
+
+  "estimatorEstimatedTotal": "ESTIMATED TOTAL",
+  "@estimatorEstimatedTotal": {}
 }

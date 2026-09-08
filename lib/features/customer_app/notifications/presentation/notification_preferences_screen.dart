@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../application/notifications_provider.dart';
 
 class NotificationPreferencesScreen extends ConsumerStatefulWidget {
@@ -58,9 +59,10 @@ class _NotificationPreferencesScreenState
     setState(() => _saving = false);
 
     if (mounted) {
+      final l = AppL.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Preferensi notifikasi disimpan',
+          content: Text(l.saveChanges,
               style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface)),
           backgroundColor:
@@ -73,12 +75,13 @@ class _NotificationPreferencesScreenState
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL.of(context)!;
     final prefsState = ref.watch(notificationPreferencesProvider);
 
     return Scaffold(
       backgroundColor: cs.surface,
-      appBar: const ReVAppBar(
-        title: Text('Pengaturan Notifikasi'),
+      appBar: ReVAppBar(
+        title: Text(l.notificationsTitle),
         showBackButton: true,
       ),
       body: prefsState.when(
@@ -118,7 +121,7 @@ class _NotificationPreferencesScreenState
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Pilih saluran notifikasi yang ingin Anda aktifkan untuk update status booking kendaraan.',
+                          l.notifRepairUpdatesDesc,
                           style: TextStyle(
                               fontSize: 13, color: cs.onSurface),
                         ),
@@ -134,9 +137,8 @@ class _NotificationPreferencesScreenState
                   cs: cs,
                   icon: Icons.notifications_outlined,
                   iconColor: AppColors.fireRed,
-                  title: 'Notifikasi In-App',
-                  subtitle:
-                      'Terima notifikasi langsung di dalam aplikasi Revive.',
+                  title: l.notifRepairUpdates,
+                  subtitle: l.notifRepairUpdatesDesc,
                   badge: null,
                   value: prefs.inApp,
                   enabled: false, // always on
@@ -151,8 +153,8 @@ class _NotificationPreferencesScreenState
                   cs: cs,
                   icon: Icons.email_outlined,
                   iconColor: Colors.blue,
-                  title: 'Notifikasi Email',
-                  subtitle: 'Terima ringkasan status ke email Anda.',
+                  title: l.supportEmail,
+                  subtitle: l.notifRemindersDesc,
                   badge: null,
                   value: prefs.email,
                   enabled: true,
@@ -168,7 +170,7 @@ class _NotificationPreferencesScreenState
                             controller: _emailController,
                             style: TextStyle(color: cs.onSurface),
                             decoration: InputDecoration(
-                              labelText: 'Alamat Email',
+                              labelText: 'Email',
                               labelStyle:
                                   TextStyle(color: cs.onSurfaceVariant),
                               prefixIcon: Icon(Icons.alternate_email,
@@ -206,10 +208,9 @@ class _NotificationPreferencesScreenState
                   cs: cs,
                   icon: Icons.chat_outlined,
                   iconColor: const Color(0xFF25D366),
-                  title: 'Notifikasi WhatsApp',
-                  subtitle:
-                      'Terima pesan status langsung ke WhatsApp Anda.',
-                  badge: const _WaBadge(),
+                  title: 'WhatsApp',
+                  subtitle: l.notifRemindersDesc,
+                  badge: _WaBadge(label: l.pending),
                   value: prefs.whatsapp,
                   enabled: true,
                   onChanged: (val) {
@@ -227,7 +228,7 @@ class _NotificationPreferencesScreenState
                                 controller: _waController,
                                 style: TextStyle(color: cs.onSurface),
                                 decoration: InputDecoration(
-                                  labelText: 'Nomor WhatsApp',
+                                  labelText: 'WhatsApp',
                                   hintText: '0812xxxxxxxx',
                                   labelStyle: TextStyle(
                                       color: cs.onSurfaceVariant),
@@ -279,7 +280,7 @@ class _NotificationPreferencesScreenState
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
-                                        'WhatsApp Business sedang dalam proses aktivasi. Notifikasi akan aktif setelah proses selesai.',
+                                        l.notifRemindersDesc,
                                         style: TextStyle(
                                             fontSize: 11,
                                             color: cs.onSurfaceVariant),
@@ -313,9 +314,9 @@ class _NotificationPreferencesScreenState
                           child: CircularProgressIndicator(
                               color: Colors.white, strokeWidth: 2),
                         )
-                      : const Text(
-                          'Simpan Pengaturan',
-                          style: TextStyle(
+                      : Text(
+                          l.saveChanges,
+                          style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 16),
@@ -411,7 +412,8 @@ class _NotificationPreferencesScreenState
 }
 
 class _WaBadge extends StatelessWidget {
-  const _WaBadge();
+  final String label;
+  const _WaBadge({required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -421,9 +423,9 @@ class _WaBadge extends StatelessWidget {
         color: Colors.orange.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: const Text(
-        'Segera',
-        style: TextStyle(
+      child: Text(
+        label,
+        style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.bold,
             color: Colors.orange),

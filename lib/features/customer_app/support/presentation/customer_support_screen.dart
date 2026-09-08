@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
+import '../../../../core/l10n/app_localizations.dart';
 
 class CustomerSupportScreen extends StatelessWidget {
   const CustomerSupportScreen({super.key});
@@ -11,7 +12,7 @@ class CustomerSupportScreen extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label copied to clipboard'),
+        content: Text('$label ${AppL.of(context)!.supportCopy}'),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -22,9 +23,10 @@ class CustomerSupportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l = AppL.of(context)!;
 
     return Scaffold(
-      appBar: const ReVAppBar(title: Text('FAQ & Support'), showBackButton: true),
+      appBar: ReVAppBar(title: Text(l.faqTitle), showBackButton: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Center(
@@ -35,13 +37,13 @@ class CustomerSupportScreen extends StatelessWidget {
               children: [
                 // Page header
                 Text(
-                  'How can we help you?',
+                  l.supportHowCanWeHelp,
                   style: theme.textTheme.headlineMedium
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Find answers to common questions or reach out to our team.',
+                  l.supportFindAnswers,
                   style: theme.textTheme.titleMedium
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
@@ -54,12 +56,12 @@ class CustomerSupportScreen extends StatelessWidget {
                       child: _buildContactCard(
                         context,
                         icon: Icons.chat_bubble_outline,
-                        title: 'Live Chat',
-                        subtitle: 'Talk to a master estimator',
-                        actionLabel: 'Open Chat',
+                        title: l.supportLiveChat,
+                        subtitle: l.supportTalkToEstimator,
+                        actionLabel: l.supportOpenChat,
                         onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Live chat launching soon'),
+                          SnackBar(
+                            content: Text(l.loading),
                             behavior: SnackBarBehavior.floating,
                           ),
                         ),
@@ -71,11 +73,11 @@ class CustomerSupportScreen extends StatelessWidget {
                       child: _buildContactCard(
                         context,
                         icon: Icons.phone_outlined,
-                        title: 'Call Us',
+                        title: l.supportCallUs,
                         subtitle: '+62 800-123-456',
-                        actionLabel: 'Copy Number',
+                        actionLabel: l.supportCopyNumber,
                         onTap: () =>
-                            _copyToClipboard(context, '+62800123456', 'Phone number'),
+                            _copyToClipboard(context, '+62800123456', l.supportPhone),
                         isDark: isDark,
                       ),
                     ),
@@ -86,7 +88,7 @@ class CustomerSupportScreen extends StatelessWidget {
                         icon: Icons.email_outlined,
                         title: 'Email',
                         subtitle: 'support@re-v.co.id',
-                        actionLabel: 'Copy Email',
+                        actionLabel: l.supportCopyEmail,
                         onTap: () =>
                             _copyToClipboard(context, 'support@re-v.co.id', 'Email'),
                         isDark: isDark,
@@ -122,12 +124,12 @@ class CustomerSupportScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('24/7 Towing & Emergency Hotline',
+                            Text(l.supportEmergencyTitle,
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                     color: theme.colorScheme.onSurface)),
-                            Text('+62 800-TOW-REVIVE  \u00b7  WhatsApp preferred',
+                            Text('+62 800-TOW-REVIVE  ·  WhatsApp',
                                 style: TextStyle(
                                     fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
                           ],
@@ -135,9 +137,9 @@ class CustomerSupportScreen extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () =>
-                            _copyToClipboard(context, '+6280086973483', 'Hotline'),
-                        child: const Text('Copy',
-                            style: TextStyle(color: AppColors.primaryContainer)),
+                            _copyToClipboard(context, '+6280086973483', l.supportPhone),
+                        child: Text(l.supportCopy,
+                            style: const TextStyle(color: AppColors.primaryContainer)),
                       ),
                     ],
                   ),
@@ -147,20 +149,13 @@ class CustomerSupportScreen extends StatelessWidget {
 
                 // ── FAQ ─────────────────────────────────────────────────────
                 Text(
-                  'Frequently Asked Questions',
+                  l.supportFaqTitle,
                   style: theme.textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 16),
 
-                _buildFaqItem(
-                  context,
-                  'How does the AI estimation work?',
-                  'Simply upload 3–4 photos of the damaged area from different angles. '
-                      'Our Vision AI analyses the depth and span of the damage and provides '
-                      'an estimated repair cost and time within seconds.',
-                  isDark,
-                ),
+                _buildFaqItem(context, l.faqSearch, l.faqSubtitle, isDark),
                 _buildFaqItem(
                   context,
                   'Can I choose which partner workshop handles my repair?',
@@ -210,7 +205,7 @@ class CustomerSupportScreen extends StatelessWidget {
                   child: TextButton.icon(
                     onPressed: () => context.go('/profile'),
                     icon: const Icon(Icons.arrow_back, size: 16),
-                    label: const Text('Back to My Garage Profile'),
+                    label: Text(l.supportBackToProfile),
                     style: TextButton.styleFrom(
                         foregroundColor: AppColors.primaryContainer),
                   ),

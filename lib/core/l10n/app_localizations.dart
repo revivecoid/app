@@ -682,7 +682,7 @@ abstract class AppL {
   /// No description provided for @faqSearch.
   ///
   /// In en, this message translates to:
-  /// **'Search questions…'**
+  /// **'How does the AI estimation work?'**
   String get faqSearch;
 
   /// No description provided for @faqNoResults.
@@ -856,14 +856,140 @@ abstract class AppL {
   /// No description provided for @checkoutTitle.
   ///
   /// In en, this message translates to:
-  /// **'Checkout'**
+  /// **'Checkout & Booking'**
   String get checkoutTitle;
+
+  /// No description provided for @checkoutLogistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Logistics Configuration'**
+  String get checkoutLogistics;
+
+  /// No description provided for @checkoutSelfDeliver.
+  ///
+  /// In en, this message translates to:
+  /// **'Self Delivery'**
+  String get checkoutSelfDeliver;
+
+  /// No description provided for @checkoutValetPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Valet Pickup'**
+  String get checkoutValetPickup;
+
+  /// No description provided for @checkoutPickupDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup Location Details'**
+  String get checkoutPickupDetails;
+
+  /// No description provided for @checkoutAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Street Address'**
+  String get checkoutAddress;
+
+  /// No description provided for @checkoutLatitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Latitude'**
+  String get checkoutLatitude;
+
+  /// No description provided for @checkoutLongitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Longitude'**
+  String get checkoutLongitude;
+
+  /// No description provided for @checkoutSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule Intake Date'**
+  String get checkoutSchedule;
+
+  /// No description provided for @checkoutVerifiedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Intake Date'**
+  String get checkoutVerifiedDate;
 
   /// No description provided for @checkoutPayment.
   ///
   /// In en, this message translates to:
   /// **'Payment Method'**
   String get checkoutPayment;
+
+  /// No description provided for @checkoutOnlinePayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Online / QR / VA'**
+  String get checkoutOnlinePayment;
+
+  /// No description provided for @checkoutBankTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Transfer'**
+  String get checkoutBankTransfer;
+
+  /// No description provided for @checkoutTransferProof.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Proof'**
+  String get checkoutTransferProof;
+
+  /// No description provided for @checkoutUploadProof.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Proof'**
+  String get checkoutUploadProof;
+
+  /// No description provided for @checkoutChangeFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Change File'**
+  String get checkoutChangeFile;
+
+  /// No description provided for @checkoutProofSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Proof Selected'**
+  String get checkoutProofSelected;
+
+  /// No description provided for @checkoutUploadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload an image of your transfer receipt.'**
+  String get checkoutUploadHint;
+
+  /// No description provided for @checkoutAiSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Estimate Summary'**
+  String get checkoutAiSummary;
+
+  /// No description provided for @checkoutValetFee.
+  ///
+  /// In en, this message translates to:
+  /// **'+ Valet Service Fee Applicable'**
+  String get checkoutValetFee;
+
+  /// No description provided for @checkoutPayNow.
+  ///
+  /// In en, this message translates to:
+  /// **'PAY NOW (QR / VA)'**
+  String get checkoutPayNow;
+
+  /// No description provided for @checkoutConfirmTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'CONFIRM BOOKING (TRANSFER)'**
+  String get checkoutConfirmTransfer;
+
+  /// No description provided for @checkoutAwaitingWebhook.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting Gateway Webhook…'**
+  String get checkoutAwaitingWebhook;
 
   /// No description provided for @checkoutSummary.
   ///
@@ -880,19 +1006,19 @@ abstract class AppL {
   /// No description provided for @trackingTitle.
   ///
   /// In en, this message translates to:
-  /// **'Live Tracking'**
+  /// **'View Repair Tracker'**
   String get trackingTitle;
 
   /// No description provided for @trackingStatus.
   ///
   /// In en, this message translates to:
-  /// **'Current Status'**
+  /// **'Service Progress'**
   String get trackingStatus;
 
   /// No description provided for @trackingWorkshop.
   ///
   /// In en, this message translates to:
-  /// **'At Workshop'**
+  /// **'Workshop Photo Stream'**
   String get trackingWorkshop;
 
   /// No description provided for @trackingEstimatedReady.
@@ -900,6 +1026,120 @@ abstract class AppL {
   /// In en, this message translates to:
   /// **'Estimated Ready'**
   String get trackingEstimatedReady;
+
+  /// No description provided for @trackingLiveTracker.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Tracker'**
+  String get trackingLiveTracker;
+
+  /// No description provided for @trackingStepIntake.
+  ///
+  /// In en, this message translates to:
+  /// **'Intake & Submission'**
+  String get trackingStepIntake;
+
+  /// No description provided for @trackingStepEvaluated.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Evaluated'**
+  String get trackingStepEvaluated;
+
+  /// No description provided for @trackingStepBooked.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule Booked'**
+  String get trackingStepBooked;
+
+  /// No description provided for @trackingStepPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Confirmed'**
+  String get trackingStepPaid;
+
+  /// No description provided for @trackingStepAdmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle Admitted'**
+  String get trackingStepAdmitted;
+
+  /// No description provided for @trackingStepActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Body & Painting'**
+  String get trackingStepActive;
+
+  /// No description provided for @trackingStepQC.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality Control Passed'**
+  String get trackingStepQC;
+
+  /// No description provided for @trackingStepReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for Pickup / Valet'**
+  String get trackingStepReady;
+
+  /// No description provided for @trackingStepDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Handover Complete'**
+  String get trackingStepDone;
+
+  /// No description provided for @trackingDescIntake.
+  ///
+  /// In en, this message translates to:
+  /// **'Your repair request has been received and your vehicle details registered.'**
+  String get trackingDescIntake;
+
+  /// No description provided for @trackingDescEvaluated.
+  ///
+  /// In en, this message translates to:
+  /// **'Our AI has evaluated the damage and produced a cost estimate for your review.'**
+  String get trackingDescEvaluated;
+
+  /// No description provided for @trackingDescBooked.
+  ///
+  /// In en, this message translates to:
+  /// **'Your appointment slot has been secured at the partner workshop.'**
+  String get trackingDescBooked;
+
+  /// No description provided for @trackingDescPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment received and confirmed. Your vehicle is queued for admission.'**
+  String get trackingDescPaid;
+
+  /// No description provided for @trackingDescAdmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your vehicle has been admitted to the workshop bay and work is starting soon.'**
+  String get trackingDescAdmitted;
+
+  /// No description provided for @trackingDescActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active bodywork and painting operations are underway on your vehicle.'**
+  String get trackingDescActive;
+
+  /// No description provided for @trackingDescQC.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair work complete. Your vehicle is undergoing our 32-point quality audit.'**
+  String get trackingDescQC;
+
+  /// No description provided for @trackingDescReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Your vehicle is ready for collection or valet pickup.'**
+  String get trackingDescReady;
+
+  /// No description provided for @trackingDescDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Handover complete. Thank you for choosing Revive!'**
+  String get trackingDescDone;
 
   /// No description provided for @notificationsTitle.
   ///
@@ -946,7 +1186,7 @@ abstract class AppL {
   /// No description provided for @partnerDashboard.
   ///
   /// In en, this message translates to:
-  /// **'Partner Dashboard'**
+  /// **'Dashboard'**
   String get partnerDashboard;
 
   /// No description provided for @partnerJobs.
@@ -1033,6 +1273,18 @@ abstract class AppL {
   /// **'We\'re here to help'**
   String get supportSubtitle;
 
+  /// No description provided for @supportHowCanWeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'How can we help?'**
+  String get supportHowCanWeHelp;
+
+  /// No description provided for @supportFindAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Find answers to common questions or contact our support team directly.'**
+  String get supportFindAnswers;
+
   /// No description provided for @supportChat.
   ///
   /// In en, this message translates to:
@@ -1048,8 +1300,140 @@ abstract class AppL {
   /// No description provided for @supportPhone.
   ///
   /// In en, this message translates to:
-  /// **'Call Support'**
+  /// **'Phone'**
   String get supportPhone;
+
+  /// No description provided for @supportLiveChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Chat'**
+  String get supportLiveChat;
+
+  /// No description provided for @supportTalkToEstimator.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk to a master estimator'**
+  String get supportTalkToEstimator;
+
+  /// No description provided for @supportOpenChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Chat'**
+  String get supportOpenChat;
+
+  /// No description provided for @supportCallUs.
+  ///
+  /// In en, this message translates to:
+  /// **'Call Us'**
+  String get supportCallUs;
+
+  /// No description provided for @supportCopyNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Number'**
+  String get supportCopyNumber;
+
+  /// No description provided for @supportCopyEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Email'**
+  String get supportCopyEmail;
+
+  /// No description provided for @supportEmergencyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'24/7 Towing & Emergency Hotline'**
+  String get supportEmergencyTitle;
+
+  /// No description provided for @supportBackToProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to My Garage Profile'**
+  String get supportBackToProfile;
+
+  /// No description provided for @supportFaqTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequently Asked Questions'**
+  String get supportFaqTitle;
+
+  /// No description provided for @supportCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get supportCopy;
+
+  /// No description provided for @passwordUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Password'**
+  String get passwordUpdateTitle;
+
+  /// No description provided for @passwordSecureAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure Your Account'**
+  String get passwordSecureAccount;
+
+  /// No description provided for @passwordEnterNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a new password below.'**
+  String get passwordEnterNew;
+
+  /// No description provided for @passwordNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New Password'**
+  String get passwordNew;
+
+  /// No description provided for @passwordConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm New Password'**
+  String get passwordConfirm;
+
+  /// No description provided for @passwordSave.
+  ///
+  /// In en, this message translates to:
+  /// **'SAVE PASSWORD'**
+  String get passwordSave;
+
+  /// No description provided for @passwordNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get passwordNoMatch;
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get passwordTooShort;
+
+  /// No description provided for @passwordSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated successfully!'**
+  String get passwordSuccess;
+
+  /// No description provided for @workshopBeingAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Workshop Being Assigned'**
+  String get workshopBeingAssigned;
+
+  /// No description provided for @workshopAssignedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Our team is matching your repair job to the best available workshop. You\'ll be notified once a workshop is assigned.\n\nYou can proceed to complete your booking details below.'**
+  String get workshopAssignedDesc;
+
+  /// No description provided for @continueToCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to Checkout'**
+  String get continueToCheckout;
 
   /// No description provided for @updatedAt.
   ///
@@ -1068,6 +1452,450 @@ abstract class AppL {
   /// In en, this message translates to:
   /// **'{count} panel'**
   String panelCount(int count);
+
+  /// No description provided for @profileAccountTelemetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Account & Telemetry'**
+  String get profileAccountTelemetry;
+
+  /// No description provided for @profileGarageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Digital Garage'**
+  String get profileGarageTitle;
+
+  /// No description provided for @profileGarageEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Your garage is empty'**
+  String get profileGarageEmpty;
+
+  /// No description provided for @profileGarageEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Register your vehicle to start managing service history, track repairs, and unlock exclusive perks.'**
+  String get profileGarageEmptyDesc;
+
+  /// No description provided for @profileMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get profileMember;
+
+  /// No description provided for @profileReviveMember.
+  ///
+  /// In en, this message translates to:
+  /// **'REVIVE MEMBER'**
+  String get profileReviveMember;
+
+  /// No description provided for @profileMemberPerks.
+  ///
+  /// In en, this message translates to:
+  /// **'Register vehicles to unlock workshop perks'**
+  String get profileMemberPerks;
+
+  /// No description provided for @profileSignedInGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in with Google'**
+  String get profileSignedInGoogle;
+
+  /// No description provided for @profileJobHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Job History & Certificates'**
+  String get profileJobHistory;
+
+  /// No description provided for @profileHistoryComing.
+  ///
+  /// In en, this message translates to:
+  /// **'Full history coming soon'**
+  String get profileHistoryComing;
+
+  /// No description provided for @profileRegisterVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Register New Vehicle to Garage'**
+  String get profileRegisterVehicle;
+
+  /// No description provided for @profileTrackLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Track Live Repair'**
+  String get profileTrackLive;
+
+  /// No description provided for @profileBookService.
+  ///
+  /// In en, this message translates to:
+  /// **'Book a Service'**
+  String get profileBookService;
+
+  /// No description provided for @profileTrackOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Track Order'**
+  String get profileTrackOrder;
+
+  /// No description provided for @profileGuarantee.
+  ///
+  /// In en, this message translates to:
+  /// **'Guarantee'**
+  String get profileGuarantee;
+
+  /// No description provided for @profileCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get profileCompleted;
+
+  /// No description provided for @profileLogOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Log Out of Revive ID'**
+  String get profileLogOut;
+
+  /// No description provided for @profileTelemetryVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Revive Workshop Telemetry OS v4.2.1-JKT'**
+  String get profileTelemetryVersion;
+
+  /// No description provided for @profileSelectJob.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a job from your history to track it'**
+  String get profileSelectJob;
+
+  /// No description provided for @profileGarageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'GARAGE PROFILE'**
+  String get profileGarageLabel;
+
+  /// No description provided for @partnerPortal.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner Portal'**
+  String get partnerPortal;
+
+  /// No description provided for @partnerWorkshopProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'My Workshop Profile'**
+  String get partnerWorkshopProfile;
+
+  /// No description provided for @partnerContactOps.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact & Operations'**
+  String get partnerContactOps;
+
+  /// No description provided for @partnerPerformanceKpis.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance KPIs'**
+  String get partnerPerformanceKpis;
+
+  /// No description provided for @partnerFacilityPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Facility Photos'**
+  String get partnerFacilityPhotos;
+
+  /// No description provided for @partnerNoPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'No facility photos uploaded yet.'**
+  String get partnerNoPhotos;
+
+  /// No description provided for @partnerDocumentStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Document Status'**
+  String get partnerDocumentStatus;
+
+  /// No description provided for @partnerPendingReview.
+  ///
+  /// In en, this message translates to:
+  /// **'PENDING REVIEW'**
+  String get partnerPendingReview;
+
+  /// No description provided for @partnerJobBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Workshop Job Board & Active Pipeline'**
+  String get partnerJobBoard;
+
+  /// No description provided for @partnerJobBoardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Live repair pipeline — tap any card to advance the stage.'**
+  String get partnerJobBoardSub;
+
+  /// No description provided for @partnerOpsCore.
+  ///
+  /// In en, this message translates to:
+  /// **'OPS CORE'**
+  String get partnerOpsCore;
+
+  /// No description provided for @partnerActiveHub.
+  ///
+  /// In en, this message translates to:
+  /// **'ACTIVE HUB'**
+  String get partnerActiveHub;
+
+  /// No description provided for @partnerWorkshopOps.
+  ///
+  /// In en, this message translates to:
+  /// **'Workshop Operations'**
+  String get partnerWorkshopOps;
+
+  /// No description provided for @partnerSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'SIGNED IN'**
+  String get partnerSignedIn;
+
+  /// No description provided for @partnerAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner Account'**
+  String get partnerAccount;
+
+  /// No description provided for @partnerWorkshopPartner.
+  ///
+  /// In en, this message translates to:
+  /// **'Workshop Partner'**
+  String get partnerWorkshopPartner;
+
+  /// No description provided for @partnerNoJobsStage.
+  ///
+  /// In en, this message translates to:
+  /// **'No jobs in this stage'**
+  String get partnerNoJobsStage;
+
+  /// No description provided for @partnerNoActiveJobs.
+  ///
+  /// In en, this message translates to:
+  /// **'No Active Jobs'**
+  String get partnerNoActiveJobs;
+
+  /// No description provided for @partnerNoActiveJobsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Jobs will appear here once a customer booking is assigned to your workshop.'**
+  String get partnerNoActiveJobsSub;
+
+  /// No description provided for @partnerPhotoBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get partnerPhotoBtn;
+
+  /// No description provided for @partnerNoJobsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No Jobs Found'**
+  String get partnerNoJobsFound;
+
+  /// No description provided for @partnerNoJobsFoundSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Try changing your filter or search term.'**
+  String get partnerNoJobsFoundSub;
+
+  /// No description provided for @vehicleRegisterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Register New Vehicle'**
+  String get vehicleRegisterTitle;
+
+  /// No description provided for @vehicleRegisterSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a vehicle to your digital garage'**
+  String get vehicleRegisterSub;
+
+  /// No description provided for @vehicleType.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle Type'**
+  String get vehicleType;
+
+  /// No description provided for @vehicleInsured.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle is Insured'**
+  String get vehicleInsured;
+
+  /// No description provided for @vehicleRegistrationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration failed'**
+  String get vehicleRegistrationFailed;
+
+  /// No description provided for @vehicleInsuredSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable to link an insurance provider'**
+  String get vehicleInsuredSub;
+
+  /// No description provided for @commlinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Commlink — Admin Hotline'**
+  String get commlinkTitle;
+
+  /// No description provided for @commlinkSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure channel with Revive Ops Core admin team'**
+  String get commlinkSub;
+
+  /// No description provided for @commlinkAdminOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'ADMIN ONLINE'**
+  String get commlinkAdminOnline;
+
+  /// No description provided for @commlinkReviveAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Revive Admin'**
+  String get commlinkReviveAdmin;
+
+  /// No description provided for @commlinkNoMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get commlinkNoMessages;
+
+  /// No description provided for @commlinkNoMessagesSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a message to the Revive Ops admin team.\nThey typically respond within 1 business hour.'**
+  String get commlinkNoMessagesSub;
+
+  /// No description provided for @estimatorSelectPanels.
+  ///
+  /// In en, this message translates to:
+  /// **'Please capture an image and select panels before continuing.'**
+  String get estimatorSelectPanels;
+
+  /// No description provided for @estimatorLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in or create an account to secure your booking.'**
+  String get estimatorLoginRequired;
+
+  /// No description provided for @estimatorBookingError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error securing booking'**
+  String get estimatorBookingError;
+
+  /// No description provided for @estimatorIntakeImagery.
+  ///
+  /// In en, this message translates to:
+  /// **'INTAKE IMAGERY'**
+  String get estimatorIntakeImagery;
+
+  /// No description provided for @estimatorAiVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Verified'**
+  String get estimatorAiVerified;
+
+  /// No description provided for @estimatorCaptureDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture Damage Photo'**
+  String get estimatorCaptureDamage;
+
+  /// No description provided for @estimatorAddPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Photo'**
+  String get estimatorAddPhoto;
+
+  /// No description provided for @estimatorFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'From Gallery'**
+  String get estimatorFromGallery;
+
+  /// No description provided for @estimatorMaxReached.
+  ///
+  /// In en, this message translates to:
+  /// **'5 photos uploaded — maximum reached'**
+  String get estimatorMaxReached;
+
+  /// No description provided for @estimatorDigitalTwin.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital Twin Analysis'**
+  String get estimatorDigitalTwin;
+
+  /// No description provided for @estimatorTapPanels.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to select affected panels'**
+  String get estimatorTapPanels;
+
+  /// No description provided for @estimatorLiveTwin.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Twin'**
+  String get estimatorLiveTwin;
+
+  /// No description provided for @estimatorAssessmentReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Damage Assessment Report'**
+  String get estimatorAssessmentReport;
+
+  /// No description provided for @estimatorTriageMatrix.
+  ///
+  /// In en, this message translates to:
+  /// **'Computer Vision Triage Matrix'**
+  String get estimatorTriageMatrix;
+
+  /// No description provided for @estimatorAssessmentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Assessment:'**
+  String get estimatorAssessmentLabel;
+
+  /// No description provided for @estimatorObservation.
+  ///
+  /// In en, this message translates to:
+  /// **'Observasi: '**
+  String get estimatorObservation;
+
+  /// No description provided for @estimatorTotalEstimation.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL ESTIMATION'**
+  String get estimatorTotalEstimation;
+
+  /// No description provided for @estimatorIncludesCoat.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes Color Matching & Clear Coat'**
+  String get estimatorIncludesCoat;
+
+  /// No description provided for @estimatorNoAiData.
+  ///
+  /// In en, this message translates to:
+  /// **'No AI damage data available.'**
+  String get estimatorNoAiData;
+
+  /// No description provided for @estimatorEstimatedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'ESTIMATED TOTAL'**
+  String get estimatorEstimatedTotal;
 }
 
 class _AppLDelegate extends LocalizationsDelegate<AppL> {

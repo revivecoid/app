@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import 'customer_profile_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -96,7 +97,7 @@ class _VehicleRegistrationModalState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Registration failed: ${e.toString()}'),
+            content: Text('${AppL.of(context)!.vehicleRegistrationFailed}: ${e.toString()}'),
             backgroundColor: AppColors.fireRed,
             behavior: SnackBarBehavior.floating,
           ),
@@ -166,12 +167,12 @@ class _VehicleRegistrationModalState
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Register New Vehicle',
+                              Text(AppL.of(context)!.vehicleRegisterTitle,
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                       color: Theme.of(context).colorScheme.onSurface)),
-                              Text('Add a vehicle to your digital garage',
+                              Text(AppL.of(context)!.vehicleRegisterSub,
                                   style: TextStyle(
                                       fontSize: 12,
                                       color: Theme.of(context).colorScheme.onSurfaceVariant)),
@@ -182,7 +183,7 @@ class _VehicleRegistrationModalState
                       SizedBox(height: 20),
 
                       // Vehicle Type
-                      Text('Vehicle Type',
+                      Text(AppL.of(context)!.vehicleType,
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -339,13 +340,12 @@ class _VehicleRegistrationModalState
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Vehicle is Insured',
+                                  Text(AppL.of(context)!.vehicleInsured,
                                       style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
                                           color: Theme.of(context).colorScheme.onSurface)),
-                                  Text(
-                                      'Enable to link an insurance provider',
+                                  Text(AppL.of(context)!.vehicleInsuredSub,
                                       style: TextStyle(
                                           fontSize: 11,
                                           color: Theme.of(context).colorScheme.onSurfaceVariant)),

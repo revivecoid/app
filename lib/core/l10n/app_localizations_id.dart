@@ -307,7 +307,7 @@ class AppLId extends AppL {
   String get faqSubtitle => 'Temukan jawaban atas pertanyaan umum';
 
   @override
-  String get faqSearch => 'Cari pertanyaan…';
+  String get faqSearch => 'Bagaimana cara kerja estimasi AI?';
 
   @override
   String get faqNoResults => 'Tidak ada pertanyaan yang ditemukan.';
@@ -395,10 +395,73 @@ class AppLId extends AppL {
   String get orderWorkshop => 'Bengkel';
 
   @override
-  String get checkoutTitle => 'Checkout';
+  String get checkoutTitle => 'Checkout & Pemesanan';
+
+  @override
+  String get checkoutLogistics => 'Konfigurasi Logistik';
+
+  @override
+  String get checkoutSelfDeliver => 'Antar Sendiri';
+
+  @override
+  String get checkoutValetPickup => 'Jemput Valet';
+
+  @override
+  String get checkoutPickupDetails => 'Detail Lokasi Penjemputan';
+
+  @override
+  String get checkoutAddress => 'Alamat Jalan Lengkap';
+
+  @override
+  String get checkoutLatitude => 'Lintang';
+
+  @override
+  String get checkoutLongitude => 'Bujur';
+
+  @override
+  String get checkoutSchedule => 'Jadwalkan Tanggal Intake';
+
+  @override
+  String get checkoutVerifiedDate => 'Tanggal Intake Terverifikasi';
 
   @override
   String get checkoutPayment => 'Metode Pembayaran';
+
+  @override
+  String get checkoutOnlinePayment => 'Online / QR / VA';
+
+  @override
+  String get checkoutBankTransfer => 'Transfer Bank';
+
+  @override
+  String get checkoutTransferProof => 'Bukti Transfer';
+
+  @override
+  String get checkoutUploadProof => 'Unggah Bukti';
+
+  @override
+  String get checkoutChangeFile => 'Ganti File';
+
+  @override
+  String get checkoutProofSelected => 'Bukti Dipilih';
+
+  @override
+  String get checkoutUploadHint => 'Silakan unggah gambar bukti transfer Anda.';
+
+  @override
+  String get checkoutAiSummary => 'Ringkasan Estimasi AI';
+
+  @override
+  String get checkoutValetFee => '+ Biaya Layanan Valet Berlaku';
+
+  @override
+  String get checkoutPayNow => 'BAYAR SEKARANG (QR / VA)';
+
+  @override
+  String get checkoutConfirmTransfer => 'KONFIRMASI PEMESANAN (TRANSFER)';
+
+  @override
+  String get checkoutAwaitingWebhook => 'Menunggu Konfirmasi Gateway…';
 
   @override
   String get checkoutSummary => 'Ringkasan Pesanan';
@@ -407,16 +470,82 @@ class AppLId extends AppL {
   String get checkoutConfirm => 'Buat Pesanan';
 
   @override
-  String get trackingTitle => 'Pelacakan Live';
+  String get trackingTitle => 'Lihat Pelacak Perbaikan';
 
   @override
-  String get trackingStatus => 'Status Saat Ini';
+  String get trackingStatus => 'Progres Layanan';
 
   @override
-  String get trackingWorkshop => 'Di Bengkel';
+  String get trackingWorkshop => 'Foto Langsung dari Bengkel';
 
   @override
   String get trackingEstimatedReady => 'Estimasi Siap';
+
+  @override
+  String get trackingLiveTracker => 'Pelacak Langsung';
+
+  @override
+  String get trackingStepIntake => 'Intake & Penerimaan';
+
+  @override
+  String get trackingStepEvaluated => 'Dievaluasi AI';
+
+  @override
+  String get trackingStepBooked => 'Jadwal Dikonfirmasi';
+
+  @override
+  String get trackingStepPaid => 'Pembayaran Dikonfirmasi';
+
+  @override
+  String get trackingStepAdmitted => 'Kendaraan Diterima';
+
+  @override
+  String get trackingStepActive => 'Pengerjaan Bodi & Pengecatan';
+
+  @override
+  String get trackingStepQC => 'Kontrol Kualitas Lulus';
+
+  @override
+  String get trackingStepReady => 'Siap Diambil / Valet';
+
+  @override
+  String get trackingStepDone => 'Serah Terima Selesai';
+
+  @override
+  String get trackingDescIntake =>
+      'Permintaan perbaikan Anda telah diterima dan detail kendaraan Anda telah dicatat.';
+
+  @override
+  String get trackingDescEvaluated =>
+      'AI kami telah mengevaluasi kerusakan dan menghasilkan estimasi biaya untuk ditinjau.';
+
+  @override
+  String get trackingDescBooked =>
+      'Slot janji Anda telah diamankan di bengkel partner.';
+
+  @override
+  String get trackingDescPaid =>
+      'Pembayaran diterima dan dikonfirmasi. Kendaraan Anda masuk antrian.';
+
+  @override
+  String get trackingDescAdmitted =>
+      'Kendaraan Anda telah diterima di bay bengkel dan pekerjaan akan segera dimulai.';
+
+  @override
+  String get trackingDescActive =>
+      'Proses pengerjaan bodi dan pengecatan aktif sedang berlangsung pada kendaraan Anda.';
+
+  @override
+  String get trackingDescQC =>
+      'Pengerjaan selesai. Kendaraan Anda sedang menjalani audit kualitas 32 titik kami.';
+
+  @override
+  String get trackingDescReady =>
+      'Kendaraan Anda siap untuk diambil atau dijemput oleh valet.';
+
+  @override
+  String get trackingDescDone =>
+      'Serah terima selesai. Terima kasih telah memilih Revive!';
 
   @override
   String get notificationsTitle => 'Preferensi Notifikasi';
@@ -441,7 +570,7 @@ class AppLId extends AppL {
   String get notifRemindersDesc => 'Pengingat servis kendaraan dan janji temu';
 
   @override
-  String get partnerDashboard => 'Dashboard Mitra';
+  String get partnerDashboard => 'Dasbor';
 
   @override
   String get partnerJobs => 'Pekerjaan Aktif';
@@ -486,13 +615,88 @@ class AppLId extends AppL {
   String get supportSubtitle => 'Kami siap membantu';
 
   @override
+  String get supportHowCanWeHelp => 'Bagaimana kami bisa membantu?';
+
+  @override
+  String get supportFindAnswers =>
+      'Temukan jawaban atas pertanyaan umum atau hubungi tim dukungan kami langsung.';
+
+  @override
   String get supportChat => 'Chat dengan Kami';
 
   @override
   String get supportEmail => 'Email Dukungan';
 
   @override
-  String get supportPhone => 'Telepon Dukungan';
+  String get supportPhone => 'Telepon';
+
+  @override
+  String get supportLiveChat => 'Live Chat';
+
+  @override
+  String get supportTalkToEstimator => 'Bicara dengan estimator ahli';
+
+  @override
+  String get supportOpenChat => 'Buka Chat';
+
+  @override
+  String get supportCallUs => 'Telepon Kami';
+
+  @override
+  String get supportCopyNumber => 'Salin Nomor';
+
+  @override
+  String get supportCopyEmail => 'Salin Email';
+
+  @override
+  String get supportEmergencyTitle => 'Hotline Towing & Darurat 24/7';
+
+  @override
+  String get supportBackToProfile => 'Kembali ke Profil Garasi Saya';
+
+  @override
+  String get supportFaqTitle => 'Pertanyaan yang Sering Diajukan';
+
+  @override
+  String get supportCopy => 'Salin';
+
+  @override
+  String get passwordUpdateTitle => 'Perbarui Kata Sandi';
+
+  @override
+  String get passwordSecureAccount => 'Amankan Akun Anda';
+
+  @override
+  String get passwordEnterNew =>
+      'Silakan masukkan kata sandi baru di bawah ini.';
+
+  @override
+  String get passwordNew => 'Kata Sandi Baru';
+
+  @override
+  String get passwordConfirm => 'Konfirmasi Kata Sandi Baru';
+
+  @override
+  String get passwordSave => 'SIMPAN KATA SANDI';
+
+  @override
+  String get passwordNoMatch => 'Kata sandi tidak cocok';
+
+  @override
+  String get passwordTooShort => 'Kata sandi minimal 6 karakter';
+
+  @override
+  String get passwordSuccess => 'Kata sandi berhasil diperbarui!';
+
+  @override
+  String get workshopBeingAssigned => 'Bengkel Sedang Ditentukan';
+
+  @override
+  String get workshopAssignedDesc =>
+      'Tim kami sedang mencocokkan pekerjaan perbaikan Anda dengan bengkel terbaik yang tersedia. Anda akan diberitahu setelah bengkel ditentukan.\n\nAnda dapat melanjutkan untuk melengkapi detail pemesanan di bawah ini.';
+
+  @override
+  String get continueToCheckout => 'Lanjutkan ke Checkout';
 
   @override
   String updatedAt(String date) {
@@ -508,4 +712,237 @@ class AppLId extends AppL {
   String panelCount(int count) {
     return '$count panel';
   }
+
+  @override
+  String get profileAccountTelemetry => 'Akun & Telemetri';
+
+  @override
+  String get profileGarageTitle => 'Garasi Digital Saya';
+
+  @override
+  String get profileGarageEmpty => 'Garasi Anda kosong';
+
+  @override
+  String get profileGarageEmptyDesc =>
+      'Daftarkan kendaraan Anda untuk mulai mengelola riwayat servis, melacak perbaikan, dan membuka keuntungan eksklusif.';
+
+  @override
+  String get profileMember => 'Anggota';
+
+  @override
+  String get profileReviveMember => 'ANGGOTA REVIVE';
+
+  @override
+  String get profileMemberPerks =>
+      'Daftarkan kendaraan untuk membuka keuntungan bengkel';
+
+  @override
+  String get profileSignedInGoogle => 'Masuk dengan Google';
+
+  @override
+  String get profileJobHistory => 'Riwayat Pekerjaan & Sertifikat';
+
+  @override
+  String get profileHistoryComing => 'Riwayat lengkap segera hadir';
+
+  @override
+  String get profileRegisterVehicle => 'Daftarkan Kendaraan Baru ke Garasi';
+
+  @override
+  String get profileTrackLive => 'Lacak Perbaikan Langsung';
+
+  @override
+  String get profileBookService => 'Pesan Servis';
+
+  @override
+  String get profileTrackOrder => 'Lacak Pesanan';
+
+  @override
+  String get profileGuarantee => 'Garansi';
+
+  @override
+  String get profileCompleted => 'Selesai';
+
+  @override
+  String get profileLogOut => 'Keluar dari Revive ID';
+
+  @override
+  String get profileTelemetryVersion =>
+      'Revive Workshop Telemetry OS v4.2.1-JKT';
+
+  @override
+  String get profileSelectJob =>
+      'Pilih pekerjaan dari riwayat Anda untuk melacaknya';
+
+  @override
+  String get profileGarageLabel => 'PROFIL GARASI';
+
+  @override
+  String get partnerPortal => 'Portal Mitra';
+
+  @override
+  String get partnerWorkshopProfile => 'Profil Bengkel Saya';
+
+  @override
+  String get partnerContactOps => 'Kontak & Operasional';
+
+  @override
+  String get partnerPerformanceKpis => 'KPI Performa';
+
+  @override
+  String get partnerFacilityPhotos => 'Foto Fasilitas';
+
+  @override
+  String get partnerNoPhotos => 'Belum ada foto fasilitas yang diunggah.';
+
+  @override
+  String get partnerDocumentStatus => 'Status Dokumen';
+
+  @override
+  String get partnerPendingReview => 'SEDANG DITINJAU';
+
+  @override
+  String get partnerJobBoard => 'Papan Pekerjaan Bengkel & Pipeline Aktif';
+
+  @override
+  String get partnerJobBoardSub =>
+      'Pipeline perbaikan langsung — ketuk kartu untuk memajukan tahap.';
+
+  @override
+  String get partnerOpsCore => 'PUSAT OPS';
+
+  @override
+  String get partnerActiveHub => 'HUB AKTIF';
+
+  @override
+  String get partnerWorkshopOps => 'Operasional Bengkel';
+
+  @override
+  String get partnerSignedIn => 'MASUK SEBAGAI';
+
+  @override
+  String get partnerAccount => 'Akun Mitra';
+
+  @override
+  String get partnerWorkshopPartner => 'Bengkel Mitra';
+
+  @override
+  String get partnerNoJobsStage => 'Tidak ada pekerjaan di tahap ini';
+
+  @override
+  String get partnerNoActiveJobs => 'Tidak Ada Pekerjaan Aktif';
+
+  @override
+  String get partnerNoActiveJobsSub =>
+      'Pekerjaan akan muncul di sini setelah pemesanan pelanggan ditetapkan ke bengkel Anda.';
+
+  @override
+  String get partnerPhotoBtn => 'Foto';
+
+  @override
+  String get partnerNoJobsFound => 'Pekerjaan Tidak Ditemukan';
+
+  @override
+  String get partnerNoJobsFoundSub =>
+      'Coba ubah filter atau kata kunci pencarian Anda.';
+
+  @override
+  String get vehicleRegisterTitle => 'Daftarkan Kendaraan Baru';
+
+  @override
+  String get vehicleRegisterSub => 'Tambahkan kendaraan ke garasi digital Anda';
+
+  @override
+  String get vehicleType => 'Tipe Kendaraan';
+
+  @override
+  String get vehicleInsured => 'Kendaraan Diasuransikan';
+
+  @override
+  String get vehicleRegistrationFailed => 'Pendaftaran gagal';
+
+  @override
+  String get vehicleInsuredSub =>
+      'Aktifkan untuk menghubungkan penyedia asuransi';
+
+  @override
+  String get commlinkTitle => 'Commlink — Hotline Admin';
+
+  @override
+  String get commlinkSub => 'Saluran aman dengan tim admin Revive Ops Core';
+
+  @override
+  String get commlinkAdminOnline => 'ADMIN ONLINE';
+
+  @override
+  String get commlinkReviveAdmin => 'Admin Revive';
+
+  @override
+  String get commlinkNoMessages => 'Belum ada pesan';
+
+  @override
+  String get commlinkNoMessagesSub =>
+      'Kirim pesan ke tim admin Revive Ops.\nMereka biasanya merespons dalam 1 jam kerja.';
+
+  @override
+  String get estimatorSelectPanels =>
+      'Harap ambil gambar dan pilih panel sebelum melanjutkan.';
+
+  @override
+  String get estimatorLoginRequired =>
+      'Silakan masuk atau buat akun untuk mengamankan pemesanan Anda.';
+
+  @override
+  String get estimatorBookingError => 'Gagal mengamankan pemesanan';
+
+  @override
+  String get estimatorIntakeImagery => 'GAMBAR KERUSAKAN';
+
+  @override
+  String get estimatorAiVerified => 'Terverifikasi AI';
+
+  @override
+  String get estimatorCaptureDamage => 'Foto Kerusakan';
+
+  @override
+  String get estimatorAddPhoto => 'Tambah Foto';
+
+  @override
+  String get estimatorFromGallery => 'Dari Galeri';
+
+  @override
+  String get estimatorMaxReached => '5 foto diunggah — batas maksimum tercapai';
+
+  @override
+  String get estimatorDigitalTwin => 'Analisis Digital Twin';
+
+  @override
+  String get estimatorTapPanels => 'Ketuk untuk memilih panel yang rusak';
+
+  @override
+  String get estimatorLiveTwin => 'Twin Langsung';
+
+  @override
+  String get estimatorAssessmentReport => 'Laporan Penilaian Kerusakan';
+
+  @override
+  String get estimatorTriageMatrix => 'Matriks Triase Computer Vision';
+
+  @override
+  String get estimatorAssessmentLabel => 'Penilaian:';
+
+  @override
+  String get estimatorObservation => 'Observasi: ';
+
+  @override
+  String get estimatorTotalEstimation => 'TOTAL ESTIMASI';
+
+  @override
+  String get estimatorIncludesCoat => 'Termasuk Color Matching & Clear Coat';
+
+  @override
+  String get estimatorNoAiData => 'Tidak ada data kerusakan AI tersedia.';
+
+  @override
+  String get estimatorEstimatedTotal => 'TOTAL ESTIMASI';
 }

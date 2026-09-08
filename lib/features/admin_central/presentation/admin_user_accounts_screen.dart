@@ -91,17 +91,42 @@ class _AdminUserAccountsState extends ConsumerState<AdminUserAccountsScreen> {
 
   Future<void> _setRole(String userId, String newRole) async {
     try {
-      // Try updating via RPC or partners table
-      await _sb.from('partners').update({'role': newRole}).eq('id', userId);
+      // Requires set_user_role RPC in Supabase (see banner below if missing)
+      await _sb.rpc('set_user_role', params: {
+        'target_user_id': userId,
+        'new_role': newRole,
+      });
       await _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Role updated to $newRole'), backgroundColor: const Color(0xFF059669)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Role updated to $newRole'),
+          backgroundColor: const Color(0xFF059669),
+        ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Role update requires server-side RPC.\nError: $e'), backgroundColor: const Color(0xFFDC2626)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          duration: const Duration(seconds: 8),
+          backgroundColor: const Color(0xFFDC2626),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Role update failed — run this SQL in Supabase once:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              const SizedBox(height: 4),
+              const SelectableText(
+                'create or replace function set_user_role(target_user_id uuid, new_role text)\n'
+                'returns void security definer language sql as \$\$\n'
+                '  update auth.users set raw_user_meta_data =\n'
+                '    raw_user_meta_data || jsonb_build_object(\'role\', new_role)\n'
+                '  where id = target_user_id;\n'
+                '\$\$;',
+                style: TextStyle(fontSize: 10, color: Colors.white70, fontFamily: 'monospace'),
+              ),
+            ],
+          ),
+        ));
       }
     }
   }

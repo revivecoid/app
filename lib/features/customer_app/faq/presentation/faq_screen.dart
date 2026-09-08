@@ -1,9 +1,11 @@
-﻿import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
+import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/providers/locale_provider.dart';
 
 class FaqScreen extends ConsumerStatefulWidget {
   const FaqScreen({super.key});
@@ -13,29 +15,47 @@ class FaqScreen extends ConsumerStatefulWidget {
 
 class _FaqScreenState extends ConsumerState<FaqScreen> {
   bool _loading = true;
+  // Dual-language FAQ items: each map has 'q', 'a', 'q_id', 'a_id'
   List<Map<String, String>> _faqItems = [];
 
-  String _phone      = '+62 800-123-456';
-  String _email      = 'support@re-v.co.id';
-  String _emergency  = '+62 800-TOW-REVIVE';
-  String _pageTitle  = 'FAQ & Support';
-  String _pageSub    = 'Find answers to common questions or reach out to our team.';
+  String _phone     = '+62 800-123-456';
+  String _email     = 'support@re-v.co.id';
+  String _emergency = '+62 800-TOW-REVIVE';
+  // EN content
+  String _pageTitleEn  = '';
+  String _pageSubEn    = '';
+  // ID content
+  String _pageTitleId  = '';
+  String _pageSubId    = '';
 
-  static const _defaultFaq = [
+  static const _defaultFaqEn = [
+    {'q': 'How does the AI estimation work?',
+     'a': 'Simply upload 3–4 photos of the damaged area from different angles. Our Vision AI analyses the depth and span of the damage and provides an estimated repair cost and time within seconds.'},
+    {'q': 'Can I choose which partner workshop handles my repair?',
+     'a': 'Yes. After receiving the AI estimate, you will see a list of certified partner workshops in your area. You can select one based on ratings, distance, and availability.'},
+    {'q': 'Is the repair quality guaranteed?',
+     'a': 'All re-V certified partners adhere to our SLA standards, and all repairs come with a 24-month warranty on workmanship and paint matching verified by our digital telemetry certificate.'},
+    {'q': 'How do I track my repair progress?',
+     'a': 'Open the "Digital Garage" section of your profile. The Live Tracker shows real-time stage updates — from intake, through active bodywork and painting, to handover. Each stage is photo-documented.'},
+    {'q': 'What is the Revive 24-Month Paint Guarantee?',
+     'a': 'Every job completed through re-V includes a digitally signed 24-month guarantee certificate covering paint adhesion, colour accuracy, and surface finish. It is stored in your Garage Profile.'},
+    {'q': 'How are insurance claims handled?',
+     'a': 'Link your Garda Oto or Astra insurance policy in Profile → Saved Insurance Policies. Our platform auto-generates the required loss-adjustment documentation and submits directly to your insurer.'},
+  ];
+
+  static const _defaultFaqId = [
     {'q': 'Bagaimana cara mendapatkan estimasi biaya perbaikan?',
      'a': 'Gunakan fitur AI Estimator kami — unggah 3-4 foto kerusakan dari berbagai sudut. Sistem Vision AI kami akan menganalisis kedalaman dan luas kerusakan lalu memberikan estimasi biaya dan waktu perbaikan dalam hitungan detik.'},
     {'q': 'Apakah saya bisa memilih bengkel partner yang menangani perbaikan?',
      'a': 'Ya. Setelah menerima estimasi AI, Anda akan melihat daftar bengkel partner tersertifikasi di area Anda. Anda dapat memilih berdasarkan rating, jarak, dan ketersediaan.'},
     {'q': 'Apakah ada garansi untuk hasil perbaikan?',
-     'a': 'Semua partner tersertifikasi re-V mengikuti standar SLA kami. Setiap perbaikan dilindungi garansi 24 bulan untuk pengerjaan dan pencocokan warna cat, diverifikasi dengan sertifikat telemetri digital.'},
+     'a': 'Semua partner tersertifikasi re-V mengikuti standar SLA kami. Setiap perbaikan dilindungi garansi 24 bulan untuk pengerjaan dan pencocokan warna cat.'},
     {'q': 'Bagaimana cara melacak status perbaikan kendaraan saya?',
-     'a': 'Buka bagian "Digital Garage" di profil Anda. Live Tracker menampilkan pembaruan tahap real-time — dari intake, pengerjaan bodi dan pengecatan, hingga serah terima. Setiap tahap didokumentasikan dengan foto.'},
-    {'q': 'Apakah bisa menggunakan asuransi kendaraan?',
-     'a': 'Tentu. Hubungkan polis Garda Oto atau Astra Insurance Anda di Profil → Saved Insurance Policies. Platform kami secara otomatis membuat dokumen loss-adjustment dan mengirimkannya langsung ke perusahaan asuransi Anda.'},
-    {'q': 'Di mana saja jaringan bengkel partner Revive?',
-     'a': 'Saat ini kami memiliki 38+ bengkel partner tersertifikasi di area Jabodetabek dan Bandung, dengan ekspansi aktif ke kota-kota besar lainnya.'},
+     'a': 'Buka bagian "Digital Garage" di profil Anda. Live Tracker menampilkan pembaruan tahap real-time — dari intake, pengerjaan bodi dan pengecatan, hingga serah terima.'},
     {'q': 'Apa itu Revive 24-Month Paint Guarantee?',
-     'a': 'Setiap pekerjaan yang diselesaikan melalui re-V mencakup sertifikat garansi 24 bulan yang ditandatangani secara digital, mencakup adhesi cat, akurasi warna, dan kualitas permukaan. Sertifikat disimpan di Garage Profile Anda.'},
+     'a': 'Setiap pekerjaan yang diselesaikan melalui re-V mencakup sertifikat garansi 24 bulan yang ditandatangani secara digital, mencakup adhesi cat, akurasi warna, dan kualitas permukaan.'},
+    {'q': 'Bagaimana klaim asuransi diproses?',
+     'a': 'Hubungkan polis Garda Oto atau Astra Insurance Anda di Profil → Saved Insurance Policies. Platform kami secara otomatis membuat dokumen loss-adjustment dan mengirimkannya langsung ke perusahaan asuransi Anda.'},
   ];
 
   @override
@@ -50,28 +70,37 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
         if ((s['support_phone']         ?? '').isNotEmpty) _phone     = s['support_phone']!;
         if ((s['support_email']         ?? '').isNotEmpty) _email     = s['support_email']!;
         if ((s['support_emergency']     ?? '').isNotEmpty) _emergency = s['support_emergency']!;
-        if ((s['support_page_title']    ?? '').isNotEmpty) _pageTitle = s['support_page_title']!;
-        if ((s['support_page_subtitle'] ?? '').isNotEmpty) _pageSub   = s['support_page_subtitle']!;
+        _pageTitleEn = s['support_page_title']    ?? '';
+        _pageSubEn   = s['support_page_subtitle'] ?? '';
+        _pageTitleId = s['support_page_title_id'] ?? '';
+        _pageSubId   = s['support_page_subtitle_id'] ?? '';
 
         final items = <Map<String, String>>[];
         int i = 0;
         while (s.containsKey('faq_${i}_q') || s.containsKey('faq_${i}_a')) {
-          final q = s['faq_${i}_q'] ?? '';
-          final a = s['faq_${i}_a'] ?? '';
-          if (q.isNotEmpty || a.isNotEmpty) items.add({'q': q, 'a': a});
+          final q    = s['faq_${i}_q']    ?? '';
+          final a    = s['faq_${i}_a']    ?? '';
+          final qId  = s['faq_${i}_q_id'] ?? '';
+          final aId  = s['faq_${i}_a_id'] ?? '';
+          if (q.isNotEmpty || a.isNotEmpty) items.add({'q': q, 'a': a, 'q_id': qId, 'a_id': aId});
           i++;
         }
         if (items.isNotEmpty) _faqItems = items;
       }
     } catch (_) {}
-    if (_faqItems.isEmpty) _faqItems = _defaultFaq.map((e) => Map<String, String>.from(e)).toList();
+    if (_faqItems.isEmpty) {
+      _faqItems = List.generate(_defaultFaqEn.length, (i) => {
+        'q': _defaultFaqEn[i]['q']!, 'a': _defaultFaqEn[i]['a']!,
+        'q_id': _defaultFaqId[i]['q']!, 'a_id': _defaultFaqId[i]['a']!,
+      });
+    }
     if (mounted) setState(() => _loading = false);
   }
 
   void _copy(String text, String label) {
-    Clipboard.setData(ClipboardData(text: text));
+    // ignore: avoid_print
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('$label copied to clipboard'),
+      content: Text('$label copied'),
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
     ));
@@ -82,9 +111,19 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cs = theme.colorScheme;
+    final l = AppL.of(context)!;
+    final locale = ref.watch(localeProvider).languageCode;
+    final isId = locale == 'id';
+
+    final pageTitle = isId
+        ? (_pageTitleId.isNotEmpty ? _pageTitleId : l.faqTitle)
+        : (_pageTitleEn.isNotEmpty ? _pageTitleEn : l.faqTitle);
+    final pageSub = isId
+        ? (_pageSubId.isNotEmpty ? _pageSubId : l.faqSubtitle)
+        : (_pageSubEn.isNotEmpty ? _pageSubEn : l.faqSubtitle);
 
     return Scaffold(
-      appBar: ReVAppBar(title: Text(_pageTitle), showBackButton: true),
+      appBar: ReVAppBar(title: Text(pageTitle), showBackButton: true),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -95,10 +134,10 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
                     // ── Header ──────────────────────────────────────────────
-                    Text(_pageTitle,
+                    Text(pageTitle,
                         style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    Text(_pageSub,
+                    Text(pageSub,
                         style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant)),
                     const SizedBox(height: 32),
 
@@ -106,24 +145,24 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
                     Row(children: [
                       Expanded(child: _ContactCard(
                         icon: Icons.chat_bubble_outline,
-                        title: 'Live Chat', subtitle: 'Talk to a master estimator',
-                        actionLabel: 'Open Chat',
+                        title: l.supportLiveChat, subtitle: l.supportTalkToEstimator,
+                        actionLabel: l.supportOpenChat,
                         onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Live chat launching soon'),
+                          SnackBar(content: Text(l.loading),
                               behavior: SnackBarBehavior.floating)),
                         isDark: isDark)),
                       const SizedBox(width: 12),
                       Expanded(child: _ContactCard(
                         icon: Icons.phone_outlined,
-                        title: 'Call Us', subtitle: _phone,
-                        actionLabel: 'Copy Number',
-                        onTap: () => _copy(_phone, 'Phone number'),
+                        title: l.supportCallUs, subtitle: _phone,
+                        actionLabel: l.supportCopyNumber,
+                        onTap: () => _copy(_phone, l.supportPhone),
                         isDark: isDark)),
                       const SizedBox(width: 12),
                       Expanded(child: _ContactCard(
                         icon: Icons.email_outlined,
                         title: 'Email', subtitle: _email,
-                        actionLabel: 'Copy Email',
+                        actionLabel: l.supportCopyEmail,
                         onTap: () => _copy(_email, 'Email'),
                         isDark: isDark)),
                     ]),
@@ -147,25 +186,32 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
                           child: const Icon(Icons.local_taxi, color: AppColors.primaryContainer, size: 24)),
                         const SizedBox(width: 16),
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('24/7 Towing & Emergency Hotline',
+                          Text(l.supportEmergencyTitle,
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: cs.onSurface)),
-                          Text('$_emergency  ·  WhatsApp preferred',
+                          Text('$_emergency  ·  WhatsApp',
                               style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                         ])),
                         TextButton(
-                          onPressed: () => _copy(_emergency, 'Hotline'),
-                          child: const Text('Copy', style: TextStyle(color: AppColors.primaryContainer))),
+                          onPressed: () => _copy(_emergency, l.supportPhone),
+                          child: Text(l.supportCopy, style: const TextStyle(color: AppColors.primaryContainer))),
                       ]),
                     ),
 
                     const SizedBox(height: 32),
 
                     // ── FAQ Accordion ────────────────────────────────────────
-                    Text('Frequently Asked Questions',
+                    Text(l.supportFaqTitle,
                         style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
-                    ..._faqItems.map((item) =>
-                        _FaqItem(question: item['q']!, answer: item['a']!, isDark: isDark)),
+                    ..._faqItems.map((item) {
+                      final q = isId
+                          ? (item['q_id']!.isNotEmpty ? item['q_id']! : item['q']!)
+                          : item['q']!;
+                      final a = isId
+                          ? (item['a_id']!.isNotEmpty ? item['a_id']! : item['a']!)
+                          : item['a']!;
+                      return _FaqItem(question: q, answer: a, isDark: isDark);
+                    }),
 
                     const SizedBox(height: 32),
                   ]),
