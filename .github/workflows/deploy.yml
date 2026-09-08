@@ -53,8 +53,7 @@ jobs:
         run: |
           flutter build web \
             --release \
-            --base-href "/" \
-            --web-renderer canvaskit
+            --base-href "/"
 
       # ── 7. Copy CNAME into build output ──────────────────────────────────────
       # Prevents GitHub Pages from stripping the custom domain on every deploy.
