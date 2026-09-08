@@ -65,7 +65,7 @@ class LiveStepperTimeline extends ConsumerWidget {
         elevation: 1,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: textColor),
-          onPressed: () => context.go('/profile'),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -6,12 +6,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/l10n/app_localizations.dart';
+import 'core/providers/locale_provider.dart';
 import 'features/shared/services/pricing_matrix.dart';
 
 void main() async {
   // 1. Ensure Flutter engine is fully initialized before async network bindings run
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Set URL strategy to Path to prevent go_router from crashing on Supabase auth hash fragments
   usePathUrlStrategy();
 
@@ -36,20 +38,24 @@ void main() async {
   );
 }
 
-
 class ReVApp extends ConsumerWidget {
   const ReVApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Read our routing configurations executing strict role guards
     final router = ref.watch(appRouterProvider);
     final currentThemeMode = ref.watch(themeModeProvider);
+    final currentLocale = ref.watch(localeProvider);
 
     return MaterialApp.router(
       title: 're-V.co.id | Automotive Body Repair Portal',
       debugShowCheckedModeBanner: false,
-      
+
+      // Localizations — EN / ID switchable at runtime
+      locale: currentLocale,
+      localizationsDelegates: AppL.localizationsDelegates,
+      supportedLocales: supportedLocales,
+
       // Theme Configuration strictly mapped to re-V Brand Identity
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
@@ -64,10 +70,9 @@ class ReVApp extends ConsumerWidget {
           PointerDeviceKind.trackpad,
         },
       ),
-      
+
       // Hook Flutter directly into our GoRouter instance
       routerConfig: router,
     );
   }
 }
-
