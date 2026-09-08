@@ -41,6 +41,19 @@ final customerJobsProvider =
 // otherwise falls back to in-memory state.
 final whatsappAlertsProvider = StateProvider<bool>((ref) => false);
 
+/// Fetches the current user's row from the profiles table.
+/// Used to show DB-saved name/phone and to pre-populate the edit form.
+final customerProfileDataProvider =
+    FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
+  final user = Supabase.instance.client.auth.currentUser;
+  if (user == null) return null;
+  return await Supabase.instance.client
+      .from('profiles')
+      .select('full_name, email, phone')
+      .eq('id', user.id)
+      .maybeSingle();
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  Screen
 // ─────────────────────────────────────────────────────────────────────────────
@@ -99,9 +112,15 @@ class CustomerProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = Supabase.instance.client.auth.currentUser;
-    final userName = user?.userMetadata?['full_name']?.toString() ??
-        user?.userMetadata?['name']?.toString() ??
-        '';
+
+    // Resolve display name: DB profiles.full_name first, then Google metadata
+    final profileAsync = ref.watch(customerProfileDataProvider);
+    final dbProfile = profileAsync.whenOrNull(data: (d) => d);
+    final dbName = dbProfile?['full_name']?.toString().trim() ?? '';
+    final googleName = user?.userMetadata?['full_name']?.toString() ??
+        user?.userMetadata?['name']?.toString() ?? '';
+    final userName = dbName.isNotEmpty ? dbName : googleName;
+
     final userEmail = user?.email ?? '';
     final userAvatar = user?.userMetadata?['avatar_url']?.toString();
     final initials = _initials(userName.isNotEmpty ? userName : userEmail);
@@ -127,7 +146,8 @@ class CustomerProfileScreen extends ConsumerWidget {
                     children: [
                       // ── Profile Card ──────────────────────────────────────
                       _buildProfileCard(
-                          context, userName, userEmail, userAvatar, initials),
+                          context, ref, userName, userEmail, userAvatar, initials,
+                          phone: dbProfile?['phone']?.toString() ?? ''),
                       SizedBox(height: 16),
 
                       // ── Digital Garage ────────────────────────────────────
@@ -246,14 +266,40 @@ class CustomerProfileScreen extends ConsumerWidget {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  //  Edit Profile Sheet
+  // ─────────────────────────────────────────────────────────────────────────
+
+  void _showEditProfileSheet(
+    BuildContext context,
+    WidgetRef ref,
+    String currentName,
+    String currentPhone,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EditProfileSheet(
+        initialName: currentName,
+        initialPhone: currentPhone,
+        onSaved: () => ref.invalidate(customerProfileDataProvider),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   //  Header
   // ─────────────────────────────────────────────────────────────────────────
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = Supabase.instance.client.auth.currentUser;
-    final userName = user?.userMetadata?['full_name']?.toString() ??
+    // Consistent name resolution: DB first, then Google metadata
+    final dbProfile = ref.watch(customerProfileDataProvider).whenOrNull(data: (d) => d);
+    final dbName = dbProfile?['full_name']?.toString().trim() ?? '';
+    final googleName = user?.userMetadata?['full_name']?.toString() ??
         user?.userMetadata?['name']?.toString() ?? '';
+    final userName = dbName.isNotEmpty ? dbName : googleName;
     final userEmail = user?.email ?? '';
     final userAvatar = user?.userMetadata?['avatar_url']?.toString();
     final initials = _initials(userName.isNotEmpty ? userName : userEmail);
@@ -466,11 +512,13 @@ class CustomerProfileScreen extends ConsumerWidget {
 
   Widget _buildProfileCard(
     BuildContext context,
+    WidgetRef ref,
     String userName,
     String userEmail,
     String? userAvatar,
-    String initials,
-  ) {
+    String initials, {
+    String phone = '',
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -633,19 +681,12 @@ class CustomerProfileScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    // Edit button
+                    // Edit button — opens real profile edit sheet
                     IconButton(
                       icon: Icon(Icons.edit_outlined,
                           color: Theme.of(context).colorScheme.onSurfaceVariant, size: 18),
                       tooltip: 'Edit Profile',
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text(
-                                  'Profile editing coming soon'),
-                              behavior: SnackBarBehavior.floating),
-                        );
-                      },
+                      onPressed: () => _showEditProfileSheet(context, ref, userName, phone),
                     ),
                   ],
                 ),
@@ -1777,3 +1818,187 @@ class CustomerProfileScreen extends ConsumerWidget {
   }
 }
 
+
+
+// _____________________________________________________________________________
+//  Edit Profile Sheet
+// _____________________________________________________________________________
+
+class _EditProfileSheet extends StatefulWidget {
+  final String initialName;
+  final String initialPhone;
+  final VoidCallback onSaved;
+
+  const _EditProfileSheet({
+    required this.initialName,
+    required this.initialPhone,
+    required this.onSaved,
+  });
+
+  @override
+  State<_EditProfileSheet> createState() => _EditProfileSheetState();
+}
+
+class _EditProfileSheetState extends State<_EditProfileSheet> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _phoneCtrl;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl  = TextEditingController(text: widget.initialName);
+    _phoneCtrl = TextEditingController(text: widget.initialPhone);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = 'Full name cannot be empty.');
+      return;
+    }
+    setState(() { _saving = true; _error = null; });
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) throw Exception('Not authenticated');
+      await Supabase.instance.client.from('profiles').upsert({
+        'id':        user.id,
+        'full_name': name,
+        'phone':     _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+        'email':     user.email ?? '',
+        'role':      (user.appMetadata['role'] as String?) ?? 'customer',
+      });
+      widget.onSaved();
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: const Row(children: [
+            Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+            SizedBox(width: 8),
+            Text('Profile updated successfully'),
+          ]),
+          backgroundColor: const Color(0xFF059669),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ));
+      }
+    } catch (e) {
+      if (mounted) setState(() { _saving = false; _error = 'Save failed: $e'; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final bottomPad = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPad),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: cs.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Row(children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.person_outline, color: AppColors.primaryContainer, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Text('Edit Profile', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface)),
+          ]),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _nameCtrl,
+            textCapitalization: TextCapitalization.words,
+            style: TextStyle(color: cs.onSurface),
+            decoration: InputDecoration(
+              labelText: 'Full Name',
+              hintText: 'Enter your full name',
+              prefixIcon: Icon(Icons.badge_outlined, color: cs.onSurfaceVariant, size: 20),
+              filled: true,
+              fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cs.outlineVariant)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cs.outlineVariant)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryContainer, width: 2)),
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _phoneCtrl,
+            keyboardType: TextInputType.phone,
+            style: TextStyle(color: cs.onSurface),
+            decoration: InputDecoration(
+              labelText: 'Phone Number',
+              hintText: '+62 8xx xxxx xxxx (optional)',
+              prefixIcon: Icon(Icons.phone_outlined, color: cs.onSurfaceVariant, size: 20),
+              filled: true,
+              fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cs.outlineVariant)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cs.outlineVariant)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryContainer, width: 2)),
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 10),
+            Text(_error!, style: TextStyle(color: cs.error, fontSize: 13)),
+          ],
+          const SizedBox(height: 24),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _saving ? null : () => Navigator.of(context).pop(),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  side: BorderSide(color: cs.outlineVariant),
+                ),
+                child: Text('Cancel', style: TextStyle(color: cs.onSurfaceVariant)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primaryContainer,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: _saving
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Save Changes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ]),
+        ],
+      ),
+    );
+  }
+}
