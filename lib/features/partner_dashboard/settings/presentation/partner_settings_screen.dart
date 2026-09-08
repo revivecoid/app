@@ -374,7 +374,7 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
     final cs = Theme.of(context).colorScheme;
     final currentLocale = ref.watch(localeProvider);
     final currentTheme = ref.watch(themeModeProvider);
-    final l = AppL.of(context);
+    final l = AppL.of(context)!;
 
     return Container(
       padding: const EdgeInsets.all(24),

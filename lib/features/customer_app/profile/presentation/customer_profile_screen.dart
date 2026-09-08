@@ -403,7 +403,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                       Icon(Icons.person_outline,
                           size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       SizedBox(width: 10),
-                      Text(AppL.of(context).profileTitle),
+                      Text(AppL.of(context)!.profileTitle),
                     ]),
                   ),
                   PopupMenuItem(
@@ -412,7 +412,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                       Icon(Icons.settings_outlined,
                           size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       SizedBox(width: 10),
-                      Text(AppL.of(context).settings),
+                      Text(AppL.of(context)!.settings),
                     ]),
                   ),
                   const PopupMenuDivider(),
@@ -422,7 +422,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                       Icon(Icons.logout,
                           size: 18, color: AppColors.primaryContainer),
                       SizedBox(width: 10),
-                      Text(AppL.of(context).logout,
+                      Text(AppL.of(context)!.logout,
                           style: TextStyle(
                               color: AppColors.primaryContainer,
                               fontWeight: FontWeight.bold)),
@@ -1775,6 +1775,7 @@ class _SettingsPanel extends ConsumerWidget {
     final t = Theme.of(context);
     final currentLocale = ref.watch(localeProvider);
     final currentTheme = ref.watch(themeModeProvider);
+    final l = AppL.of(context)!;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
@@ -1797,23 +1798,23 @@ class _SettingsPanel extends ConsumerWidget {
           Row(children: [
             Icon(Icons.tune_rounded, size: 22, color: cs.primary),
             const SizedBox(width: 10),
-            Text(AppL.of(context).settings,
+            Text(l.settings,
                 style: t.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
           ]),
           const SizedBox(height: 28),
 
           // ── Language ─────────────────────────────────────────────────────
-          _SectionLabel(AppL.of(context).language, Icons.language_rounded),
+          _SectionLabel(l.language, Icons.language_rounded),
           const SizedBox(height: 10),
           Row(children: [
             _LocaleChip(
-              label: '🇮🇩  ${AppL.of(context).languageId}',
+              label: '🇮🇩  ${l.languageId}',
               selected: currentLocale.languageCode == 'id',
               onTap: () => ref.read(localeProvider.notifier).setLocale(const Locale('id')),
             ),
             const SizedBox(width: 10),
             _LocaleChip(
-              label: '🇬🇧  ${AppL.of(context).languageEn}',
+              label: '🇬🇧  ${l.languageEn}',
               selected: currentLocale.languageCode == 'en',
               onTap: () => ref.read(localeProvider.notifier).setLocale(const Locale('en')),
             ),
@@ -1821,23 +1822,23 @@ class _SettingsPanel extends ConsumerWidget {
           const SizedBox(height: 28),
 
           // ── Appearance ───────────────────────────────────────────────────
-          _SectionLabel(AppL.of(context).appearance, Icons.brightness_6_rounded),
+          _SectionLabel(l.appearance, Icons.brightness_6_rounded),
           const SizedBox(height: 10),
           Wrap(spacing: 10, children: [
             _ThemeChip(
-              label: AppL.of(context).lightMode,
+              label: l.lightMode,
               icon: Icons.light_mode_outlined,
               selected: currentTheme == ThemeMode.light,
               onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.light,
             ),
             _ThemeChip(
-              label: AppL.of(context).darkMode,
+              label: l.darkMode,
               icon: Icons.dark_mode_outlined,
               selected: currentTheme == ThemeMode.dark,
               onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.dark,
             ),
             _ThemeChip(
-              label: AppL.of(context).systemDefault,
+              label: l.systemDefault,
               icon: Icons.brightness_auto_outlined,
               selected: currentTheme == ThemeMode.system,
               onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.system,
@@ -1850,7 +1851,7 @@ class _SettingsPanel extends ConsumerWidget {
             width: double.infinity,
             child: FilledButton.tonal(
               onPressed: () => Navigator.pop(context),
-              child: Text(AppL.of(context).done),
+              child: Text(l.done),
             ),
           ),
         ],
