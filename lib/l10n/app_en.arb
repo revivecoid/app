@@ -1,0 +1,501 @@
+{
+  "@@locale": "en",
+
+  "appName": "Revive",
+  "@appName": { "description": "Application name" },
+
+  "appTagline": "Automotive Body Repair Portal",
+  "@appTagline": {},
+
+  "loading": "Loading…",
+  "@loading": {},
+
+  "cancel": "Cancel",
+  "@cancel": {},
+
+  "save": "Save",
+  "@save": {},
+
+  "saveChanges": "Save Changes",
+  "@saveChanges": {},
+
+  "retry": "Retry",
+  "@retry": {},
+
+  "error": "Error",
+  "@error": {},
+
+  "close": "Close",
+  "@close": {},
+
+  "confirm": "Confirm",
+  "@confirm": {},
+
+  "delete": "Delete",
+  "@delete": {},
+
+  "edit": "Edit",
+  "@edit": {},
+
+  "submit": "Submit",
+  "@submit": {},
+
+  "next": "Next",
+  "@next": {},
+
+  "back": "Back",
+  "@back": {},
+
+  "done": "Done",
+  "@done": {},
+
+  "yes": "Yes",
+  "@yes": {},
+
+  "no": "No",
+  "@no": {},
+
+  "or": "or",
+  "@or": {},
+
+  "search": "Search",
+  "@search": {},
+
+  "filter": "Filter",
+  "@filter": {},
+
+  "refresh": "Refresh",
+  "@refresh": {},
+
+  "seeAll": "See All",
+  "@seeAll": {},
+
+  "optional": "Optional",
+  "@optional": {},
+
+  "required": "Required",
+  "@required": {},
+
+  "success": "Success",
+  "@success": {},
+
+  "warning": "Warning",
+  "@warning": {},
+
+  "info": "Info",
+  "@info": {},
+
+  "noDataFound": "No data found.",
+  "@noDataFound": {},
+
+  "somethingWentWrong": "Something went wrong. Please try again.",
+  "@somethingWentWrong": {},
+
+  "networkError": "Network error. Check your connection.",
+  "@networkError": {},
+
+  "settings": "Settings",
+  "@settings": {},
+
+  "language": "Language",
+  "@language": {},
+
+  "appearance": "Appearance",
+  "@appearance": {},
+
+  "darkMode": "Dark Mode",
+  "@darkMode": {},
+
+  "lightMode": "Light Mode",
+  "@lightMode": {},
+
+  "systemDefault": "System Default",
+  "@systemDefault": {},
+
+  "version": "Version",
+  "@version": {},
+
+  "logout": "Log Out",
+  "@logout": {},
+
+  "logoutConfirm": "Are you sure you want to log out?",
+  "@logoutConfirm": {},
+
+  "languageId": "Bahasa Indonesia",
+  "@languageId": {},
+
+  "languageEn": "English",
+  "@languageEn": {},
+
+  "heroTagBadge": "AUTOMOTIVE AI CARE",
+  "@heroTagBadge": {},
+
+  "heroTitle": "Body Repair\nMade Simple.",
+  "@heroTitle": {},
+
+  "heroSubtitle": "Instant body repair estimation & real-time tracking. Get your car shining faster, with absolute transparency.",
+  "@heroSubtitle": {},
+
+  "heroCtaButton": "Get Free AI Estimate",
+  "@heroCtaButton": {},
+
+  "contactUs": "CONTACT US",
+  "@contactUs": {},
+
+  "activeRepair": "ACTIVE REPAIR",
+  "@activeRepair": {},
+
+  "repairProgress": "Repair Progress",
+  "@repairProgress": {},
+
+  "inProgress": "In Progress",
+  "@inProgress": {},
+
+  "pending": "Pending",
+  "@pending": {},
+
+  "trackLive": "Track Live",
+  "@trackLive": {},
+
+  "newClaim": "New Claim",
+  "@newClaim": {},
+
+  "newClaimDesc": "Scan car damage with AI",
+  "@newClaimDesc": {},
+
+  "startScan": "Start Scan",
+  "@startScan": {},
+
+  "trackStatus": "Track Status",
+  "@trackStatus": {},
+
+  "trackStatusDesc": "Live workshop cameras",
+  "@trackStatusDesc": {},
+
+  "viewQueue": "View Queue",
+  "@viewQueue": {},
+
+  "aiTelemetryHub": "AI TELEMETRY HUB",
+  "@aiTelemetryHub": {},
+
+  "slaLabel": "SLA < 48 Hrs",
+  "@slaLabel": {},
+
+  "networkTitle": "Jabodetabek Certified Network",
+  "@networkTitle": {},
+
+  "networkDesc": "Over 38 OEM-compliant spray booths with digitized color-matching precision down to 99.4% factory accuracy.",
+  "@networkDesc": {},
+
+  "seamlessProcess": "SEAMLESS PROCESS",
+  "@seamlessProcess": {},
+
+  "howItWorks": "How It Works",
+  "@howItWorks": {},
+
+  "step1Title": "Snap Damage Photos",
+  "@step1Title": {},
+
+  "step1Desc": "Take 3 clear photos around your vehicle dents, scratches, or panel gaps directly in the web scanner.",
+  "@step1Desc": {},
+
+  "step2Title": "Instant AI Assessment",
+  "@step2Title": {},
+
+  "step2Desc": "Get sub-millimeter part analysis and guaranteed fixed-price estimate with parts catalog breakdown.",
+  "@step2Desc": {},
+
+  "step3Title": "Select Hub & Bay",
+  "@step3Title": {},
+
+  "step3Desc": "Choose your closest certified workshop and lock priority slot reservation with door-to-door towing.",
+  "@step3Desc": {},
+
+  "step4Title": "Live Tracking to Handover",
+  "@step4Title": {},
+
+  "step4Desc": "Watch real-time prep, booth painting, and quality control telemetry until delivery back to your driveway.",
+  "@step4Desc": {},
+
+  "recentInspections": "RECENT INSPECTIONS",
+  "@recentInspections": {},
+
+  "trustVerified": "TRUST & VERIFIED",
+  "@trustVerified": {},
+
+  "trustTitle": "Why Revive?",
+  "@trustTitle": {},
+
+  "quickLinks": "QUICK LINKS",
+  "@quickLinks": {},
+
+  "linkFaq": "FAQ & Help",
+  "@linkFaq": {},
+
+  "linkAbout": "About Revive",
+  "@linkAbout": {},
+
+  "linkPrivacy": "Privacy Policy",
+  "@linkPrivacy": {},
+
+  "linkSupport": "Support",
+  "@linkSupport": {},
+
+  "footerCopyright": "© 2025 Revive Technologies Indonesia",
+  "@footerCopyright": {},
+
+  "footerTagline": "AI-Powered Automotive Body Repair",
+  "@footerTagline": {},
+
+  "estimatorTitle": "Damage Estimator",
+  "@estimatorTitle": {},
+
+  "estimatorSubtitle": "Upload a photo and get an instant AI repair estimate",
+  "@estimatorSubtitle": {},
+
+  "uploadPhoto": "Upload Photo",
+  "@uploadPhoto": {},
+
+  "takePhoto": "Take Photo",
+  "@takePhoto": {},
+
+  "analyzeNow": "Analyze Now",
+  "@analyzeNow": {},
+
+  "estimateResult": "Estimate Result",
+  "@estimateResult": {},
+
+  "totalEstimate": "Total Estimate",
+  "@totalEstimate": {},
+
+  "orderNow": "Order Now",
+  "@orderNow": {},
+
+  "getEstimate": "Get Estimate",
+  "@getEstimate": {},
+
+  "severityLight": "Light",
+  "@severityLight": {},
+
+  "severityMedium": "Moderate",
+  "@severityMedium": {},
+
+  "severityHeavy": "Heavy",
+  "@severityHeavy": {},
+
+  "panelDamage": "Panel Damage",
+  "@panelDamage": {},
+
+  "faqTitle": "FAQ & Support",
+  "@faqTitle": {},
+
+  "faqSubtitle": "Find answers to common questions",
+  "@faqSubtitle": {},
+
+  "faqSearch": "Search questions…",
+  "@faqSearch": {},
+
+  "faqNoResults": "No questions found for your search.",
+  "@faqNoResults": {},
+
+  "contactSupport": "Contact Support",
+  "@contactSupport": {},
+
+  "aboutTitle": "About Revive",
+  "@aboutTitle": {},
+
+  "aboutSubtitle": "Indonesia's premier AI-powered automotive body repair network",
+  "@aboutSubtitle": {},
+
+  "ourMission": "Our Mission",
+  "@ourMission": {},
+
+  "ourVision": "Our Vision",
+  "@ourVision": {},
+
+  "ourTeam": "Our Team",
+  "@ourTeam": {},
+
+  "privacyTitle": "Privacy Policy",
+  "@privacyTitle": {},
+
+  "privacyLastUpdated": "Last updated",
+  "@privacyLastUpdated": {},
+
+  "profileTitle": "My Profile",
+  "@profileTitle": {},
+
+  "profileVehicles": "My Vehicles",
+  "@profileVehicles": {},
+
+  "profileOrders": "My Orders",
+  "@profileOrders": {},
+
+  "profileEditProfile": "Edit Profile",
+  "@profileEditProfile": {},
+
+  "profileChangePassword": "Change Password",
+  "@profileChangePassword": {},
+
+  "profileNotifications": "Notifications",
+  "@profileNotifications": {},
+
+  "profileSettings": "Settings",
+  "@profileSettings": {},
+
+  "profileLogout": "Log Out",
+  "@profileLogout": {},
+
+  "addVehicle": "Add Vehicle",
+  "@addVehicle": {},
+
+  "vehiclePlate": "License Plate",
+  "@vehiclePlate": {},
+
+  "vehicleBrand": "Brand",
+  "@vehicleBrand": {},
+
+  "vehicleModel": "Model",
+  "@vehicleModel": {},
+
+  "vehicleYear": "Year",
+  "@vehicleYear": {},
+
+  "vehicleColor": "Color",
+  "@vehicleColor": {},
+
+  "orderTitle": "Order Details",
+  "@orderTitle": {},
+
+  "orderStatus": "Order Status",
+  "@orderStatus": {},
+
+  "orderDate": "Order Date",
+  "@orderDate": {},
+
+  "orderTotal": "Total",
+  "@orderTotal": {},
+
+  "orderWorkshop": "Workshop",
+  "@orderWorkshop": {},
+
+  "checkoutTitle": "Checkout",
+  "@checkoutTitle": {},
+
+  "checkoutPayment": "Payment Method",
+  "@checkoutPayment": {},
+
+  "checkoutSummary": "Order Summary",
+  "@checkoutSummary": {},
+
+  "checkoutConfirm": "Place Order",
+  "@checkoutConfirm": {},
+
+  "trackingTitle": "Live Tracking",
+  "@trackingTitle": {},
+
+  "trackingStatus": "Current Status",
+  "@trackingStatus": {},
+
+  "trackingWorkshop": "At Workshop",
+  "@trackingWorkshop": {},
+
+  "trackingEstimatedReady": "Estimated Ready",
+  "@trackingEstimatedReady": {},
+
+  "notificationsTitle": "Notification Preferences",
+  "@notificationsTitle": {},
+
+  "notifRepairUpdates": "Repair Updates",
+  "@notifRepairUpdates": {},
+
+  "notifRepairUpdatesDesc": "Get notified on every repair milestone",
+  "@notifRepairUpdatesDesc": {},
+
+  "notifPromotions": "Promotions & Offers",
+  "@notifPromotions": {},
+
+  "notifPromotionsDesc": "Special deals and seasonal offers",
+  "@notifPromotionsDesc": {},
+
+  "notifReminders": "Reminders",
+  "@notifReminders": {},
+
+  "notifRemindersDesc": "Vehicle service and appointment reminders",
+  "@notifRemindersDesc": {},
+
+  "partnerDashboard": "Partner Dashboard",
+  "@partnerDashboard": {},
+
+  "partnerJobs": "Active Jobs",
+  "@partnerJobs": {},
+
+  "partnerWorkshop": "My Workshop",
+  "@partnerWorkshop": {},
+
+  "partnerEarnings": "Earnings",
+  "@partnerEarnings": {},
+
+  "partnerSettings": "Workshop Settings",
+  "@partnerSettings": {},
+
+  "partnerProfile": "Partner Profile",
+  "@partnerProfile": {},
+
+  "partnerStatus": "Workshop Status",
+  "@partnerStatus": {},
+
+  "statusOnline": "Online",
+  "@statusOnline": {},
+
+  "statusOffline": "Offline",
+  "@statusOffline": {},
+
+  "statusBusy": "Busy",
+  "@statusBusy": {},
+
+  "jobAccept": "Accept Job",
+  "@jobAccept": {},
+
+  "jobDecline": "Decline",
+  "@jobDecline": {},
+
+  "jobComplete": "Mark Complete",
+  "@jobComplete": {},
+
+  "supportTitle": "Customer Support",
+  "@supportTitle": {},
+
+  "supportSubtitle": "We're here to help",
+  "@supportSubtitle": {},
+
+  "supportChat": "Chat with Us",
+  "@supportChat": {},
+
+  "supportEmail": "Email Support",
+  "@supportEmail": {},
+
+  "supportPhone": "Call Support",
+  "@supportPhone": {},
+
+  "updatedAt": "Updated {date}",
+  "@updatedAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+
+  "jobIdLabel": "Job #{id}",
+  "@jobIdLabel": {
+    "placeholders": {
+      "id": { "type": "String" }
+    }
+  },
+
+  "panelCount": "{count} panel",
+  "@panelCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
+}

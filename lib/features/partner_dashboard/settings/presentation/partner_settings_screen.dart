@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/providers/locale_provider.dart';
 
 // Helper for exact colors matching the design system
 class _DesignColors {
@@ -74,6 +76,8 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildSectionHeader(),
+                              SizedBox(height: 24),
+                              _buildLanguageCard(),
                               SizedBox(height: 24),
                               _buildQuotaWidgets(),
                               SizedBox(height: 24),
@@ -361,6 +365,95 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageCard() {
+    final cs = Theme.of(context).colorScheme;
+    final currentLocale = ref.watch(localeProvider);
+    final currentTheme = ref.watch(themeModeProvider);
+    final l = AppL.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: _DesignColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                  color: _DesignColors.primaryContainer.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8)),
+              child: Icon(Icons.language_rounded, color: _DesignColors.primaryContainer, size: 20),
+            ),
+            const SizedBox(width: 10),
+            Text('${l.language} & ${l.appearance}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _DesignColors.onSurface)),
+          ]),
+          const SizedBox(height: 6),
+          Text('Interface language and color scheme preference.',
+              style: TextStyle(fontSize: 13, color: _DesignColors.onSurfaceVariant, height: 1.4)),
+          const SizedBox(height: 20),
+
+          // ── Language ────────────────────────────────────────────────────
+          Text(l.language.toUpperCase(),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
+                  color: _DesignColors.onSurfaceVariant, letterSpacing: 0.8)),
+          const SizedBox(height: 10),
+          Row(children: [
+            _LangChip(
+              label: '🇮🇩  ${l.languageId}',
+              selected: currentLocale.languageCode == 'id',
+              selectedColor: _DesignColors.primaryContainer,
+              selectedText: Colors.white,
+              onTap: () => ref.read(localeProvider.notifier).setLocale(const Locale('id')),
+            ),
+            const SizedBox(width: 10),
+            _LangChip(
+              label: '🇬🇧  ${l.languageEn}',
+              selected: currentLocale.languageCode == 'en',
+              selectedColor: _DesignColors.primaryContainer,
+              selectedText: Colors.white,
+              onTap: () => ref.read(localeProvider.notifier).setLocale(const Locale('en')),
+            ),
+          ]),
+          const SizedBox(height: 20),
+
+          // ── Theme ────────────────────────────────────────────────────────
+          Text(l.appearance.toUpperCase(),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
+                  color: _DesignColors.onSurfaceVariant, letterSpacing: 0.8)),
+          const SizedBox(height: 10),
+          Wrap(spacing: 10, runSpacing: 8, children: [
+            _ThemeOptionChip(
+              label: l.lightMode,
+              icon: Icons.light_mode_outlined,
+              selected: currentTheme == ThemeMode.light,
+              onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.light,
+            ),
+            _ThemeOptionChip(
+              label: l.darkMode,
+              icon: Icons.dark_mode_outlined,
+              selected: currentTheme == ThemeMode.dark,
+              onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.dark,
+            ),
+            _ThemeOptionChip(
+              label: l.systemDefault,
+              icon: Icons.brightness_auto_outlined,
+              selected: currentTheme == ThemeMode.system,
+              onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.system,
+            ),
+          ]),
         ],
       ),
     );
@@ -1091,6 +1184,93 @@ class _PartnerSettingsScreenState extends ConsumerState<PartnerSettingsScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Language Chip ────────────────────────────────────────────────────────────
+
+class _LangChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final Color selectedColor;
+  final Color selectedText;
+  final VoidCallback onTap;
+  const _LangChip({
+    required this.label, required this.selected,
+    required this.selectedColor, required this.selectedText,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: selected ? selectedColor : cs.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected ? selectedColor : cs.outlineVariant,
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Center(
+            child: Text(label,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                    color: selected ? selectedText : cs.onSurfaceVariant)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Theme Option Chip ────────────────────────────────────────────────────────
+
+class _ThemeOptionChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ThemeOptionChip({
+    required this.label, required this.icon,
+    required this.selected, required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? cs.secondaryContainer : cs.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? cs.secondary : cs.outlineVariant,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 16,
+              color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant)),
+        ]),
+      ),
     );
   }
 }
