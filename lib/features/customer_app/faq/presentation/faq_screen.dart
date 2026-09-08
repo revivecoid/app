@@ -142,30 +142,32 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
                     const SizedBox(height: 32),
 
                     // ── Contact Cards ────────────────────────────────────────
-                    Row(children: [
-                      Expanded(child: _ContactCard(
-                        icon: Icons.chat_bubble_outline,
-                        title: l.supportLiveChat, subtitle: l.supportTalkToEstimator,
-                        actionLabel: l.supportOpenChat,
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l.loading),
-                              behavior: SnackBarBehavior.floating)),
-                        isDark: isDark)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _ContactCard(
-                        icon: Icons.phone_outlined,
-                        title: l.supportCallUs, subtitle: _phone,
-                        actionLabel: l.supportCopyNumber,
-                        onTap: () => _copy(_phone, l.supportPhone),
-                        isDark: isDark)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _ContactCard(
-                        icon: Icons.email_outlined,
-                        title: 'Email', subtitle: _email,
-                        actionLabel: l.supportCopyEmail,
-                        onTap: () => _copy(_email, 'Email'),
-                        isDark: isDark)),
-                    ]),
+                    IntrinsicHeight(
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                        Expanded(child: _ContactCard(
+                          icon: Icons.chat_bubble_outline,
+                          title: l.supportLiveChat, subtitle: l.supportTalkToEstimator,
+                          actionLabel: l.supportOpenChat,
+                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l.loading),
+                                behavior: SnackBarBehavior.floating)),
+                          isDark: isDark)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _ContactCard(
+                          icon: Icons.phone_outlined,
+                          title: l.supportCallUs, subtitle: _phone,
+                          actionLabel: l.supportCopyNumber,
+                          onTap: () => _copy(_phone, l.supportPhone),
+                          isDark: isDark)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _ContactCard(
+                          icon: Icons.email_outlined,
+                          title: 'Email', subtitle: _email,
+                          actionLabel: l.supportCopyEmail,
+                          onTap: () => _copy(_email, 'Email'),
+                          isDark: isDark)),
+                      ]),
+                    ),
 
                     const SizedBox(height: 24),
 
@@ -241,7 +243,7 @@ class _ContactCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [if (!isDark) BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
-      child: Column(children: [
+      child: Column(mainAxisSize: MainAxisSize.max, children: [
         Container(
           width: 48, height: 48,
           decoration: BoxDecoration(color: AppColors.primaryContainer.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
@@ -251,6 +253,7 @@ class _ContactCard extends StatelessWidget {
         const SizedBox(height: 4),
         Text(subtitle, textAlign: TextAlign.center,
             style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+        const Spacer(),
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
