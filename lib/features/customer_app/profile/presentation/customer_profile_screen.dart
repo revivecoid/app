@@ -1129,7 +1129,7 @@ class CustomerProfileScreen extends ConsumerWidget {
             onTap: () {
               // TODO: navigate to full job history screen
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                     content: Text(AppL.of(context)!.profileHistoryComing),
                     behavior: SnackBarBehavior.floating),
               );
@@ -1695,7 +1695,7 @@ class CustomerProfileScreen extends ConsumerWidget {
             isActive: false,
             onTapOverride: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content:
                       Text(AppL.of(context)!.profileSelectJob),
                   behavior: SnackBarBehavior.floating,
