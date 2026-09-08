@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -655,15 +655,15 @@ class _ContentTabState extends State<_ContentTab> {
         const SizedBox(height: 16),
         // ── About Us page ─────────────────────────────────────────────────────
         _Card(cs: cs, title: 'About Us Page', icon: Icons.info_outline_rounded, children: [
-          _Field(cs: cs, label: 'Page Title',    ctrl: _abTitle,   hint: 'Tentang Revive', onChange: _mark),
+          _BilingualField(cs: cs, label: 'Page Title', ctrlEn: _abTitle,   ctrlId: _abTitleId,   hintEn: 'About Revive',   hintId: 'Tentang Revive', onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Tagline',       ctrl: _abTagline, hint: 'One-liner tagline', maxLines: 2, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Tagline',    ctrlEn: _abTagline, ctrlId: _abTaglineId, hintEn: 'Short tagline (EN)', hintId: 'Tagline singkat (ID)', maxLines: 2, onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Our Story',     ctrl: _abStory,   hint: 'Company origin story', maxLines: 5, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Our Story',  ctrlEn: _abStory,   ctrlId: _abStoryId,   hintEn: 'Company story (EN)', hintId: 'Cerita perusahaan (ID)', maxLines: 5, onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Mission',       ctrl: _abMission, hint: 'Misi Kami', maxLines: 3, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Mission',    ctrlEn: _abMission, ctrlId: _abMissionId, hintEn: 'Mission statement (EN)', hintId: 'Pernyataan misi (ID)', maxLines: 3, onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Vision',        ctrl: _abVision,  hint: 'Visi Kami', maxLines: 3, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Vision',     ctrlEn: _abVision,  ctrlId: _abVisionId,  hintEn: 'Vision statement (EN)', hintId: 'Pernyataan visi (ID)', maxLines: 3, onChange: _mark),
           const SizedBox(height: 14),
           Text('Statistics Strip', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
           const SizedBox(height: 8),
@@ -679,46 +679,47 @@ class _ContentTabState extends State<_ContentTab> {
         // ── Company Values ────────────────────────────────────────────────────
         _Card(cs: cs, title: 'Company Values', icon: Icons.handshake_outlined, children: [
           for (final v in [
-            ('Value 1', _v1t, _v1s), ('Value 2', _v2t, _v2s),
-            ('Value 3', _v3t, _v3s), ('Value 4', _v4t, _v4s),
+            ('Value 1', _v1t, _v1s, _v1tId, _v1sId),
+            ('Value 2', _v2t, _v2s, _v2tId, _v2sId),
+            ('Value 3', _v3t, _v3s, _v3tId, _v3sId),
+            ('Value 4', _v4t, _v4s, _v4tId, _v4sId),
           ]) ...[
-            if (v != ('Value 1', _v1t, _v1s)) const SizedBox(height: 12),
+            if (v.$1 != 'Value 1') const SizedBox(height: 16),
             Text(v.$1, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
             const SizedBox(height: 8),
-            Row(children: [
-              Expanded(child: _Field(cs: cs, label: 'Title',    ctrl: v.$2, hint: 'e.g. Transparan', onChange: _mark)),
-              const SizedBox(width: 12),
-              Expanded(child: _Field(cs: cs, label: 'Subtitle', ctrl: v.$3, hint: 'Short description', onChange: _mark)),
-            ]),
+            _BilingualField(cs: cs, label: 'Title',    ctrlEn: v.$2, ctrlId: v.$4, hintEn: 'e.g. Transparent (EN)', hintId: 'e.g. Transparan (ID)', onChange: _mark),
+            const SizedBox(height: 8),
+            _BilingualField(cs: cs, label: 'Subtitle', ctrlEn: v.$3, ctrlId: v.$5, hintEn: 'Short description (EN)', hintId: 'Deskripsi singkat (ID)', onChange: _mark),
           ],
         ]),
         const SizedBox(height: 16),
         // ── Partner CTA ───────────────────────────────────────────────────────
         _Card(cs: cs, title: 'Partner CTA Banner', icon: Icons.store_outlined, children: [
-          _Field(cs: cs, label: 'Title',    ctrl: _pcTitle, hint: 'Bergabung sebagai Partner Bengkel', onChange: _mark),
+          _BilingualField(cs: cs, label: 'Title',    ctrlEn: _pcTitle, ctrlId: _pcTitleId, hintEn: 'Join as a Workshop Partner', hintId: 'Bergabung sebagai Partner Bengkel', onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Subtitle', ctrl: _pcSub,   hint: 'Daftarkan bengkel Anda...', maxLines: 2, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Subtitle', ctrlEn: _pcSub,   ctrlId: _pcSubId,   hintEn: 'Register your workshop...', hintId: 'Daftarkan bengkel Anda...', maxLines: 2, onChange: _mark),
         ]),
         const SizedBox(height: 16),
-        // ── Privacy Policy page ───────────────────────────────────────────
+        // ── Privacy Policy page ───────────────────────────────────────────────
         _Card(cs: cs, title: 'Privacy Policy Page', icon: Icons.privacy_tip_outlined, children: [
-          _Field(cs: cs, label: 'Page Title',   ctrl: _ppTitle,   hint: 'Kebijakan Privasi', onChange: _mark),
+          _BilingualField(cs: cs, label: 'Page Title',   ctrlEn: _ppTitle,   ctrlId: _ppTitleId, hintEn: 'Privacy Policy', hintId: 'Kebijakan Privasi', onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Last Updated', ctrl: _ppUpdated, hint: 'Terakhir diperbarui: September 2026', onChange: _mark),
+          _Field(cs: cs,           label: 'Last Updated', ctrl: _ppUpdated,               hint: 'Last updated: September 2026', onChange: _mark),
           const SizedBox(height: 12),
-          _Field(cs: cs, label: 'Introduction', ctrl: _ppIntro,   hint: 'Intro paragraph...', maxLines: 4, onChange: _mark),
+          _BilingualField(cs: cs, label: 'Introduction', ctrlEn: _ppIntro,   ctrlId: _ppIntroId, hintEn: 'Intro paragraph (EN)...', hintId: 'Paragraf pembuka (ID)...', maxLines: 4, onChange: _mark),
           const SizedBox(height: 14),
           Text('Sections', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
           for (int i = 0; i < 8; i++) ...[
             const SizedBox(height: 12),
             Text('Section ${i + 1}', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
             const SizedBox(height: 6),
-            _Field(cs: cs, label: 'Title', ctrl: _ppST[i], hint: 'Section heading', onChange: _mark),
+            _BilingualField(cs: cs, label: 'Title', ctrlEn: _ppST[i],   ctrlId: _ppSTId[i], hintEn: 'Section heading (EN)', hintId: 'Judul bagian (ID)', onChange: _mark),
             const SizedBox(height: 6),
-            _Field(cs: cs, label: 'Body',  ctrl: _ppSB[i], hint: 'Section content', maxLines: 4, onChange: _mark),
+            _BilingualField(cs: cs, label: 'Body',  ctrlEn: _ppSB[i],   ctrlId: _ppSBId[i], hintEn: 'Section content (EN)', hintId: 'Konten bagian (ID)', maxLines: 4, onChange: _mark),
           ],
         ]),
         const SizedBox(height: 80),
+
       ]),
     );
   }
