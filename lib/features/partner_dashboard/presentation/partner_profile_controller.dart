@@ -10,6 +10,8 @@ class PartnerProfileState {
   final List<String> facilityPhotoUrls;
   final String? errorMessage;
   final String? successMessage;
+  /// Resolved display name: workshop name → DB profile → Google OAuth → email
+  final String ownerName;
 
   PartnerProfileState({
     this.isLoading = true,
@@ -20,6 +22,7 @@ class PartnerProfileState {
     this.facilityPhotoUrls = const [],
     this.errorMessage,
     this.successMessage,
+    this.ownerName = '',
   });
 
   PartnerProfileState copyWith({
@@ -31,6 +34,7 @@ class PartnerProfileState {
     List<String>? facilityPhotoUrls,
     String? errorMessage,
     String? successMessage,
+    String? ownerName,
   }) {
     return PartnerProfileState(
       isLoading: isLoading ?? this.isLoading,
@@ -41,6 +45,7 @@ class PartnerProfileState {
       facilityPhotoUrls: facilityPhotoUrls ?? this.facilityPhotoUrls,
       errorMessage: errorMessage,
       successMessage: successMessage,
+      ownerName: ownerName ?? this.ownerName,
     );
   }
 }
@@ -67,7 +72,46 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
   Future<void> _fetchProfile() async {
     // Use maybeSingle() so we get null instead of PGRST116 if no row exists yet
     final data = await _supabase.from('partners').select().eq('id', _partnerId).maybeSingle();
-    state = state.copyWith(isLoading: false, partnerData: data);
+
+    // Resolve owner display name with priority:
+    //   1. Registered workshop name (entity_name / shop_name) from partners table
+    //   2. Full name from profiles table (non-Google registrations)
+    //   3. Google OAuth name from userMetadata
+    //   4. Email as last resort
+    final workshopName = data?['entity_name']?.toString().trim() ?? '';
+    final shopName     = data?['shop_name']?.toString().trim() ?? '';
+
+    String resolvedName = workshopName.isNotEmpty ? workshopName
+        : shopName.isNotEmpty ? shopName
+        : '';
+
+    if (resolvedName.isEmpty) {
+      // Try DB profiles table
+      try {
+        final profile = await _supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', _partnerId)
+            .maybeSingle();
+        final dbName = profile?['full_name']?.toString().trim() ?? '';
+        if (dbName.isNotEmpty) resolvedName = dbName;
+      } catch (_) {}
+    }
+
+    if (resolvedName.isEmpty) {
+      // Fall back to Google OAuth metadata
+      final user = _supabase.auth.currentUser;
+      resolvedName = user?.userMetadata?['full_name']?.toString().trim()
+          ?? user?.userMetadata?['name']?.toString().trim()
+          ?? user?.email
+          ?? '';
+    }
+
+    state = state.copyWith(
+      isLoading: false,
+      partnerData: data,
+      ownerName: resolvedName,
+    );
   }
 
   Future<void> _fetchKpis() async {

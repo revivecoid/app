@@ -257,7 +257,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hero header
-          _buildHeroCard(p, cs),
+          _buildHeroCard(state, p, cs),
           SizedBox(height: 20),
           // Two-column row: Contact & KPIs
           Row(
@@ -277,7 +277,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
     );
   }
 
-  Widget _buildHeroCard(Map<String, dynamic> p, ColorScheme cs) {
+  Widget _buildHeroCard(PartnerProfileState state, Map<String, dynamic> p, ColorScheme cs) {
     final tier = p['tier']?.toString() ?? 'standard';
     final tierColor = switch (tier.toLowerCase()) {
       'premium' => _amber500,
@@ -286,12 +286,10 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
     };
     final statusPending = p['status']?.toString() == 'pending';
 
-    // Google account owner name
+    // Resolved name comes from the controller (workshop → DB profile → Google → email)
+    final ownerName = state.ownerName;
+    // Avatar still comes from Google OAuth metadata (only source)
     final user = Supabase.instance.client.auth.currentUser;
-    final ownerName = user?.userMetadata?['full_name']?.toString()
-        ?? user?.userMetadata?['name']?.toString()
-        ?? user?.email
-        ?? '';
     final avatarUrl = user?.userMetadata?['avatar_url']?.toString();
 
     return Container(
