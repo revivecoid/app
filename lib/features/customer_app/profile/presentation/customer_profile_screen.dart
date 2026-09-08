@@ -58,19 +58,8 @@ class CustomerProfileScreen extends ConsumerWidget {
     }
   }
 
-  void _showSettingsPanel(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final t = Theme.of(context);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: cs.surface,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => _SettingsPanel(ref: ref),
-    );
-  }
+  void _showSettingsPanel(BuildContext context, WidgetRef ref) =>
+      AppSettingsSheet.show(context);
 
   String _initials(String name) {
     if (name.trim().isEmpty) return '?';
