@@ -170,6 +170,15 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       child: Row(
         children: [
           Text('My Workshop Profile', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: cs.onSurface)),
+          const SizedBox(width: 16),
+          FilledButton.tonal(
+            onPressed: () => context.go('/partner-dashboard'),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.dashboard_outlined, size: 15),
+              const SizedBox(width: 6),
+              const Text('Dashboard', style: TextStyle(fontSize: 13)),
+            ]),
+          ),
           Spacer(),
           if (state.partnerData != null) ...[
             // Online / Offline toggle

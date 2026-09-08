@@ -47,6 +47,9 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
         user?.userMetadata?['name']?.toString() ?? '';
     final userEmail = user?.email ?? '';
     final avatarUrl = user?.userMetadata?['avatar_url']?.toString();
+    final userRole = user?.userMetadata?['role']?.toString() ?? 'customer';
+    final isAdmin = userRole == 'admin' || userRole == 'sysadmin';
+    final isPartner = userRole == 'partner';
     String initials = '?';
     if (userName.trim().isNotEmpty) {
       final parts = userName.trim().split(' ');
@@ -64,15 +67,12 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         onSelected: (value) async {
           switch (value) {
+            case 'dashboard':
+              if (isAdmin) context.go('/admin-central');
+              else if (isPartner) context.go('/partner-dashboard');
+              break;
             case 'profile':
               context.push('/profile');
-              break;
-            case 'settings':
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Settings coming soon'),
-                    behavior: SnackBarBehavior.floating),
-              );
               break;
             case 'logout':
               await Supabase.instance.client.auth.signOut();
@@ -98,6 +98,30 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ],
             ),
           ),
+          // Role-based dashboard shortcut
+          if (isAdmin)
+            PopupMenuItem(
+              value: 'dashboard',
+              child: Row(children: [
+                Icon(Icons.admin_panel_settings_outlined,
+                    size: 18, color: AppColors.fireRed),
+                const SizedBox(width: 10),
+                const Text('Admin Central',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+              ]),
+            ),
+          if (isPartner)
+            PopupMenuItem(
+              value: 'dashboard',
+              child: Row(children: [
+                Icon(Icons.storefront_outlined,
+                    size: 18, color: AppColors.primaryContainer),
+                const SizedBox(width: 10),
+                const Text('Partner Dashboard',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+              ]),
+            ),
+          if (isAdmin || isPartner) const PopupMenuDivider(),
           PopupMenuItem(
             value: 'profile',
             child: Row(children: [
@@ -105,15 +129,6 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   size: 18, color: AppColors.daysGray),
               const SizedBox(width: 10),
               const Text('My Profile'),
-            ]),
-          ),
-          PopupMenuItem(
-            value: 'settings',
-            child: Row(children: [
-              const Icon(Icons.settings_outlined,
-                  size: 18, color: AppColors.daysGray),
-              const SizedBox(width: 10),
-              const Text('Settings'),
             ]),
           ),
           const PopupMenuDivider(),
