@@ -89,7 +89,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // Unauthenticated Guard
       if (session == null) {
-        final publicPaths = ['/', '/estimator', '/diagram-test', '/auth/callback', '/partner/register'];
+        final publicPaths = ['/', '/estimator', '/diagram-test', '/auth/callback', '/partner/register', '/faq', '/about', '/privacy'];
         if (publicPaths.contains(path) || path.startsWith('/auth/')) return null;
         if (!isLoggingIn) {
           final returnTo = Uri.encodeComponent(state.uri.toString());
