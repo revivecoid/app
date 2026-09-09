@@ -6,14 +6,14 @@ import '../../../../core/widgets/rev_app_bar.dart';
 
 class PrivacyPolicyScreen extends ConsumerStatefulWidget {
   const PrivacyPolicyScreen({super.key});
-  @override ConsumerState<PrivacyPolicyScreen> createState() => _PrivacyState();
+  @override
+  ConsumerState<PrivacyPolicyScreen> createState() => _PrivacyState();
 }
 
 class _PrivacyState extends ConsumerState<PrivacyPolicyScreen> {
   bool _loading = true;
   Map<String, String> _s = {};
 
-  // isId passed from build() where ref.watch drives reactivity
   String _cmsL(String k, {required bool isId, required String fb}) {
     if (isId) {
       final idVal = _s['${k}_id'];
@@ -75,11 +75,11 @@ class _PrivacyState extends ConsumerState<PrivacyPolicyScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final cs = theme.colorScheme;
     final isId = ref.watch(localeProvider).languageCode == 'id';
     final defaults = isId ? _defaultSectionsId : _defaultSectionsEn;
 
-    // Build sections: CMS overrides take priority over locale defaults
     final sections = <(String, String)>[];
     for (int i = 0; i < defaults.length; i++) {
       final title = _cmsL('privacy_${i}_title', isId: isId, fb: defaults[i].$1);
@@ -94,59 +94,122 @@ class _PrivacyState extends ConsumerState<PrivacyPolicyScreen> {
         : 'We are committed to protecting the privacy and security of your personal data.');
 
     return Scaffold(
-      backgroundColor: cs.surface,
-      appBar: ReVAppBar(showBackButton: true,
-        title: Text(pageTitle,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: cs.onSurface))),
+      appBar: ReVAppBar(title: Text(pageTitle), showBackButton: true),
       body: _loading
-        ? Center(child: CircularProgressIndicator(color: cs.primary))
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 760),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                      color: cs.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20)),
-                  child: Text('LEGAL',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800,
-                          color: cs.primary, letterSpacing: 1.2))),
-                const SizedBox(height: 10),
-                Text(pageTitle,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800, color: cs.onSurface)),
-                const SizedBox(height: 6),
-                Row(children: [
-                  Icon(Icons.calendar_today_outlined, size: 12, color: cs.onSurfaceVariant),
-                  const SizedBox(width: 4),
-                  Text(pageUpdated,
-                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                ]),
-                const SizedBox(height: 4),
-                Text(pageIntro,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurfaceVariant, height: 1.6)),
-                const SizedBox(height: 20),
-                ...sections.map((sec) => Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                      color: cs.surfaceContainerLowest,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4))),
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 800),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(sec.$1,
-                        style: TextStyle(fontWeight: FontWeight.w700,
-                            fontSize: 13, color: cs.primary)),
+
+                    // ── Header ────────────────────────────────────────────────
+                    Text(pageTitle,
+                        style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    Text(sec.$2,
-                        style: TextStyle(fontSize: 13,
-                            color: cs.onSurfaceVariant, height: 1.65)),
-                  ]))),
-                const SizedBox(height: 24),
-              ]),
-            )),
+                    Text(pageIntro,
+                        style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant)),
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      Icon(Icons.calendar_today_outlined, size: 13, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text(pageUpdated,
+                          style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                    ]),
+                    const SizedBox(height: 32),
+
+                    // ── Sections ──────────────────────────────────────────────
+                    ...sections.map((sec) => _SectionCard(
+                          title: sec.$1,
+                          body: sec.$2,
+                          isDark: isDark,
+                        )),
+
+                    const SizedBox(height: 8),
+
+                    // ── Contact strip ─────────────────────────────────────────
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cs.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: cs.primary.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: cs.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.shield_outlined, color: cs.primary, size: 24),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(
+                            isId ? 'Pertanyaan Privasi?' : 'Privacy Questions?',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: cs.onSurface),
+                          ),
+                          Text(
+                            isId
+                                ? 'Hubungi kami di privacy@revive.co.id'
+                                : 'Reach us at privacy@revive.co.id',
+                            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                          ),
+                        ])),
+                      ]),
+                    ),
+                    const SizedBox(height: 16),
+                  ]),
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+// ── Section card widget ────────────────────────────────────────────────────────
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final String body;
+  final bool isDark;
+  const _SectionCard({required this.title, required this.body, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+        ],
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(Icons.lock_outline_rounded, color: theme.colorScheme.primary, size: 20),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          const SizedBox(height: 6),
+          Text(body,
+              style: TextStyle(
+                  fontSize: 13,
+                  height: 1.65,
+                  color: theme.colorScheme.onSurfaceVariant)),
+        ])),
+      ]),
     );
   }
 }
