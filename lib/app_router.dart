@@ -30,6 +30,12 @@ import 'features/partner_dashboard/settings/presentation/partner_settings_screen
 import 'features/partner_dashboard/presentation/partner_commlink_screen.dart';
 import 'features/partner_dashboard/presentation/partner_shell_screen.dart';
 
+// --- IMPORTING OPS MOBILE PAGES ---
+import 'features/ops_mobile/presentation/ops_shell_screen.dart';
+import 'features/ops_mobile/presentation/ops_floor_screen.dart';
+import 'features/ops_mobile/presentation/ops_logistics_screen.dart';
+import 'features/ops_mobile/presentation/ops_settings_screen.dart';
+
 
 // --- IMPORTING CMS SCREENS ---
 import 'features/cms/presentation/ai_damage_model_studio_screen.dart';
@@ -134,6 +140,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         
         if (role == 'master_admin') return targetPath ?? '/admin-central';
         if (role == 'partner_mechanic') return targetPath ?? '/partner-dashboard';
+        if (role == 'partner_staff' || role == 'partner_driver') return targetPath ?? '/ops';
         return targetPath ?? '/'; 
       } else {
         // If we landed somewhere else unexpectedly right after login (e.g. Supabase fallback to '/'),
@@ -168,6 +175,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (partnerId == null || partnerId.toString().isEmpty) {
           debugPrint('🚨 FATAL: Partner account missing isolated tenant ID payload.');
           return '/login'; 
+        }
+      }
+
+      // 3. OPS / MOBILE DOMAIN GUARD
+      if (path.startsWith('/ops')) {
+        if (role != 'partner_mechanic' && role != 'partner_staff' && role != 'partner_driver') {
+          return '/'; // Access Denied Intercept
+        }
+        final partnerId = session.user.userMetadata?['partner_id'];
+        if (partnerId == null || partnerId.toString().isEmpty) {
+          return '/login';
         }
       }
 
@@ -339,6 +357,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // --- PARTNER WORKSHOP DOMAIN ---
+      GoRoute(
+        path: '/ops',
+        redirect: (context, state) {
+           final role = Supabase.instance.client.auth.currentUser?.userMetadata?['role'] as String?;
+           if (role == 'partner_driver') return '/ops/logistics';
+           return '/ops/floor';
+        },
+      ),
+      GoRoute(
+        path: '/ops/floor',
+        builder: (context, state) => const OpsShellScreen(
+          activeRoute: '/ops/floor',
+          child: OpsFloorScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/ops/logistics',
+        builder: (context, state) => const OpsShellScreen(
+          activeRoute: '/ops/logistics',
+          child: OpsLogisticsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/ops/settings',
+        builder: (context, state) => const OpsShellScreen(
+          activeRoute: '/ops/settings',
+          child: OpsSettingsScreen(),
+        ),
+      ),
       GoRoute(
         path: '/partner-dashboard',
         builder: (context, state) => PartnerDashboardDesktop(),
