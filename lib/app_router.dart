@@ -183,12 +183,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // 3. OPS / MOBILE DOMAIN GUARD
       if (path.startsWith('/ops')) {
-        if (role != 'partner_mechanic' && role != 'partner_staff' && role != 'partner_driver') {
+        if (role != 'partner_staff' && role != 'partner_driver' && role != 'partner_mechanic' && role != 'master_admin') {
           return '/'; // Access Denied Intercept
         }
-        final partnerId = session.user.userMetadata?['partner_id'];
-        if (partnerId == null || partnerId.toString().isEmpty) {
-          return '/login';
+        if (role != 'master_admin') {
+          final partnerId = session.user.userMetadata?['partner_id'];
+          if (partnerId == null || partnerId.toString().isEmpty) {
+            return '/login';
+          }
         }
       }
 

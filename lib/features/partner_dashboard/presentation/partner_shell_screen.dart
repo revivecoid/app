@@ -108,6 +108,7 @@ class _PartnerShellSidebar extends ConsumerWidget {
       (Icons.speed_outlined, 'Quota & Panel Durations', '/partner-dashboard/quota', 0),
       (Icons.storefront_outlined, 'My Profile', '/partner-dashboard/profile', 0),
       (Icons.people_outline, 'Staff & Drivers', '/partner-dashboard/staff', 0),
+      (Icons.smartphone_outlined, 'Mobile Ops App', '/ops', 0),
       (Icons.tune_outlined, 'Workshop Settings', '/partner-dashboard/settings', 0),
       (Icons.forum_outlined, 'Commlink & Messages', '/partner-dashboard/commlink', unreadCount),
     ];
