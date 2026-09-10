@@ -1,4 +1,4 @@
--- Migration: Fix Add Staff RPC Caller Role Validation
+-- Migration: Fix Add Staff RPC Caller Partner ID Validation
 
 CREATE OR REPLACE FUNCTION public.add_partner_staff(staff_email TEXT, staff_role TEXT)
 RETURNS void
@@ -10,20 +10,28 @@ DECLARE
     caller_partner_id UUID;
     target_user_id UUID;
 BEGIN
-    -- 1. Get caller's role from JWT metadata first, fallback to profiles
+    -- 1. Get caller's role from JWT metadata first
     SELECT raw_app_meta_data->>'role' INTO caller_role
     FROM auth.users
     WHERE id = auth.uid();
 
-    IF caller_role IS NULL THEN
-        SELECT role INTO caller_role
+    -- Try to get partner_id from app_metadata or user_metadata
+    SELECT COALESCE(
+        raw_app_meta_data->>'partner_id', 
+        raw_user_meta_data->>'partner_id'
+    )::uuid INTO caller_partner_id
+    FROM auth.users
+    WHERE id = auth.uid();
+
+    -- Fallbacks to profiles if missing in auth.users
+    IF caller_role IS NULL OR caller_partner_id IS NULL THEN
+        SELECT 
+            COALESCE(caller_role, role), 
+            COALESCE(caller_partner_id, partner_id) 
+        INTO caller_role, caller_partner_id
         FROM public.profiles
         WHERE id = auth.uid();
     END IF;
-
-    SELECT partner_id INTO caller_partner_id
-    FROM public.profiles
-    WHERE id = auth.uid();
 
     IF caller_role != 'partner_mechanic' THEN
         RAISE EXCEPTION 'Only workshop owners can add staff. Detected role: %, UID: %', caller_role, auth.uid();
