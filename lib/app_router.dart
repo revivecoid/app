@@ -187,7 +187,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return '/'; // Access Denied Intercept
         }
         if (role != 'master_admin') {
-          final partnerId = session.user.userMetadata?['partner_id'];
+          final partnerId = session.user.appMetadata?['partner_id'] ?? session.user.userMetadata?['partner_id'];
           if (partnerId == null || partnerId.toString().isEmpty) {
             return '/login';
           }

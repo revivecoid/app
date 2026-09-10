@@ -1,4 +1,4 @@
--- Migration: Fix Add Staff RPC Caller Partner ID Validation
+-- Migration: Fix Add Staff RPC to set partner_id in JWT
 
 CREATE OR REPLACE FUNCTION public.add_partner_staff(staff_email TEXT, staff_role TEXT)
 RETURNS void
@@ -61,12 +61,16 @@ BEGIN
     SET role = staff_role,
         partner_id = caller_partner_id;
     
-    -- 4. Update auth.users app_metadata
+    -- 4. Update auth.users app_metadata with BOTH role and partner_id!
     UPDATE auth.users
     SET raw_app_meta_data = jsonb_set(
-        COALESCE(raw_app_meta_data, '{}'::jsonb),
-        '{role}',
-        to_jsonb(staff_role)
+        jsonb_set(
+            COALESCE(raw_app_meta_data, '{}'::jsonb),
+            '{role}',
+            to_jsonb(staff_role)
+        ),
+        '{partner_id}',
+        to_jsonb(caller_partner_id)
     )
     WHERE id = target_user_id;
 
