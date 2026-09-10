@@ -136478,23 +136478,24 @@ s=r.r.ch
 s===$&&A.a()
 r.w=s.BV("public:repair_jobs:partner_id=eq."+q,B.nz).Wv(new A.aDN(r),B.ki,new A.nX(B.kj,"partner_id",r.f.a),"public","repair_jobs").Fy()},
 x8(a,b){return this.aNi(a,b)},
-aNi(a,b){var s=0,r=A.w(t.H),q,p=2,o=[],n=this,m,l,k,j,i
+aNi(a,b){var s=0,r=A.w(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h
 var $async$x8=A.r(function(c,d){if(c===1){o.push(d)
-s=p}for(;;)switch(s){case 0:j=B.b.ia(B.rm,b)
-if(j===-1||j>=8){s=1
-break}m=b==="3_booked"||b==="4_paid"?"5_admitted":B.rm[j+1]
+s=p}for(;;)switch(s){case 0:i=B.b.ia(B.rm,b)
+if(i===-1||i>=8){s=1
+break}m=b==="3_booked"||b==="4_paid"?"5_admitted":B.rm[i+1]
 p=4
-l=t.z
+k=t.z
 s=7
-return A.n(n.r.aV("repair_jobs").cr(A.a7(["status",m],l,l)).cd("id",a),$async$x8)
+return A.n(n.r.aV("repair_jobs").cr(A.a7(["status",m],k,k)).cd("id",a),$async$x8)
 case 7:p=2
 s=6
 break
 case 4:p=3
-i=o.pop()
+h=o.pop()
+l=A.a1(h)
 s=8
 return A.n(n.I0(A.a7(["type","UPDATE_STATUS","job_id",a,"payload",m],t.N,t.z)),$async$x8)
-case 8:n.saq(n.f.io("Network offline. Action queued for background sync."))
+case 8:n.saq(n.f.io("DB Error: "+A.k(l)))
 s=6
 break
 case 3:s=2
