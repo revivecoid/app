@@ -229,7 +229,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
         'job_id': jobId,
         'payload': nextStage,
       });
-      state = state.copyWith(errorMessage: 'Network offline. Action queued for background sync.');
+      state = state.copyWith(errorMessage: 'DB Error: $e');
     }
   }
 
