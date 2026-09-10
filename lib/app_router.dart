@@ -36,6 +36,8 @@ import 'features/ops_mobile/presentation/ops_shell_screen.dart';
 import 'features/ops_mobile/presentation/ops_floor_screen.dart';
 import 'features/ops_mobile/presentation/ops_logistics_screen.dart';
 import 'features/ops_mobile/presentation/ops_settings_screen.dart';
+import 'features/ops_mobile/presentation/ops_intake_photo_screen.dart';
+import 'features/ops_mobile/presentation/ops_milestones_screen.dart';
 
 
 // --- IMPORTING CMS SCREENS ---
@@ -372,6 +374,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           activeRoute: '/ops/floor',
           child: OpsFloorScreen(),
         ),
+        routes: [
+          GoRoute(
+            path: 'milestones/:jobId',
+            builder: (context, state) => OpsMilestonesScreen(jobId: state.pathParameters['jobId']!),
+          ),
+        ],
       ),
       GoRoute(
         path: '/ops/logistics',
@@ -379,6 +387,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           activeRoute: '/ops/logistics',
           child: OpsLogisticsScreen(),
         ),
+        routes: [
+          GoRoute(
+            path: 'intake/:jobId',
+            builder: (context, state) => OpsIntakePhotoScreen(jobId: state.pathParameters['jobId']!),
+          ),
+        ],
       ),
       GoRoute(
         path: '/ops/settings',
