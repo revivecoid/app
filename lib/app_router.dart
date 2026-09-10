@@ -29,6 +29,7 @@ import 'features/partner_dashboard/presentation/panel_duration_config_screen.dar
 import 'features/partner_dashboard/settings/presentation/partner_settings_screen.dart';
 import 'features/partner_dashboard/presentation/partner_commlink_screen.dart';
 import 'features/partner_dashboard/presentation/partner_shell_screen.dart';
+import 'features/partner_dashboard/presentation/partner_staff_management_screen.dart';
 
 // --- IMPORTING OPS MOBILE PAGES ---
 import 'features/ops_mobile/presentation/ops_shell_screen.dart';
@@ -399,6 +400,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/partner-dashboard/settings',
         // PartnerSettingsScreen now embeds PartnerShellScreen internally
         builder: (context, state) => PartnerSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/partner-dashboard/staff',
+        builder: (context, state) => const PartnerShellScreen(
+          activeRoute: '/partner-dashboard/staff',
+          pageTitle: 'Staff Management',
+          child: PartnerStaffManagementScreen(),
+        ),
       ),
       GoRoute(
         path: '/partner-dashboard/schedule',
