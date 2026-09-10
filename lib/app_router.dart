@@ -27,6 +27,7 @@ import 'features/partner_dashboard/presentation/schedule_config_screen.dart';
 import 'features/partner_dashboard/presentation/panel_duration_config_screen.dart';
 import 'features/partner_dashboard/settings/presentation/partner_settings_screen.dart';
 import 'features/partner_dashboard/presentation/partner_commlink_screen.dart';
+import 'features/partner_dashboard/presentation/partner_shell_screen.dart';
 
 
 // --- IMPORTING CMS SCREENS ---
@@ -339,22 +340,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/partner-dashboard/profile',
+        // PartnerProfileScreen now embeds PartnerShellScreen internally
         builder: (context, state) => PartnerProfileScreen(),
       ),
       GoRoute(
         path: '/partner-dashboard/settings',
+        // PartnerSettingsScreen now embeds PartnerShellScreen internally
         builder: (context, state) => PartnerSettingsScreen(),
       ),
       GoRoute(
         path: '/partner-dashboard/schedule',
-        builder: (context, state) => const ScheduleConfigScreen(),
+        // ScheduleConfigScreen is a pure body widget — wrap it with the shell
+        builder: (context, state) => PartnerShellScreen(
+          activeRoute: '/partner-dashboard/schedule',
+          pageTitle: 'Schedule Config',
+          child: const ScheduleConfigScreen(),
+        ),
       ),
       GoRoute(
         path: '/partner-dashboard/quota',
-        builder: (context, state) => const PanelDurationConfigScreen(),
+        // PanelDurationConfigScreen is a pure body widget — wrap with shell
+        builder: (context, state) => PartnerShellScreen(
+          activeRoute: '/partner-dashboard/quota',
+          pageTitle: 'Quota & Panel Durations',
+          child: const PanelDurationConfigScreen(),
+        ),
       ),
       GoRoute(
         path: '/partner-dashboard/commlink',
+        // PartnerCommLinkScreen now embeds PartnerShellScreen internally
         builder: (context, state) => const PartnerCommLinkScreen(),
       ),
 

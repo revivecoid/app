@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import 'partner_profile_controller.dart';
+import 'partner_shell_screen.dart';
 
 // ─── Brand accent colors (theme-invariant) ───────────────────────────────────
 const _primary = Color(0xFFa40016);
@@ -15,8 +14,6 @@ const _emerald500 = Color(0xFF10B981);
 const _amber500 = Color(0xFFF59E0B);
 const _blue500 = Color(0xFF3B82F6);
 const _errorRed = Color(0xFF93000a);
-
-const _kSidebarWidth = 260.0;
 
 class PartnerProfileScreen extends ConsumerStatefulWidget {
   PartnerProfileScreen({super.key});
@@ -77,174 +74,94 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
       }
     });
 
-    return LayoutBuilder(builder: (context, constraints) {
-      Widget inner = Scaffold(
-      backgroundColor: cs.surface,
-      body: Row(
-        children: [
-          _buildSidebar(context, cs),
-          Expanded(
-            child: Column(
-              children: [
-                _buildTopBar(context, state, controller, cs),
-                Expanded(
-                  child: state.isLoading
-                      ? Center(child: CircularProgressIndicator(color: _primaryContainer))
-                      : state.partnerData == null
-                          ? _buildError(state.errorMessage, cs)
-                          : _buildBody(state, controller, cs),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-      return inner;
-    });
-  }
-
-  // ── Sidebar ──────────────────────────────────────────────────────────────
-  Widget _buildSidebar(BuildContext context, ColorScheme cs) {
-    final items = [
-      (Icons.dashboard_outlined, 'Dashboard', '/partner-dashboard'),
-      (Icons.storefront_outlined, 'My Profile', '/partner-dashboard/profile'),
-      (Icons.settings_outlined, 'Settings', '/partner-dashboard/settings'),
-      (Icons.calendar_month_outlined, 'Schedule', '/partner-dashboard/schedule'),
-      (Icons.timer_outlined, 'Panel Durations', '/partner-dashboard/quota'),
-    ];
-    return Container(
-      width: _kSidebarWidth,
-      color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-      child: Column(
-        children: [
+    // Trailing actions for the shell top bar
+    final topBarActions = <Widget>[
+      if (state.partnerData != null) ...[
+        // Online / Offline toggle
+        Row(children: [
           Container(
-            height: 64,
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            width: 8, height: 8,
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: cs.outlineVariant)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.directions_car, color: _primaryContainer, size: 22),
-                SizedBox(width: 10),
-                Text(AppL.of(context)!.partnerPortal, style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
-              ],
+              color: state.partnerData!['is_active'] == true ? _emerald500 : cs.onSurfaceVariant,
+              shape: BoxShape.circle,
             ),
           ),
-          SizedBox(height: 12),
-          ...items.map((item) {
-            final isActive = item.$3 == '/partner-dashboard/profile';
-            return InkWell(
-              onTap: () => context.go(item.$3),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                color: isActive ? _primaryContainer.withValues(alpha: 0.08) : Colors.transparent,
-                child: Row(
-                  children: [
-                    Icon(item.$1, size: 20, color: isActive ? _primaryContainer : cs.onSurfaceVariant),
-                    SizedBox(width: 12),
-                    Text(item.$2, style: TextStyle(
-                      color: isActive ? _primaryContainer : cs.onSurface,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                      fontSize: 14,
-                    )),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
+          const SizedBox(width: 6),
+          Text(
+            state.partnerData!['is_active'] == true ? 'Online' : 'Offline',
+            style: TextStyle(
+              color: state.partnerData!['is_active'] == true ? _emerald500 : cs.onSurfaceVariant,
+              fontWeight: FontWeight.w500, fontSize: 13,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(
+            value: state.partnerData!['is_active'] == true,
+            activeThumbColor: _emerald500,
+            onChanged: (val) => controller.toggleOnlineStatus(val),
+          ),
+        ]),
+        const SizedBox(width: 12),
+        if (_isEditing) ...[
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+                foregroundColor: cs.onSurfaceVariant,
+                side: BorderSide(color: cs.outlineVariant)),
+            onPressed: () => setState(() => _isEditing = false),
+            child: Text(AppL.of(context)!.cancel),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryContainer, foregroundColor: _onPrimary),
+            icon: state.isSaving
+                ? SizedBox(
+                    width: 14, height: 14,
+                    child: CircularProgressIndicator(color: cs.surface, strokeWidth: 2))
+                : const Icon(Icons.save_outlined, size: 16),
+            label: Text(AppL.of(context)!.saveChanges),
+            onPressed: state.isSaving
+                ? null
+                : () {
+                    controller.updateProfile(
+                      address: _addressCtrl.text.trim().isEmpty
+                          ? null
+                          : _addressCtrl.text.trim(),
+                      paintBrand: _paintBrandCtrl.text.trim().isEmpty
+                          ? null
+                          : _paintBrandCtrl.text.trim(),
+                      throughputCapacity:
+                          int.tryParse(_throughputCtrl.text.trim()),
+                      serviceRadiusKm:
+                          double.tryParse(_radiusCtrl.text.trim()),
+                    );
+                  },
+          ),
+        ] else
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _primary, foregroundColor: _onPrimary),
+            icon: const Icon(Icons.edit_outlined, size: 16),
+            label: Text(AppL.of(context)!.edit),
+            onPressed: () {
+              _populateControllers(state.partnerData!);
+              setState(() => _isEditing = true);
+            },
+          ),
+      ],
+    ];
 
-  // ── Top Bar ──────────────────────────────────────────────────────────────
-  Widget _buildTopBar(BuildContext context, PartnerProfileState state, PartnerProfileController controller, ColorScheme cs) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border(bottom: BorderSide(color: cs.outlineVariant)),
-      ),
-      child: Row(
-        children: [
-          Text(AppL.of(context)!.partnerWorkshopProfile, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: cs.onSurface)),
-          const SizedBox(width: 16),
-          FilledButton.tonal(
-            onPressed: () => context.go('/partner-dashboard'),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.dashboard_outlined, size: 15),
-              const SizedBox(width: 6),
-              Text(AppL.of(context)!.partnerDashboard, style: TextStyle(fontSize: 13)),
-            ]),
-          ),
-          Spacer(),
-          if (state.partnerData != null) ...[
-            // Online / Offline toggle
-            Row(
-              children: [
-                Container(
-                  width: 8, height: 8,
-                  decoration: BoxDecoration(
-                    color: state.partnerData!['is_active'] == true ? _emerald500 : cs.onSurfaceVariant,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                SizedBox(width: 6),
-                Text(
-                  state.partnerData!['is_active'] == true ? 'Online' : 'Offline',
-                  style: TextStyle(
-                    color: state.partnerData!['is_active'] == true ? _emerald500 : cs.onSurfaceVariant,
-                    fontWeight: FontWeight.w500, fontSize: 13,
-                  ),
-                ),
-                SizedBox(width: 8),
-                Switch(
-                  value: state.partnerData!['is_active'] == true,
-                  activeThumbColor: _emerald500,
-                  onChanged: (val) => controller.toggleOnlineStatus(val),
-                ),
-              ],
-            ),
-            SizedBox(width: 16),
-            if (_isEditing) ...[
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(foregroundColor: cs.onSurfaceVariant, side: BorderSide(color: cs.outlineVariant)),
-                onPressed: () => setState(() => _isEditing = false),
-                child: Text(AppL.of(context)!.cancel),
-              ),
-              SizedBox(width: 8),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: _primaryContainer, foregroundColor: _onPrimary),
-                icon: state.isSaving
-                    ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: cs.surface, strokeWidth: 2))
-                    : Icon(Icons.save_outlined, size: 16),
-                label: Text(AppL.of(context)!.saveChanges),
-                onPressed: state.isSaving ? null : () {
-                  controller.updateProfile(
-                    address: _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text.trim(),
-                    paintBrand: _paintBrandCtrl.text.trim().isEmpty ? null : _paintBrandCtrl.text.trim(),
-                    throughputCapacity: int.tryParse(_throughputCtrl.text.trim()),
-                    serviceRadiusKm: double.tryParse(_radiusCtrl.text.trim()),
-                  );
-                },
-              ),
-            ] else
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: _primary, foregroundColor: _onPrimary),
-                icon: Icon(Icons.edit_outlined, size: 16),
-                label: Text(AppL.of(context)!.edit),
-                onPressed: () {
-                  _populateControllers(state.partnerData!);
-                  setState(() => _isEditing = true);
-                },
-              ),
-          ],
-        ],
-      ),
+    final bodyContent = state.isLoading
+        ? const Center(child: CircularProgressIndicator(color: _primaryContainer))
+        : state.partnerData == null
+            ? _buildError(state.errorMessage, cs)
+            : _buildBody(state, controller, cs);
+
+    return PartnerShellScreen(
+      activeRoute: '/partner-dashboard/profile',
+      pageTitle: AppL.of(context)!.partnerWorkshopProfile,
+      trailingActions: topBarActions,
+      child: bodyContent,
     );
   }
 
@@ -258,19 +175,19 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
         children: [
           // Hero header
           _buildHeroCard(state, p, cs),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           // Two-column row: Contact & KPIs
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(flex: 3, child: _buildContactCard(p, cs)),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Expanded(flex: 2, child: _buildKpiCard(state, cs)),
             ],
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           _buildFacilityPhotosCard(state, cs),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           _buildDocumentStatusCard(p, cs),
         ],
       ),
@@ -286,9 +203,7 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
     };
     final statusPending = p['status']?.toString() == 'pending';
 
-    // Resolved name comes from the controller (workshop → DB profile → Google → email)
     final ownerName = state.ownerName;
-    // Avatar still comes from Google OAuth metadata (only source)
     final user = Supabase.instance.client.auth.currentUser;
     final avatarUrl = user?.userMetadata?['avatar_url']?.toString();
 
@@ -299,98 +214,98 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: cs.outlineVariant),
       ),
-      child: Row(
-        children: [
-          // Avatar: Google profile picture if available, else storefront icon
-          Container(
-            width: 72, height: 72,
-            decoration: BoxDecoration(
-              color: _primaryContainer.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: avatarUrl != null && avatarUrl.isNotEmpty
-                ? Image.network(
-                    avatarUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        Icon(Icons.storefront, size: 36, color: _primaryContainer),
-                  )
-                : Icon(Icons.storefront, size: 36, color: _primaryContainer),
+      child: Row(children: [
+        Container(
+          width: 72, height: 72,
+          decoration: BoxDecoration(
+            color: _primaryContainer.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
           ),
-          SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        p['entity_name']?.toString() ?? p['shop_name']?.toString() ?? 'Workshop Name',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: cs.onSurface),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: tierColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: tierColor.withValues(alpha: 0.4)),
-                      ),
-                      child: Text(
-                        tier.toUpperCase(),
-                        style: TextStyle(color: tierColor, fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    if (statusPending) ...[
-                      SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: _amber500.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: _amber500.withValues(alpha: 0.4)),
-                        ),
-                        child: Text(AppL.of(context)!.partnerPendingReview, style: TextStyle(color: _amber500, fontSize: 11, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ],
-                ),
-                SizedBox(height: 4),
-                // Account owner name from Google OAuth
-                if (ownerName.isNotEmpty)
-                  Row(
-                    children: [
-                      Icon(Icons.person_outline, size: 13, color: cs.onSurfaceVariant),
-                      SizedBox(width: 4),
-                      Text(
-                        ownerName,
-                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                SizedBox(height: 4),
-                Text(
-                  p['address']?.toString() ?? 'No address on file',
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-                  maxLines: 2,
+          clipBehavior: Clip.antiAlias,
+          child: avatarUrl != null && avatarUrl.isNotEmpty
+              ? Image.network(
+                  avatarUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      Icon(Icons.storefront, size: 36, color: _primaryContainer),
+                )
+              : Icon(Icons.storefront, size: 36, color: _primaryContainer),
+        ),
+        const SizedBox(width: 20),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Flexible(
+                child: Text(
+                  p['entity_name']?.toString() ??
+                      p['shop_name']?.toString() ??
+                      'Workshop Name',
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: cs.onSurface),
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (p['submitted_at'] != null) ...[
-                  SizedBox(height: 4),
-                  Text(
-                    'Member since ${DateFormat.yMMMd().format(DateTime.parse(p['submitted_at'].toString()))}',
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: tierColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: tierColor.withValues(alpha: 0.4)),
+                ),
+                child: Text(tier.toUpperCase(),
+                    style: TextStyle(
+                        color: tierColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold)),
+              ),
+              if (statusPending) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _amber500.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _amber500.withValues(alpha: 0.4)),
                   ),
-                ],
+                  child: Text(AppL.of(context)!.partnerPendingReview,
+                      style: TextStyle(
+                          color: _amber500,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold)),
+                ),
               ],
+            ]),
+            const SizedBox(height: 4),
+            if (ownerName.isNotEmpty)
+              Row(children: [
+                Icon(Icons.person_outline, size: 13, color: cs.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Text(ownerName,
+                    style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500)),
+              ]),
+            const SizedBox(height: 4),
+            Text(
+              p['address']?.toString() ?? 'No address on file',
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
-      ),
+            if (p['submitted_at'] != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Member since ${DateFormat.yMMMd().format(DateTime.parse(p['submitted_at'].toString()))}',
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+              ),
+            ],
+          ]),
+        ),
+      ]),
     );
   }
 
@@ -402,33 +317,37 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: cs.outlineVariant),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(AppL.of(context)!.partnerContactOps, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
-          SizedBox(height: 16),
-          Divider(color: cs.outlineVariant),
-          SizedBox(height: 12),
-          if (_isEditing) ...[
-            _editField('Address', _addressCtrl, Icons.location_on_outlined, cs),
-            SizedBox(height: 12),
-            _editField('Paint Brand Partner', _paintBrandCtrl, Icons.palette_outlined, cs),
-            SizedBox(height: 12),
-            _editField('Daily Throughput Capacity', _throughputCtrl, Icons.speed_outlined, cs, keyboardType: TextInputType.number),
-            SizedBox(height: 12),
-            _editField('Service Radius (km)', _radiusCtrl, Icons.radar_outlined, cs, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
-          ] else ...[
-            _infoRow(Icons.location_on_outlined, 'Address', p['address']?.toString() ?? '—', cs),
-            _infoRow(Icons.palette_outlined, 'Paint Brand', p['paint_brand']?.toString() ?? '—', cs),
-            _infoRow(Icons.speed_outlined, 'Daily Capacity', '${p['throughput_capacity'] ?? '—'} panels/day', cs),
-            _infoRow(Icons.radar_outlined, 'Service Radius', '${p['service_radius_km'] ?? '—'} km', cs),
-          ],
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(AppL.of(context)!.partnerContactOps,
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: cs.onSurface)),
+        const SizedBox(height: 16),
+        Divider(color: cs.outlineVariant),
+        const SizedBox(height: 12),
+        if (_isEditing) ...[
+          _editField('Address', _addressCtrl, Icons.location_on_outlined, cs),
+          const SizedBox(height: 12),
+          _editField('Paint Brand Partner', _paintBrandCtrl, Icons.palette_outlined, cs),
+          const SizedBox(height: 12),
+          _editField('Daily Throughput Capacity', _throughputCtrl, Icons.speed_outlined, cs,
+              keyboardType: TextInputType.number),
+          const SizedBox(height: 12),
+          _editField('Service Radius (km)', _radiusCtrl, Icons.radar_outlined, cs,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+        ] else ...[
+          _infoRow(Icons.location_on_outlined, 'Address', p['address']?.toString() ?? '—', cs),
+          _infoRow(Icons.palette_outlined, 'Paint Brand', p['paint_brand']?.toString() ?? '—', cs),
+          _infoRow(Icons.speed_outlined, 'Daily Capacity', '${p['throughput_capacity'] ?? '—'} panels/day', cs),
+          _infoRow(Icons.radar_outlined, 'Service Radius', '${p['service_radius_km'] ?? '—'} km', cs),
         ],
-      ),
+      ]),
     );
   }
 
-  Widget _editField(String label, TextEditingController ctrl, IconData icon, ColorScheme cs, {TextInputType? keyboardType}) {
+  Widget _editField(String label, TextEditingController ctrl, IconData icon, ColorScheme cs,
+      {TextInputType? keyboardType}) {
     return TextField(
       controller: ctrl,
       keyboardType: keyboardType,
@@ -438,10 +357,17 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
         prefixIcon: Icon(icon, size: 18, color: cs.onSurfaceVariant),
         filled: true,
         fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: cs.outlineVariant)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: cs.outlineVariant)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: _primaryContainer, width: 2)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: cs.outlineVariant)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: cs.outlineVariant)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: _primaryContainer, width: 2)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         labelStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
       ),
     );
@@ -450,15 +376,20 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
   Widget _infoRow(IconData icon, String label, String value, ColorScheme cs) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: cs.onSurfaceVariant),
-          SizedBox(width: 10),
-          SizedBox(width: 140, child: Text(label, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant))),
-          Expanded(child: Text(value, style: TextStyle(fontSize: 13, color: cs.onSurface, fontWeight: FontWeight.w500))),
-        ],
-      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(icon, size: 16, color: cs.onSurfaceVariant),
+        const SizedBox(width: 10),
+        SizedBox(
+            width: 140,
+            child: Text(label,
+                style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant))),
+        Expanded(
+            child: Text(value,
+                style: TextStyle(
+                    fontSize: 13,
+                    color: cs.onSurface,
+                    fontWeight: FontWeight.w500))),
+      ]),
     );
   }
 
@@ -470,43 +401,50 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: cs.outlineVariant),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(AppL.of(context)!.partnerPerformanceKpis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
-          SizedBox(height: 16),
-          Divider(color: cs.outlineVariant),
-          SizedBox(height: 12),
-          _kpiTile('Total Jobs Completed', '${state.totalJobsDone}', Icons.check_circle_outline, _emerald500, cs),
-          SizedBox(height: 12),
-          _kpiTile('Avg. Repair Duration', '${state.avgRepairDays.toStringAsFixed(1)} days', Icons.schedule_outlined, _blue500, cs),
-          SizedBox(height: 12),
-          _kpiTile('Daily Capacity', '${state.partnerData?['throughput_capacity'] ?? '—'} panels', Icons.speed_outlined, _amber500, cs),
-        ],
-      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(AppL.of(context)!.partnerPerformanceKpis,
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: cs.onSurface)),
+        const SizedBox(height: 16),
+        Divider(color: cs.outlineVariant),
+        const SizedBox(height: 12),
+        _kpiTile('Total Jobs Completed', '${state.totalJobsDone}',
+            Icons.check_circle_outline, _emerald500, cs),
+        const SizedBox(height: 12),
+        _kpiTile('Avg. Repair Duration',
+            '${state.avgRepairDays.toStringAsFixed(1)} days',
+            Icons.schedule_outlined, _blue500, cs),
+        const SizedBox(height: 12),
+        _kpiTile('Daily Capacity',
+            '${state.partnerData?['throughput_capacity'] ?? '—'} panels',
+            Icons.speed_outlined, _amber500, cs),
+      ]),
     );
   }
 
   Widget _kpiTile(String label, String value, IconData icon, Color color, ColorScheme cs) {
-    return Row(
-      children: [
-        Container(
-          width: 36, height: 36,
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, size: 18, color: color),
-        ),
-        SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface)),
-            ],
-          ),
-        ),
-      ],
-    );
+    return Row(children: [
+      Container(
+        width: 36, height: 36,
+        decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8)),
+        child: Icon(icon, size: 18, color: color),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: cs.onSurface)),
+        ]),
+      ),
+    ]);
   }
 
   Widget _buildFacilityPhotosCard(PartnerProfileState state, ColorScheme cs) {
@@ -517,47 +455,51 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: cs.outlineVariant),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(AppL.of(context)!.partnerFacilityPhotos, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
-          SizedBox(height: 14),
-          state.facilityPhotoUrls.isEmpty
-              ? Container(
-                  height: 100,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: cs.outlineVariant, style: BorderStyle.solid),
-                  ),
-                  child: Text(AppL.of(context)!.partnerNoPhotos, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
-                )
-              : SizedBox(
-                  height: 120,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: state.facilityPhotoUrls.length,
-                    separatorBuilder: (_, __) => SizedBox(width: 10),
-                    itemBuilder: (context, i) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          state.facilityPhotoUrls[i],
-                          width: 160, height: 120,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 160, height: 120,
-                            color: cs.surfaceContainerHighest,
-                            child: Icon(Icons.broken_image_outlined, color: cs.onSurfaceVariant),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(AppL.of(context)!.partnerFacilityPhotos,
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: cs.onSurface)),
+        const SizedBox(height: 14),
+        state.facilityPhotoUrls.isEmpty
+            ? Container(
+                height: 100,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: cs.outlineVariant),
                 ),
-        ],
-      ),
+                child: Text(AppL.of(context)!.partnerNoPhotos,
+                    style:
+                        TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+              )
+            : SizedBox(
+                height: 120,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: state.facilityPhotoUrls.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (context, i) {
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        state.facilityPhotoUrls[i],
+                        width: 160, height: 120,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 160, height: 120,
+                          color: cs.surfaceContainerHighest,
+                          child:
+                              Icon(Icons.broken_image_outlined, color: cs.onSurfaceVariant),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+      ]),
     );
   }
 
@@ -575,51 +517,63 @@ class _PartnerProfileScreenState extends ConsumerState<PartnerProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: cs.outlineVariant),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(AppL.of(context)!.partnerDocumentStatus, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.onSurface)),
-          SizedBox(height: 14),
-          ...docs.map((doc) {
-            final hasDoc = p[doc.$2] != null && p[doc.$2].toString().isNotEmpty;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                children: [
-                  Icon(doc.$3, size: 18, color: hasDoc ? _emerald500 : cs.onSurfaceVariant),
-                  SizedBox(width: 12),
-                  SizedBox(width: 60, child: Text(doc.$1, style: TextStyle(fontSize: 13, color: cs.onSurface, fontWeight: FontWeight.w500))),
-                  SizedBox(width: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: hasDoc ? _emerald500.withValues(alpha: 0.1) : _amber500.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      hasDoc ? 'Uploaded' : 'Pending Upload',
-                      style: TextStyle(color: hasDoc ? _emerald500 : _amber500, fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(AppL.of(context)!.partnerDocumentStatus,
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: cs.onSurface)),
+        const SizedBox(height: 14),
+        ...docs.map((doc) {
+          final hasDoc =
+              p[doc.$2] != null && p[doc.$2].toString().isNotEmpty;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(children: [
+              Icon(doc.$3,
+                  size: 18,
+                  color: hasDoc ? _emerald500 : cs.onSurfaceVariant),
+              const SizedBox(width: 12),
+              SizedBox(
+                  width: 60,
+                  child: Text(doc.$1,
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w500))),
+              const SizedBox(width: 16),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: hasDoc
+                      ? _emerald500.withValues(alpha: 0.1)
+                      : _amber500.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  hasDoc ? 'Uploaded' : 'Pending Upload',
+                  style: TextStyle(
+                      color: hasDoc ? _emerald500 : _amber500,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold),
+                ),
               ),
-            );
-          }),
-        ],
-      ),
+            ]),
+          );
+        }),
+      ]),
     );
   }
 
   Widget _buildError(String? msg, ColorScheme cs) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.error_outline, size: 48, color: _errorRed),
-          SizedBox(height: 12),
-          Text(msg ?? 'Failed to load profile.', style: TextStyle(color: cs.onSurfaceVariant)),
-        ],
-      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.error_outline, size: 48, color: _errorRed),
+        const SizedBox(height: 12),
+        Text(msg ?? 'Failed to load profile.',
+            style: TextStyle(color: cs.onSurfaceVariant)),
+      ]),
     );
   }
 }
