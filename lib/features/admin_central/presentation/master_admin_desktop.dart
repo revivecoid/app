@@ -19,6 +19,7 @@ class _NavItem {
 
 const _navItems = [
   _NavItem('Job Board / Pipeline', Icons.view_kanban_outlined),
+  _NavItem('Partner Assessment', Icons.store_mall_directory_outlined, route: '/admin-central/partners'),
   _NavItem('Workshop Settings & Quotas', Icons.tune_outlined),
   _NavItem('Assign Jobs Hub', Icons.assignment_outlined),
   _NavItem('Customer Database', Icons.people_outline_rounded),

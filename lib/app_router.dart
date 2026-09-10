@@ -20,6 +20,7 @@ import 'features/customer_app/notifications/presentation/notification_preference
 import 'features/customer_app/profile/presentation/update_password_screen.dart';
 import 'features/admin_central/presentation/master_admin_desktop.dart';
 import 'features/admin_central/presentation/admin_partner_profile_screen.dart';
+import 'features/admin_central/presentation/admin_partner_assessment_screen.dart';
 import 'features/admin_central/presentation/admin_job_assignment_screen.dart';
 import 'features/partner_dashboard/presentation/partner_dashboard_desktop.dart';
 import 'features/partner_dashboard/presentation/partner_registration_screen.dart';
@@ -287,6 +288,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin-central',
         builder: (context, state) => const MasterAdminDesktop(),
+      ),
+      GoRoute(
+        path: '/admin-central/partners',
+        builder: (context, state) => const AdminPartnerAssessmentScreen(),
       ),
       GoRoute(
         // Assign Jobs Hub is now inline in MasterAdminDesktop — redirect back
