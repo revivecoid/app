@@ -75,7 +75,7 @@ class _PartnerStaffManagementScreenState extends ConsumerState<PartnerStaffManag
       _loadStaff();
     } catch (e) {
       setState(() {
-        _message = 'Failed to add staff. Ensure they have registered an account first.';
+        _message = 'Error: $e';
         _isError = true;
       });
       debugPrint(e.toString());
