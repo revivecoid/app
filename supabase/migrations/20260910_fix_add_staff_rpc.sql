@@ -1,6 +1,4 @@
--- Migration: Fix Add Staff RPC
--- Upgrades the RPC to look in auth.users in case the profiles row doesn't exist yet,
--- and upserts the profiles row.
+-- Migration: Fix Add Staff RPC Caller Role Validation
 
 CREATE OR REPLACE FUNCTION public.add_partner_staff(staff_email TEXT, staff_role TEXT)
 RETURNS void
@@ -12,13 +10,23 @@ DECLARE
     caller_partner_id UUID;
     target_user_id UUID;
 BEGIN
-    -- 1. Get caller's role and partner_id
-    SELECT role, partner_id INTO caller_role, caller_partner_id
+    -- 1. Get caller's role from JWT metadata first, fallback to profiles
+    SELECT raw_app_meta_data->>'role' INTO caller_role
+    FROM auth.users
+    WHERE id = auth.uid();
+
+    IF caller_role IS NULL THEN
+        SELECT role INTO caller_role
+        FROM public.profiles
+        WHERE id = auth.uid();
+    END IF;
+
+    SELECT partner_id INTO caller_partner_id
     FROM public.profiles
     WHERE id = auth.uid();
 
     IF caller_role != 'partner_mechanic' THEN
-        RAISE EXCEPTION 'Only workshop owners (partner_mechanic) can add staff.';
+        RAISE EXCEPTION 'Only workshop owners can add staff. Detected role: %, UID: %', caller_role, auth.uid();
     END IF;
 
     IF caller_partner_id IS NULL THEN
@@ -45,7 +53,7 @@ BEGIN
     SET role = staff_role,
         partner_id = caller_partner_id;
     
-    -- 4. Also update auth.users app_metadata to ensure JWT matches.
+    -- 4. Update auth.users app_metadata
     UPDATE auth.users
     SET raw_app_meta_data = jsonb_set(
         COALESCE(raw_app_meta_data, '{}'::jsonb),
