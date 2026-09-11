@@ -268,7 +268,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
 
       } catch (networkError) {
         if (kIsWeb) {
-          // On web: no local filesystem — queue action in memory
+          // On web: no local filesystem - queue action in memory
           await _queueOfflineAction({
             'type': 'UPLOAD_PHOTO',
             'job_id': jobId,
@@ -277,7 +277,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
           });
           state = state.copyWith(
             isLoading: false,
-            errorMessage: 'Upload failed. Action queued for retry.',
+            errorMessage: 'Upload failed: $networkError',
           );
         } else {
           // Mobile: queue for background sync
