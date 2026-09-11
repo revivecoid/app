@@ -18,6 +18,7 @@ class PartnerJobNode {
   final String licensePlate;
   final String status;
   final DateTime admittedAt;
+  final String? latestPhotoUrl;
 
   PartnerJobNode({
     required this.id,
@@ -27,9 +28,10 @@ class PartnerJobNode {
     required this.licensePlate,
     required this.status,
     required this.admittedAt,
+    this.latestPhotoUrl,
   });
 
-  PartnerJobNode copyWith({String? status}) {
+  PartnerJobNode copyWith({String? status, String? latestPhotoUrl}) {
     return PartnerJobNode(
       id: id,
       customerName: customerName,
@@ -38,6 +40,7 @@ class PartnerJobNode {
       licensePlate: licensePlate,
       status: status ?? this.status,
       admittedAt: admittedAt,
+      latestPhotoUrl: latestPhotoUrl ?? this.latestPhotoUrl,
     );
   }
 }
@@ -155,7 +158,8 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
       final response = await _supabase.from('repair_jobs').select('''
         id, status, created_at,
         profiles:customer_id (full_name),
-        vehicles:vehicle_id (make, model, license_plate)
+        vehicles:vehicle_id (make, model, license_plate),
+        repair_photos (r2_file_key, uploaded_at)
       ''').eq('partner_id', state.partnerId).inFilter('status', [
         '3_booked', '4_paid', '5_admitted', '6_in_progress',
         '7_finished', '8_awaiting_delivery'
@@ -165,6 +169,14 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
       final List<PartnerJobNode> jobs = (response as List).map((job) {
         final profile = job['profiles'] as Map<String, dynamic>? ?? {};
         final vehicle = job['vehicles'] as Map<String, dynamic>? ?? {};
+        
+        String? latestPhotoUrl;
+        final photos = job['repair_photos'] as List?;
+        if (photos != null && photos.isNotEmpty) {
+          photos.sort((a, b) => DateTime.parse(b['uploaded_at'].toString()).compareTo(DateTime.parse(a['uploaded_at'].toString())));
+          latestPhotoUrl = _supabase.storage.from('revive-photos-r2-proxy').getPublicUrl(photos.first['r2_file_key'].toString());
+        }
+
         return PartnerJobNode(
           id: job['id'].toString(),
           customerName: profile['full_name']?.toString() ?? 'Unknown',
@@ -173,6 +185,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
           licensePlate: vehicle['license_plate']?.toString() ?? 'No Plate',
           status: job['status'].toString(),
           admittedAt: DateTime.parse(job['created_at'].toString()),
+          latestPhotoUrl: latestPhotoUrl,
         );
       }).toList();
 
