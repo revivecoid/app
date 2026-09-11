@@ -136504,39 +136504,40 @@ case 6:case 1:return A.u(q,r)
 case 2:return A.t(o.at(-1),r)}})
 return A.v($async$x8,r)},
 pk(a,b){return this.aOg(a,b)},
-aOg(a,b){var s=0,r=A.w(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d,c
-var $async$pk=A.r(function(a0,a1){if(a0===1){o.push(a1)
+aOg(a,a0){var s=0,r=A.w(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d,c,b
+var $async$pk=A.r(function(a1,a2){if(a1===1){o.push(a2)
 s=p}for(;;)switch(s){case 0:p=4
 m=B.fN
 s=7
 return A.n(n.y.agg(m),$async$pk)
-case 7:l=a1
+case 7:l=a2
 if(l==null){s=1
 break}n.saq(n.f.h0(null,!0))
 s=8
 return A.n(A.B0(l),$async$pk)
-case 8:k=a1
+case 8:k=a2
 j=n.f.a+"_"+a+"_"+Date.now()+".jpg"
 p=10
-h=n.r
-g=h.ay
-g===$&&A.a()
+g=n.r
+f=g.ay
+f===$&&A.a()
 s=13
-return A.n(g.aV("revive-photos-r2-proxy").te(j,k,B.xp),$async$pk)
-case 13:h=h.aV("repair_photos")
-g=A.bo("^\\d+_",!0,!1,!1)
-f=t.N
+return A.n(f.aV("revive-photos-r2-proxy").te(j,k,B.xp),$async$pk)
+case 13:g=g.aV("repair_photos")
+f=A.bo("^\\d+_",!0,!1,!1)
+e=t.N
 s=14
-return A.n(h.hz(0,A.a7(["job_id",a,"step_context",A.c8(b,g,""),"r2_file_key",j,"uploaded_at",new A.b8(Date.now(),0,!1).t9()],f,f)),$async$pk)
+return A.n(g.hz(0,A.a7(["job_id",a,"step_context",A.c8(a0,f,""),"r2_file_key",j,"uploaded_at",new A.b8(Date.now(),0,!1).t9()],e,e)),$async$pk)
 case 14:n.saq(n.f.h0("Photo streamed successfully.",!1))
 p=4
 s=12
 break
 case 10:p=9
-d=o.pop()
+c=o.pop()
+i=A.a1(c)
 s=15
-return A.n(n.I0(A.a7(["type","UPLOAD_PHOTO","job_id",a,"context",b,"r2_key",j],t.N,t.z)),$async$pk)
-case 15:n.saq(n.f.h0("Upload failed. Action queued for retry.",!1))
+return A.n(n.I0(A.a7(["type","UPLOAD_PHOTO","job_id",a,"context",a0,"r2_key",j],t.N,t.z)),$async$pk)
+case 15:n.saq(n.f.h0("Upload failed: "+A.k(i),!1))
 s=12
 break
 case 9:s=4
@@ -136545,9 +136546,9 @@ case 12:p=2
 s=6
 break
 case 4:p=3
-c=o.pop()
-i=A.a1(c)
-n.saq(n.f.h0("Pipeline Exception: "+A.k(i),!1))
+b=o.pop()
+h=A.a1(b)
+n.saq(n.f.h0("Pipeline Exception: "+A.k(h),!1))
 s=6
 break
 case 3:s=2
