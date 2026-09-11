@@ -752,6 +752,19 @@ class _JobCard extends StatelessWidget {
                     Text('• ${job.customerName}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
                   ],
                 ),
+                if (job.latestPhotoUrl != null) ...[
+                  SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.network(
+                      job.latestPhotoUrl!,
+                      width: double.infinity,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
                 SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
