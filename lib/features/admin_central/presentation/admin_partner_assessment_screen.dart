@@ -881,7 +881,7 @@ class _AdminPhotoSlotState extends State<_AdminPhotoSlot> {
     String? publicUrl;
     if (hasPhoto) {
       final key = current['file_key']?.toString() ?? '';
-      publicUrl = widget.sb.storage.from('revive-photos-r2-proxy').getPublicUrl(key);
+      publicUrl = widget.sb.storage.from('revive-photos').getPublicUrl(key);
     }
 
     return Container(
@@ -956,7 +956,7 @@ class _AdminPhotoSlotState extends State<_AdminPhotoSlot> {
                 final p = widget.slotPhotos[i];
                 final key = p['file_key']?.toString() ?? '';
                 final url = widget.sb.storage
-                    .from('revive-photos-r2-proxy')
+                    .from('revive-photos')
                     .getPublicUrl(key);
                 final isCurrent = p['is_current'] == true;
                 return Stack(children: [
@@ -1179,7 +1179,7 @@ class _DownloadButton extends StatelessWidget {
               try {
                 // Generate a 60-minute signed URL for download
                 final url = await Supabase.instance.client.storage
-                    .from('revive-photos-r2-proxy')
+                    .from('revive-photos')
                     .createSignedUrl(fileKey, 3600);
                 // Open URL in browser
                 // ignore: deprecated_member_use

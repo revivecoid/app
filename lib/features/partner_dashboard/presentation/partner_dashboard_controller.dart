@@ -378,7 +378,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
             final localFile = File(action['local_path'] as String);
             if (await localFile.exists()) {
               final bytes = await localFile.readAsBytes();
-              await _supabase.storage.from('revive-photos-r2-proxy').uploadBinary(
+              await _supabase.storage.from('revive-photos').uploadBinary(
                 action['r2_key'] as String, 
                 bytes,
                 fileOptions: const FileOptions(contentType: 'image/jpeg'),

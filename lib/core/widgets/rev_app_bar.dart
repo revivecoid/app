@@ -48,9 +48,10 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
         user?.userMetadata?['name']?.toString() ?? '';
     final userEmail = user?.email ?? '';
     final avatarUrl = user?.userMetadata?['avatar_url']?.toString();
-    final userRole = user?.userMetadata?['role']?.toString() ?? 'customer';
-    final isAdmin = userRole == 'admin' || userRole == 'sysadmin';
-    final isPartner = userRole == 'partner';
+    // SEC-02 FIX: Read role from appMetadata (set by service_role only)
+    final userRole = user?.appMetadata['role']?.toString() ?? 'customer';
+    final isAdmin = userRole == 'master_admin';
+    final isPartner = userRole == 'partner_mechanic';
     String initials = '?';
     if (userName.trim().isNotEmpty) {
       final parts = userName.trim().split(' ');
