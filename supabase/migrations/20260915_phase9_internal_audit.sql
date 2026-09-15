@@ -189,3 +189,58 @@ CREATE POLICY partners_select ON partners
     deleted_at IS NULL
     OR is_master_admin()  -- admins can still see deleted records
   );
+
+
+-- ---------------------------------------------------------------------------
+-- INT-08: job_milestones RLS — only ops staff of the assigned partner
+-- can insert milestones for a job.
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE job_milestones ENABLE ROW LEVEL SECURITY;
+
+-- Read: Ops staff for the assigned partner, the customer who owns the job, and admins
+DROP POLICY IF EXISTS job_milestones_select ON job_milestones;
+CREATE POLICY job_milestones_select ON job_milestones
+  FOR SELECT TO authenticated
+  USING (
+    is_master_admin()
+    OR EXISTS (
+      SELECT 1 FROM repair_jobs rj
+       WHERE rj.id = job_milestones.job_id
+         AND (
+           rj.customer_id = auth.uid()                                          -- customer
+           OR (auth.jwt()->'app_metadata'->>'partner_id')::uuid = rj.partner_id -- ops staff
+         )
+    )
+  );
+
+-- Insert: Only ops staff of the partner assigned to this job
+DROP POLICY IF EXISTS job_milestones_insert ON job_milestones;
+CREATE POLICY job_milestones_insert ON job_milestones
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM repair_jobs rj
+       WHERE rj.id = job_milestones.job_id
+         AND (auth.jwt()->'app_metadata'->>'partner_id')::uuid = rj.partner_id
+         AND rj.status NOT IN ('1_pending', '2_estimated', '9_completed', '0_cancelled')
+    )
+  );
+
+-- Ops staff cannot update or delete milestones (immutable audit trail)
+DROP POLICY IF EXISTS job_milestones_update ON job_milestones;
+CREATE POLICY job_milestones_update ON job_milestones
+  FOR UPDATE TO authenticated
+  USING (is_master_admin());
+
+DROP POLICY IF EXISTS job_milestones_delete ON job_milestones;
+CREATE POLICY job_milestones_delete ON job_milestones
+  FOR DELETE TO authenticated
+  USING (is_master_admin());
+
+
+-- ---------------------------------------------------------------------------
+-- INT-09: CSRF on OAuth — N/A
+-- supabase_flutter uses PKCE flow by default which includes a server-generated
+-- state parameter. No client-side changes needed.
+-- ---------------------------------------------------------------------------

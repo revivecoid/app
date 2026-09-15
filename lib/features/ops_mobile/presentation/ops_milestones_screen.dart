@@ -56,7 +56,7 @@ class _OpsMilestonesScreenState extends ConsumerState<OpsMilestonesScreen> {
       ),
       body: milestonesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error: $err')),
+        error: (err, _) => Center(child: Text('Failed to load milestones. Please try again.')),
         data: (milestones) {
           final completedNames = milestones.map((m) => m['milestone_name'] as String).toSet();
 
