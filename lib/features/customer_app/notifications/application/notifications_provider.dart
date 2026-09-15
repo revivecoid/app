@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/app_notification.dart';
@@ -217,18 +220,35 @@ class NotificationPreferencesNotifier
     }
   }
 
+  Timer? _debounceTimer;
+
   Future<void> update(NotificationPreferences prefs) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
 
+    // Optimistic UI update immediately
     state = AsyncValue.data(prefs);
 
-    await _supabase.from('notification_preferences').upsert({
-      'user_id': user.id,
-      ...prefs.toMap(),
+    // INT-11 FIX: Debounce DB writes — cancel any pending save and wait
+    // 500ms before writing. Rapid toggles won't spam the database.
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        await _supabase.from('notification_preferences').upsert({
+          'user_id': user.id,
+          ...prefs.toMap(),
+        });
+      } catch (e) {
+        debugPrint('[NotificationPrefs] update error: $e');
+      }
     });
   }
-}
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
 
 final notificationPreferencesProvider = StateNotifierProvider<
     NotificationPreferencesNotifier, AsyncValue<NotificationPreferences>>(
