@@ -6,9 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: "pages"
@@ -16,9 +14,6 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -32,9 +27,10 @@ jobs:
           SUPABASE_URL=${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
           EOF
+          mkdir -p assets
           cp .env assets/.env
 
-      # OPS-02 FIX: Pin Flutter version for reproducible builds
+      # Pin Flutter version for reproducible builds
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -48,11 +44,11 @@ jobs:
       - name: Generate localizations
         run: flutter gen-l10n
 
-      # QA-02: Static analysis gate — fail on errors only (warnings tracked separately)
+      # Static analysis gate — fail on errors only
       - name: Run Flutter Analyze
         run: flutter analyze --no-fatal-warnings --no-fatal-infos
 
-      # QA-01: Run tests if test files exist
+      # Run tests if test files exist
       - name: Run Flutter Tests
         run: |
           if [ -n "$(find test -name '*_test.dart' 2>/dev/null | head -1)" ]; then
@@ -75,14 +71,10 @@ jobs:
           mkdir -p build/web/assets
           cp assets/.env build/web/assets/.env
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './build/web'
-
+      # Deploy to gh-pages branch
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          cname: revive.co.id
