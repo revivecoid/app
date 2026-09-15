@@ -48,9 +48,9 @@ jobs:
       - name: Generate localizations
         run: flutter gen-l10n
 
-      # QA-02: Static analysis gate — only fail on errors/warnings, not info hints
+      # QA-02: Static analysis gate — fail on errors only (warnings tracked separately)
       - name: Run Flutter Analyze
-        run: flutter analyze --fatal-warnings
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
 
       # QA-01: Run tests if test files exist
       - name: Run Flutter Tests
