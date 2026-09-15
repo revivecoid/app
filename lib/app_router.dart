@@ -80,6 +80,15 @@ class SupabaseAuthRefreshNotifier extends ChangeNotifier {
 // --- ROUTER GLOBAL STATE ---
 String? _globalReturnToPath;
 
+// INT-10 FIX: Sanitize returnTo to prevent open redirect attacks.
+// Only allow relative paths starting with '/'. Block absolute URLs,
+// javascript: schemes, and protocol-relative URLs (//evil.com).
+String? _sanitizeReturnTo(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  final trimmed = raw.trim();
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return trimmed;
+  return null; // Block absolute URLs
+}
 // --- RIVERPOD ROUTER PROVIDER ---
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authNotifier = SupabaseAuthRefreshNotifier(ref);
@@ -130,11 +139,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         final queryParamReturnTo = state.uri.queryParameters['returnTo'];
         final decodedQueryParam = queryParamReturnTo != null ? Uri.decodeComponent(queryParamReturnTo) : null;
         
-        String? targetPath = decodedQueryParam ?? _globalReturnToPath;
+        // INT-10 FIX: Sanitize all returnTo sources to block open redirects
+        String? targetPath = _sanitizeReturnTo(decodedQueryParam) ?? _sanitizeReturnTo(_globalReturnToPath);
         if (targetPath == null) {
           try {
             final prefs = await SharedPreferences.getInstance();
-            targetPath = prefs.getString('returnTo');
+            targetPath = _sanitizeReturnTo(prefs.getString('returnTo'));
             if (targetPath != null) {
               await prefs.remove('returnTo');
             }
@@ -150,10 +160,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         // see if we have a trapped returnTo in SharedPreferences we should be honoring.
         try {
           final prefs = await SharedPreferences.getInstance();
-          final trappedPath = prefs.getString('returnTo');
+          final trappedPath = _sanitizeReturnTo(prefs.getString('returnTo'));
           if (trappedPath != null) {
             await prefs.remove('returnTo');
-            if (trappedPath.isNotEmpty) return trappedPath; 
+            return trappedPath; 
           }
         } catch (e) { debugPrint('[Router] SharedPreferences error: $e'); }
 

@@ -609,16 +609,22 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
     );
     if (confirm == true) {
       try {
-        await Supabase.instance.client.from('partners').delete().eq('id', widget.partnerId);
+        // INT-07 FIX: Soft-delete via RPC for audit trail. Direct DELETE bypasses logging.
+        await Supabase.instance.client.rpc('admin_soft_delete_partner', params: {
+          'p_partner_id': widget.partnerId,
+        });
         ref.read(adminDashboardProvider.notifier).removePartnerLocal(widget.partnerId);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Partner deleted successfully')));
+              const SnackBar(content: Text('Partner deactivated and marked for deletion.')));
           context.go('/admin-central');
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+          // INT-12 FIX: Don't expose raw exception to user
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Failed to delete partner. Please try again.')));
+          debugPrint('[AdminPartnerProfile] delete error: $e');
         }
       }
     }

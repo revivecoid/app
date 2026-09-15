@@ -691,30 +691,15 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
   Future<void> assignJobToPartner(
       String jobId, String partnerId, String partnerName) async {
     try {
-      // Primary: use SECURITY DEFINER RPC that bypasses the pg_net webhook trigger
+      // INT-03 FIX: RPC only — no fallback direct UPDATE (bypass risk)
       await _supabase.rpc('admin_assign_job', params: {
         'p_job_id': jobId,
         'p_partner_id': partnerId,
         'p_status': '3_booked',
       });
-    } on PostgrestException catch (rpcErr) {
-      // Fallback: RPC not deployed yet — direct update (will hit trigger)
-      debugPrint('⚠️ admin_assign_job RPC not found, using direct update: ${rpcErr.code}');
-      try {
-        await _supabase.from('repair_jobs').update({
-          'partner_id': partnerId,
-          'status': '3_booked',
-        }).eq('id', jobId);
-      } catch (directErr) {
-        debugPrint('❌ direct assign error: $directErr');
-        state = state.copyWith(
-            errorMessage: 'Assignment failed: $directErr\n\n'
-                'Apply the migration in supabase/migrations/20260909_fix_notification_trigger_and_admin_rpcs.sql');
-        return;
-      }
     } catch (e) {
       debugPrint('❌ assignJobToPartner error: $e');
-      state = state.copyWith(errorMessage: 'Assignment failed: $e');
+      state = state.copyWith(errorMessage: 'Assignment failed. Please verify the admin_assign_job RPC is deployed.');
       return;
     }
 
@@ -735,26 +720,14 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
     debugPrint('✅ Job $jobId assigned to $partnerName');
   }
 
-  Future<void> unassignJob(String jobId) async {
     try {
+      // INT-03 FIX: RPC only — no fallback direct UPDATE
       await _supabase.rpc('admin_unassign_job', params: {
         'p_job_id': jobId,
       });
-    } on PostgrestException catch (rpcErr) {
-      debugPrint('⚠️ admin_unassign_job RPC not found, using direct update: ${rpcErr.code}');
-      try {
-        await _supabase.from('repair_jobs').update({
-          'partner_id': null,
-          'status': '2_estimated',
-        }).eq('id', jobId);
-      } catch (directErr) {
-        debugPrint('❌ direct unassign error: $directErr');
-        state = state.copyWith(errorMessage: 'Unassign failed: $directErr');
-        return;
-      }
     } catch (e) {
       debugPrint('❌ unassignJob error: $e');
-      state = state.copyWith(errorMessage: 'Unassign failed: $e');
+      state = state.copyWith(errorMessage: 'Unassign failed. Please verify the admin_unassign_job RPC is deployed.');
       return;
     }
 

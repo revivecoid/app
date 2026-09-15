@@ -346,7 +346,12 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
   Future<void> toggleOnlineStatus(bool isActive) async {
     try {
       if (_partnerId == null) return;
-      await _sb.from('partners').update({'is_active': isActive}).eq('id', _partnerId!);
+      // INT-04 FIX: Use RPC so server can enforce that a suspended partner
+      // (is_active=false set by admin) cannot reactivate themselves.
+      await _sb.rpc('toggle_partner_online', params: {
+        'p_partner_id': _partnerId!,
+        'p_is_active': isActive,
+      });
       final updated = Map<String, dynamic>.from(state.partnerData ?? {});
       updated['is_active'] = isActive;
       state = state.copyWith(partnerData: updated);

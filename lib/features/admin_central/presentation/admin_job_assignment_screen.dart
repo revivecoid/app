@@ -67,8 +67,9 @@ class _AdminJobAssignmentScreenState extends ConsumerState<AdminJobAssignmentScr
       }
       _fetchData();
     } catch (e) {
+      debugPrint('[JobAssignment] assign error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error assigning job: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to assign job. Please try again.'), backgroundColor: Colors.red));
       }
     }
   }
