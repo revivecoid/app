@@ -36,37 +36,62 @@ class SchedulingEngine {
   }
 
   /// Calculates the sequential list of valid working dates skipping holidays and off-days.
+  ///
+  /// REL-01 FIX: Added infinite loop guard. When [standardWorkingDays] is empty or
+  /// every candidate date is a holiday, the original while-loop spun forever.
+  /// Now throws [StateError] with a clear message if no valid sequence can be found
+  /// within [_maxSearchDays] days (default 365).
+  static const int _maxSearchDays = 365;
+
   static List<DateTime> calculateWorkingDaysSequence({
     required DateTime startDate,
     required int requiredDays,
     required List<int> standardWorkingDays,
     required List<DateTime> allHolidays,
   }) {
+    // REL-01 FIX: Guard against empty working-days config (would infinite-loop)
+    if (standardWorkingDays.isEmpty) {
+      throw StateError(
+        'SchedulingEngine: standardWorkingDays is empty. '
+        'Partner must have at least one working day configured.',
+      );
+    }
+
     List<DateTime> sequence = [];
     DateTime currentDate = DateTime(startDate.year, startDate.month, startDate.day);
-    
+    int searchedDays = 0;
+
     while (sequence.length < requiredDays) {
+      // REL-01 FIX: Safety cap — bail out instead of looping forever
+      if (searchedDays >= _maxSearchDays) {
+        throw StateError(
+          'SchedulingEngine: Could not find $requiredDays working days within '
+          '$_maxSearchDays calendar days. Check holiday and working-day configuration.',
+        );
+      }
+
       bool isValid = true;
-      
+
       // Check standard working days (1=Mon, 7=Sun)
       if (!standardWorkingDays.contains(currentDate.weekday)) {
         isValid = false;
       } else {
         // Check holidays
         for (final holiday in allHolidays) {
-          if (currentDate.year == holiday.year && 
-              currentDate.month == holiday.month && 
+          if (currentDate.year == holiday.year &&
+              currentDate.month == holiday.month &&
               currentDate.day == holiday.day) {
             isValid = false;
             break;
           }
         }
       }
-      
+
       if (isValid) {
         sequence.add(currentDate);
       }
       currentDate = currentDate.add(const Duration(days: 1));
+      searchedDays++;
     }
     return sequence;
   }

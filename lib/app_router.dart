@@ -120,10 +120,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/update-password';
       }
 
-      // Read Profile Role — from appMetadata (admin-only, secure) with userMetadata fallback
-      final role = (session.user.appMetadata['role'] as String?)
-          ?? (session.user.userMetadata?['role'] as String?)
-          ?? 'customer';
+      // Read Profile Role — ONLY from appMetadata (admin-only, secure).
+      // SEC-02 FIX: user_metadata is self-writable by the account owner
+      // and MUST NOT be used for authorization decisions.
+      final role = (session.user.appMetadata['role'] as String?) ?? 'customer';
 
       // Authenticated Login/Callback Redirect Logic
       if (isLoggingIn || path == '/auth/callback') {
@@ -173,10 +173,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return '/'; // Access Denied Intercept
         }
         
-        // Strict Tenant Verification Guard
-        final partnerId = session.user.userMetadata?['partner_id'];
+        // SEC-02 FIX: Strict Tenant Verification Guard — read partner_id from app_metadata ONLY
+        final partnerId = session.user.appMetadata['partner_id'];
         if (partnerId == null || partnerId.toString().isEmpty) {
-          debugPrint('🚨 FATAL: Partner account missing isolated tenant ID payload.');
+          debugPrint('FATAL: Partner account missing isolated tenant ID in app_metadata.');
           return '/login'; 
         }
       }
@@ -187,7 +187,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return '/'; // Access Denied Intercept
         }
         if (role != 'master_admin') {
-          final partnerId = session.user.appMetadata?['partner_id'] ?? session.user.userMetadata?['partner_id'];
+          // SEC-02 FIX: Read partner_id from app_metadata ONLY
+          final partnerId = session.user.appMetadata['partner_id'];
           if (partnerId == null || partnerId.toString().isEmpty) {
             return '/login';
           }
@@ -198,27 +199,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
 
     // 404 FALLBACK ERROR ARCHITECTURE
-    errorBuilder: (context, state) => Scaffold(
-      backgroundColor: AppColors.background,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.broken_image, size: 80, color: AppColors.daysGray),
-            const SizedBox(height: 24),
-            const Text('404 - SECTOR NOT FOUND', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.sleekBlack)),
-            const SizedBox(height: 16),
-            Text('The route "${state.uri.path}" is unavailable or restricted.', style: const TextStyle(color: AppColors.daysGray)),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () => context.go('/'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed),
-              child: const Text('RETURN TO BASE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
-          ],
+    // UX-03 FIX: Use theme-aware colors instead of hardcoded dark-on-dark
+    errorBuilder: (context, state) {
+      final cs = Theme.of(context).colorScheme;
+      return Scaffold(
+        backgroundColor: cs.surface,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.broken_image, size: 80, color: cs.onSurfaceVariant),
+              const SizedBox(height: 24),
+              Text('404 - SECTOR NOT FOUND', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: cs.onSurface)),
+              const SizedBox(height: 16),
+              Text('The route "${state.uri.path}" is unavailable or restricted.', style: TextStyle(color: cs.onSurfaceVariant)),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => context.go('/'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed),
+                child: const Text('RETURN TO BASE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
 
     routes: [
       // --- AUTHENTICATION GATE ---

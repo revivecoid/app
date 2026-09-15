@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -71,8 +72,19 @@ class JobStreamController extends StateNotifier<JobStreamState> {
   StreamSubscription? _photoSubscription;
   Timer? _reconnectTimer;
   
-  // Simulated endpoint mapping for Cloudflare R2 bucket proxy
+  // REL-04 FIX: Use unified 'revive-photos' bucket (same name used by upload paths)
   final String _cdnBucketPath = Supabase.instance.client.storage.from('revive-photos').getPublicUrl('');
+
+  // REL-06 FIX: Exponential backoff state
+  int _retryCount = 0;
+  static const int _maxRetries = 10;
+  static const List<int> _backoffSeconds = [5, 10, 20, 40, 80, 120];
+
+  Duration get _nextBackoff {
+    final index = (_retryCount - 1).clamp(0, _backoffSeconds.length - 1);
+    return Duration(seconds: _backoffSeconds[index]);
+  }
+
 
   JobStreamController(this._supabase, this._jobId) : super(JobStreamState()) {
     _initializeStreams();
@@ -113,6 +125,8 @@ class JobStreamController extends StateNotifier<JobStreamState> {
           .eq('id', _jobId)
           .listen((data) {
             if (data.isNotEmpty) {
+              // REL-06: Reset backoff counter on successful data receipt
+              _retryCount = 0;
               state = state.copyWith(
                 currentStatus: data.first['status'] as String,
                 isDisconnected: false,
@@ -147,15 +161,27 @@ class JobStreamController extends StateNotifier<JobStreamState> {
     }
   }
 
-  /// Defensive Pipeline: Safely traps disconnects and instantiates an automatic retry backoff listener logic block.
+  /// REL-06 FIX: Exponential backoff reconnect instead of flat 5s retry.
+  /// After [_maxRetries] attempts the controller gives up and leaves
+  /// isDisconnected = true so the UI can show a "Reconnect" button.
   void _handleStreamDisconnect() {
     if (!state.isDisconnected) {
       state = state.copyWith(isDisconnected: true);
     }
-    
-    // Auto-retry listener logic with 5-second backoff
+
+    _retryCount++;
+
+    if (_retryCount > _maxRetries) {
+      // Give up — let the UI surface a manual reconnect option
+      debugPrint('[JobStream] Max retries ($_maxRetries) reached. Giving up auto-reconnect.');
+      return;
+    }
+
+    final backoff = _nextBackoff;
+    debugPrint('[JobStream] Reconnecting in ${backoff.inSeconds}s (attempt $_retryCount/$_maxRetries)...');
+
     _reconnectTimer?.cancel();
-    _reconnectTimer = Timer(const Duration(seconds: 5), () {
+    _reconnectTimer = Timer(backoff, () {
       _initializeStreams();
     });
   }

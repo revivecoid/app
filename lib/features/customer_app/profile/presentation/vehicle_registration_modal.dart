@@ -126,7 +126,8 @@ class _VehicleRegistrationModalState
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          // UX-02 FIX: Use theme-aware surface color instead of hardcoded white
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -138,7 +139,8 @@ class _VehicleRegistrationModalState
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                // UX-02 FIX: Theme-aware handle bar color
+                color: Theme.of(context).colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -205,12 +207,13 @@ class _VehicleRegistrationModalState
                                   decoration: BoxDecoration(
                                     color: selected
                                         ? AppColors.primaryContainer
-                                        : Colors.grey[100],
+                                        // UX-02 FIX: Theme-aware chip background
+                                        : Theme.of(context).colorScheme.surfaceContainerHighest,
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
                                       color: selected
                                           ? AppColors.primaryContainer
-                                          : Colors.grey[300]!,
+                                          : Theme.of(context).colorScheme.outlineVariant,
                                     ),
                                   ),
                                   child: Text(t,

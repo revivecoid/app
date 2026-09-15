@@ -1,11 +1,11 @@
 {
-    "name": "re_v",
-    "short_name": "re_v",
+    "name": "Revive - Body Repair",
+    "short_name": "Revive",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#141314",
+    "theme_color": "#D10721",
+    "description": "Estimasi dan booking perbaikan bodi kendaraan berbasis AI",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

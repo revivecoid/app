@@ -1,18 +1,55 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+// PERF-09 FIX: Use standard library base64 encoder instead of byte-by-byte loop
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const googleApiKey = Deno.env.get("GOOGLE_AI_API_KEY") ?? "";
 const groqApiKey = Deno.env.get("GROQ_API_KEY") ?? "";
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// SEC-03 FIX: Lock CORS to production domain only
+const ALLOWED_ORIGINS = ["https://revive.co.id", "http://localhost"];
+
+function getCorsHeaders(origin?: string | null): Record<string, string> {
+  const allowedOrigin = origin && ALLOWED_ORIGINS.some(o => origin.startsWith(o))
+    ? origin
+    : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
+
+// SEC-03 FIX: Simple in-memory rate limiter (per user, resets on function cold start)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 10; // max requests per window
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT_MAX;
+}
+
+// SEC-03 FIX: Validate photo URLs belong to our Supabase Storage domain
+function isValidPhotoUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.endsWith(".supabase.co") || parsed.hostname === "localhost";
+  } catch {
+    return false;
+  }
+}
 
 // ── Hardcoded fallback prices (used if pricing_rules table is empty/unreachable) ──
 const FALLBACK_PRICES: Record<string, number> = {
@@ -115,11 +152,43 @@ function calculateDeterministicCost(
 
 
 serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
+    // ── SEC-03 FIX: Require valid JWT authentication ──────────────────────
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Missing or invalid Authorization header" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+
+    // Verify the JWT using the anon key client (validates token signature)
+    const userClient = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: { user }, error: authError } = await userClient.auth.getUser(
+      authHeader.replace("Bearer ", "")
+    );
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+
+    // SEC-03 FIX: Rate limit per user
+    if (!checkRateLimit(user.id)) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Max 10 requests per hour." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 429,
+      });
+    }
+
     const { photoUrl, photoUrls: photoUrlsRaw, damageDescription, selectedPanels } = await req.json();
 
     // Support both the new array format and the legacy single-URL format
@@ -134,6 +203,24 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
+    }
+
+    // SEC-03 FIX: Cap number of images to prevent abuse
+    if (photoUrls.length > 5) {
+      return new Response(JSON.stringify({ error: "Maximum 5 images allowed" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
+    // SEC-03 FIX: Validate all URLs belong to our Supabase Storage domain
+    for (const url of photoUrls) {
+      if (!isValidPhotoUrl(url)) {
+        return new Response(JSON.stringify({ error: `Invalid photo URL domain: ${new URL(url).hostname}` }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
     }
 
     // Load AI config + live pricing rules in parallel for minimum latency
@@ -257,12 +344,8 @@ async function callGoogleGemini(photoUrls: string[], prompt: string, modelName: 
     const imageResp = await fetch(url);
     if (!imageResp.ok) throw new Error(`Failed to fetch image from URL: ${url}`);
     const imageBuffer = await imageResp.arrayBuffer();
-    let binary = '';
-    const bytes = new Uint8Array(imageBuffer);
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    const base64Image = btoa(binary);
+    // PERF-09 FIX: Use standard library base64 encoder instead of byte-by-byte loop
+    const base64Image = base64Encode(new Uint8Array(imageBuffer));
     const mimeType = imageResp.headers.get('content-type') || 'image/jpeg';
     imageParts.push({ inline_data: { mime_type: mimeType, data: base64Image } });
   }

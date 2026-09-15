@@ -1,18 +1,29 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// DAT-10 FIX: Status messages aligned to match the actual DB constraint values
+// DB constraint: '1_intake','2_estimated','3_booked','4_paid','5_admitted',
+//                '6_in_progress','7_finished','8_awaiting_delivery','9_done'
 const STATUS_MESSAGES: Record<string, { title: string; body: string; type: string }> = {
   "2_estimated": { title: "Estimasi Kerusakan Selesai", body: "AI vision kami telah selesai menganalisis kerusakan kendaraan Anda. Tinjau hasil estimasi dan konfirmasi booking.", type: "status_update" },
-  "3_confirmed": { title: "Booking Dikonfirmasi", body: "Workshop kami menerima booking Anda. Tim kami akan segera menghubungi Anda untuk konfirmasi jadwal.", type: "status_update" },
-  "4_scheduled": { title: "Jadwal Masuk Ditetapkan", body: "Kendaraan Anda telah dijadwalkan untuk masuk ke bengkel. Pastikan kendaraan siap pada waktu yang ditentukan.", type: "status_update" },
+  "3_booked":    { title: "Booking Dikonfirmasi", body: "Workshop kami menerima booking Anda. Tim kami akan segera menghubungi Anda untuk konfirmasi jadwal.", type: "status_update" },
+  "4_paid":      { title: "Pembayaran Diterima", body: "Pembayaran Anda telah dikonfirmasi. Kendaraan Anda akan segera diproses sesuai jadwal.", type: "status_update" },
   "5_admitted":  { title: "Kendaraan Diterima di Bengkel", body: "Kendaraan Anda telah diterima dan sedang dalam pemeriksaan awal oleh tim teknisi kami.", type: "status_update" },
-  "6_body_paint":{ title: "Proses Body Paint Dimulai", body: "Kendaraan Anda sedang dalam proses perbaikan di divisi Body dan Paint. Kami akan memberi tahu Anda saat selesai.", type: "status_update" },
-  "7_qc":        { title: "Quality Control", body: "Perbaikan hampir selesai! Kendaraan Anda sedang memasuki tahap Quality Control untuk memastikan standar terbaik.", type: "status_update" },
-  "8_ready":     { title: "Kendaraan Siap Diambil!", body: "Kendaraan Anda telah selesai diperbaiki dan siap untuk diambil. Silakan datang ke workshop kami.", type: "pickup_ready" },
+  "6_in_progress":{ title: "Proses Perbaikan Dimulai", body: "Kendaraan Anda sedang dalam proses perbaikan di divisi Body dan Paint. Kami akan memberi tahu Anda saat selesai.", type: "status_update" },
+  "7_finished":  { title: "Perbaikan Selesai - Quality Check", body: "Perbaikan hampir selesai! Kendaraan Anda sedang memasuki tahap Quality Control untuk memastikan standar terbaik.", type: "status_update" },
+  "8_awaiting_delivery": { title: "Kendaraan Siap Diambil!", body: "Kendaraan Anda telah selesai diperbaiki dan siap untuk diambil. Silakan datang ke workshop kami.", type: "pickup_ready" },
   "9_done":      { title: "Terima Kasih!", body: "Kendaraan Anda telah diserahkan. Kami harap Anda puas dengan layanan Revive. Sampai jumpa!", type: "general" },
 };
 
+// SEC-15 FIX: Escape HTML special characters to prevent XSS
+function escapeHtml(str: string): string {
+  return str.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c] || c));
+}
+
 function buildEmailHtml(title: string, body: string, jobId: string): string {
+  const safeJobId = escapeHtml(jobId);
+  const safeTitle = escapeHtml(title);
+  const safeBody = escapeHtml(body);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
     body{font-family:-apple-system,sans-serif;background:#f5f5f5;margin:0;padding:20px}
     .card{background:#fff;border-radius:12px;max-width:500px;margin:0 auto;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)}
@@ -25,12 +36,12 @@ function buildEmailHtml(title: string, body: string, jobId: string): string {
   </style></head><body><div class="card">
     <div class="header"><h2>Revive Auto Repair</h2></div>
     <div class="body-content">
-      <h3 style="color:#1D1C1D;margin-top:0">${title}</h3>
-      <p>${body}</p>
+      <h3 style="color:#1D1C1D;margin-top:0">${safeTitle}</h3>
+      <p>${safeBody}</p>
       <p>Untuk melihat status terkini kendaraan Anda, buka aplikasi Revive.</p>
       <a class="btn" href="https://revive.co.id">Buka Aplikasi</a>
     </div>
-    <div class="footer">Job ID: ${jobId}<br>&#169; Revive Auto Repair</div>
+    <div class="footer">Job ID: ${safeJobId}<br>&#169; Revive Auto Repair</div>
   </div></body></html>`;
 }
 
@@ -75,8 +86,18 @@ async function sendEmail(toEmail: string, title: string, body: string, jobId: st
 serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
+  // SEC-05 FIX: Verify caller has service role key or shared secret
+  const authHeader = req.headers.get("Authorization");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const notificationSecret = Deno.env.get("NOTIFICATION_SECRET");
+  const expectedToken = notificationSecret || serviceRoleKey;
+  
+  if (!authHeader || !authHeader.startsWith("Bearer ") || 
+      authHeader.replace("Bearer ", "") !== expectedToken) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  }
+
   const supabaseUrl     = Deno.env.get("SUPABASE_URL")!;
-  const serviceRoleKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase        = createClient(supabaseUrl, serviceRoleKey);
 
   let payload: { job_id: string; customer_id: string; old_status: string; new_status: string };

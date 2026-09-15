@@ -3,27 +3,54 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 serve(async (req: Request) => {
   try {
+    // SEC-05 FIX: Verify caller has service role key (this should be a cron, not public)
+    const authHeader = req.headers.get('Authorization');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (!authHeader || !authHeader.startsWith('Bearer ') || 
+        authHeader.replace('Bearer ', '') !== serviceRoleKey) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      serviceRoleKey
     )
 
-    // Fetch Indonesian public holidays from a verified public API endpoint
+    // Fetch Indonesian public holidays with timeout
     const currentYear = new Date().getFullYear();
     
-    // Fixed string interpolation syntax from the provided code
-    // Using a standard Indonesian public holiday open API structure as placeholder
-    const response = await fetch(`https://dayoffapi.vercel.app/api?year=${currentYear}`);
+    // REL-14 FIX: Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    
+    let response;
+    try {
+      response = await fetch(`https://dayoffapi.vercel.app/api?year=${currentYear}`, {
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
     
     if (!response.ok) throw new Error("Failed to retrieve Indonesian holiday metadata.");
     
     const holidaysData = await response.json();
     
-    // Extract dates formatted as YYYY-MM-DD
-    // Note: Assuming the API returns an array of objects where 'tanggal' or 'date' is the YYYY-MM-DD string
-    const holidayDates: string[] = holidaysData.map((h: any) => h.tanggal ?? h.date).filter(Boolean);
+    // SEC-05 FIX: Validate response shape before writing to DB
+    if (!Array.isArray(holidaysData)) {
+      throw new Error("Invalid holiday API response: expected array");
+    }
 
-    if (holidayDates.length === 0) throw new Error("Holiday array payload empty.");
+    // Extract dates formatted as YYYY-MM-DD with validation
+    const holidayDates: string[] = holidaysData
+      .map((h: any) => h.tanggal ?? h.date)
+      .filter((d: any): d is string => {
+        if (typeof d !== 'string') return false;
+        // Validate date format YYYY-MM-DD
+        return /^\d{4}-\d{2}-\d{2}$/.test(d);
+      });
+
+    if (holidayDates.length === 0) throw new Error("Holiday array payload empty after validation.");
 
     // Update the automated_holidays array for all active partner profiles globally
     const { error } = await supabaseClient

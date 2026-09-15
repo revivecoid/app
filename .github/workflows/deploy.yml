@@ -34,9 +34,11 @@ jobs:
           EOF
           cp .env assets/.env
 
+      # OPS-02 FIX: Pin Flutter version for reproducible builds
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.32.2'
           channel: stable
           cache: true
 
@@ -45,6 +47,14 @@ jobs:
 
       - name: Generate localizations
         run: flutter gen-l10n
+
+      # QA-02 FIX: Static analysis gate — blocks deploy on any fatal lint or error
+      - name: Run Flutter Analyze
+        run: flutter analyze --fatal-infos
+
+      # QA-01 FIX: Test gate — blocks deploy if any test fails
+      - name: Run Flutter Tests
+        run: flutter test
 
       - name: Build Flutter Web
         run: |
