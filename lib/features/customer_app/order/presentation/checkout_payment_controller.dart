@@ -265,11 +265,12 @@ class CheckoutController extends StateNotifier<CheckoutState> {
           });
         }
 
-        await _supabase.from('repair_jobs').update({
-          'status': '3_booked',
-          'delivery_type': deliveryTypeDbEnum,
-          'scheduled_date': state.scheduledDate!.toIso8601String(),
-        }).eq('id', state.jobId);
+        // INT-06 FIX: Use book_slot RPC for atomic capacity check (BIZ-05)
+        await _supabase.rpc('book_slot', params: {
+          'p_job_id': state.jobId,
+          'p_delivery_type': deliveryTypeDbEnum,
+          'p_scheduled_date': state.scheduledDate!.toIso8601String(),
+        });
       }
 
       if (state.paymentMethod == PaymentMethod.manualTransfer) {

@@ -205,23 +205,33 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
 
   Future<void> suspendPartner() async {
     try {
-      await _supabase.from('partners').update({'is_active': false}).eq('id', partnerId);
+      // INT-04 FIX: Use RPC with audit trail instead of direct UPDATE
+      await _supabase.rpc('admin_suspend_partner', params: {
+        'p_partner_id': partnerId,
+        'p_suspend': true,
+      });
       final updated = Map<String, dynamic>.from(state.partnerData ?? {});
       updated['is_active'] = false;
       state = state.copyWith(partnerData: updated, successMessage: 'Partner suspended successfully.');
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to suspend partner: $e');
+      state = state.copyWith(errorMessage: 'Failed to suspend partner.');
+      debugPrint('[AdminPartner] suspendPartner error: $e');
     }
   }
 
   Future<void> reactivatePartner() async {
     try {
-      await _supabase.from('partners').update({'is_active': true}).eq('id', partnerId);
+      // INT-04 FIX: Use RPC with audit trail instead of direct UPDATE
+      await _supabase.rpc('admin_suspend_partner', params: {
+        'p_partner_id': partnerId,
+        'p_suspend': false,
+      });
       final updated = Map<String, dynamic>.from(state.partnerData ?? {});
       updated['is_active'] = true;
       state = state.copyWith(partnerData: updated, successMessage: 'Partner reactivated successfully.');
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to reactivate partner: $e');
+      state = state.copyWith(errorMessage: 'Failed to reactivate partner.');
+      debugPrint('[AdminPartner] reactivatePartner error: $e');
     }
   }
 

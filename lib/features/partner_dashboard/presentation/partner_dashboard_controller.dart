@@ -236,7 +236,11 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
     final nextStage = (currentStage == '3_booked' || currentStage == '4_paid') ? '5_admitted' : _stages[idx + 1];
     
     try {
-      await _supabase.from('repair_jobs').update({'status': nextStage}).eq('id', jobId);
+      // INT-02 FIX: Use RPC for server-side transition validation (BIZ-02)
+      await _supabase.rpc('advance_job_status', params: {
+        'p_job_id': jobId,
+        'p_new_status': nextStage,
+      });
     } catch (e) {
       // Offline fallback: Queue the stage advancement locally
       await _queueOfflineAction({
@@ -244,7 +248,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
         'job_id': jobId,
         'payload': nextStage,
       });
-      state = state.copyWith(errorMessage: 'DB Error: $e');
+      state = state.copyWith(errorMessage: 'Status update queued offline.');
     }
   }
 
@@ -375,7 +379,11 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
         try {
           final action = item as Map<String, dynamic>;
           if (action['type'] == 'UPDATE_STATUS') {
-            await _supabase.from('repair_jobs').update({'status': action['payload']}).eq('id', action['job_id']);
+            // INT-02 FIX: Use RPC for server-side transition validation
+            await _supabase.rpc('advance_job_status', params: {
+              'p_job_id': action['job_id'],
+              'p_new_status': action['payload'],
+            });
           } else if (action['type'] == 'UPLOAD_PHOTO' && action['local_path'] != null) {
             final localFile = File(action['local_path'] as String);
             if (await localFile.exists()) {
