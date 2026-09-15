@@ -24,6 +24,7 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // ignore: unused_local_variable — watched to trigger rebuilds on theme change
     final themeMode = ref.watch(themeModeProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;

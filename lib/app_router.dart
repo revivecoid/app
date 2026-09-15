@@ -21,7 +21,6 @@ import 'features/customer_app/profile/presentation/update_password_screen.dart';
 import 'features/admin_central/presentation/master_admin_desktop.dart';
 import 'features/admin_central/presentation/admin_partner_profile_screen.dart';
 import 'features/admin_central/presentation/admin_partner_assessment_screen.dart';
-import 'features/admin_central/presentation/admin_job_assignment_screen.dart';
 import 'features/partner_dashboard/presentation/partner_dashboard_desktop.dart';
 import 'features/partner_dashboard/presentation/partner_registration_screen.dart';
 import 'features/partner_dashboard/presentation/schedule_config_screen.dart';

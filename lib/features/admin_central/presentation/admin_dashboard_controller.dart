@@ -560,8 +560,6 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
 
       debugPrint('Admin jobs via RPC: ${rows.length} rows');
 
-      final cdnBucketPath =
-          _supabase.storage.from('revive-photos').getPublicUrl('');
 
       final List<AdminJobNode> jobs = rows.map((job) {
         final j = job as Map<String, dynamic>;
@@ -596,8 +594,6 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
           vehicles:vehicle_id (make, model, license_plate),
           partners:partner_id (shop_name)
         ''').limit(50);
-        final cdnBucketPath =
-            _supabase.storage.from('revive-photos').getPublicUrl('');
         final List<AdminJobNode> jobs = (response as List).map((job) {
           final customerData = job['profiles'] as Map<String, dynamic>? ?? {};
           final vehicleData = job['vehicles'] as Map<String, dynamic>? ?? {};
@@ -720,6 +716,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
     debugPrint('✅ Job $jobId assigned to $partnerName');
   }
 
+  Future<void> unassignJob(String jobId) async {
     try {
       // INT-03 FIX: RPC only — no fallback direct UPDATE
       await _supabase.rpc('admin_unassign_job', params: {
