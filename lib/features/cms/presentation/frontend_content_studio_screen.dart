@@ -79,7 +79,7 @@ class _FrontendCmsState extends ConsumerState<FrontendContentStudioScreen> {
     try {
       final f = await _supabase.storage.from('revive-photos').list();
       if (mounted) setState(() => _assets = f);
-    } catch (_) {}
+    } catch (e) { debugPrint('[CMS] loadAssets error: $e'); }
     if (mounted) setState(() => _assetsLoading = false);
   }
 

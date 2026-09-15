@@ -86,7 +86,7 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
         }
         if (items.isNotEmpty) _faqItems = items;
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('[FAQ] load error: $e'); }
     if (_faqItems.isEmpty) {
       _faqItems = List.generate(_defaultFaqEn.length, (i) => {
         'q': _defaultFaqEn[i]['q']!, 'a': _defaultFaqEn[i]['a']!,

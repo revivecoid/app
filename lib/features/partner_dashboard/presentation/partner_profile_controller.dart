@@ -235,7 +235,7 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
         if (byType.containsKey(type)) byType[type]!.add(v);
       }
       state = state.copyWith(documents: byType);
-    } catch (_) {}
+    } catch (e) { debugPrint('[PartnerProfile] loadDocuments error: $e'); }
   }
 
   Future<void> _loadFacilityPhotos() async {
@@ -253,7 +253,7 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
         if (v.slot >= 0 && v.slot <= 3) slots[v.slot].add(v);
       }
       state = state.copyWith(facilityPhotos: slots);
-    } catch (_) {}
+    } catch (e) { debugPrint('[PartnerProfile] loadFacilityPhotos error: $e'); }
   }
 
   Future<void> _loadKpis() async {
@@ -275,7 +275,7 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
         totalJobsDone: list.length,
         avgRepairDays: list.isEmpty ? 0.0 : sum / list.length,
       );
-    } catch (_) {}
+    } catch (e) { debugPrint('[PartnerProfile] loadKpis error: $e'); }
   }
 
   // ── Save partner details (text fields + selections) ───────────────────────

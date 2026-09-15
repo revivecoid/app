@@ -113,7 +113,7 @@ class CheckoutController extends StateNotifier<CheckoutState> {
             final map = jsonDecode(data);
             recoveredCost = (map['estimatedCost'] as num?)?.toDouble() ?? 0.0;
           }
-        } catch (_) {}
+        } catch (e) { debugPrint('[Checkout] recover cost error: $e'); }
       }
 
       state = state.copyWith(

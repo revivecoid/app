@@ -13,7 +13,7 @@ final cmsSettingsProvider = FutureProvider.autoDispose<Map<String, String>>((ref
     if (res is Map) {
       return res.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
     }
-  } catch (_) {}
+  } catch (e) { debugPrint('[Landing] CMS settings error: $e'); }
   return {};
 });
 

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -33,7 +33,7 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
     try {
       final res = await Supabase.instance.client.rpc('get_cms_settings');
       if (res is Map) _s = res.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
-    } catch (_) {}
+    } catch (e) { debugPrint('[AboutUs] load error: $e'); }
     if (mounted) setState(() => _loading = false);
   }
 

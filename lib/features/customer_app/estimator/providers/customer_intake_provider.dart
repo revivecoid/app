@@ -84,14 +84,14 @@ class CustomerIntakeNotifier extends StateNotifier<CustomerIntakeState> {
       if (data != null) {
         state = CustomerIntakeState.fromJson(jsonDecode(data));
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('[IntakeProvider] error: $e'); }
   }
 
   void _saveState(CustomerIntakeState newState) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('customer_intake', jsonEncode(newState.toJson()));
-    } catch (_) {}
+    } catch (e) { debugPrint('[IntakeProvider] error: $e'); }
   }
 
   void _updateAndSave(CustomerIntakeState newState) {
