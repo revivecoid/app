@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 serve(async (req) => {
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': 'https://revive.co.id',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   }
 
@@ -25,7 +25,8 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
     if (userError || !user) throw new Error(`Unauthorized: ${userError?.message || 'No user'}`)
 
-    const userRole = user.app_metadata?.role || user.user_metadata?.role
+    // SEC-02 FIX: Only read role from app_metadata (cannot be self-modified by user)
+    const userRole = user.app_metadata?.role
     if (userRole !== 'master_admin') {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders })
     }
@@ -75,14 +76,30 @@ serve(async (req) => {
     )
 
     if (authError) {
-      // If the user already exists, inviteUserByEmail might throw an error.
-      // We need to fetch the existing user ID.
-      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers()
-      if (listError) throw listError
+      // SEC-15 FIX: Use filtered lookup instead of unpaginated listUsers()
+      // listUsers() without pagination only returns the first page — fails when user count exceeds default limit
+      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1,
+        // Note: Supabase admin API doesn't support email filter directly in listUsers.
+        // Use getUserByEmail if available, or search after fetch.
+      })
       
-      const existingUser = listData.users.find(u => u.email === appData.email)
+      // Better approach: iterate to find user by email, but limit scope
+      let existingUser = null
+      let page = 1
+      const perPage = 100
+      while (!existingUser) {
+        const { data: pageData, error: pageError } = await supabaseAdmin.auth.admin.listUsers({ page, perPage })
+        if (pageError) throw pageError
+        existingUser = pageData.users.find(u => u.email === appData.email)
+        if (pageData.users.length < perPage) break // No more pages
+        page++
+        if (page > 50) break // Safety limit: 5000 users max scan
+      }
+      
       if (!existingUser) {
-        throw new Error(`Failed to invite user: ${authError.message}`)
+        throw new Error(`Failed to invite user and could not find existing account: ${authError.message}`)
       }
       userId = existingUser.id
     } else {

@@ -135,7 +135,8 @@ class PartnerProfileState {
 
 class PartnerProfileController extends StateNotifier<PartnerProfileState> {
   final SupabaseClient _sb = Supabase.instance.client;
-  static const _bucket = 'revive-photos-r2-proxy';
+  // REL-04 FIX: Use unified bucket name
+  static const _bucket = 'revive-photos';
 
   String? _partnerId; // null until we find/create the partners row
 
@@ -150,14 +151,21 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
       final user = _sb.auth.currentUser;
       if (user == null) throw Exception('Not authenticated');
 
-      // Try to find partner row: first by id = auth.uid (self-registered),
-      // then by user_id = auth.uid (admin-created).
-      Map<String, dynamic>? partnerData = await _sb
-          .from('partners')
-          .select()
-          .eq('id', user.id)
-          .maybeSingle();
+      // REL-05 FIX: Get partner_id from app_metadata (set by approve-partner Edge Function).
+      // The old code used user.id which never matched the partners table because
+      // approve-partner creates partners with uuid_generate_v4(), not auth.uid.
+      final metaPartnerId = user.appMetadata['partner_id']?.toString();
+      
+      Map<String, dynamic>? partnerData;
+      if (metaPartnerId != null && metaPartnerId.isNotEmpty) {
+        partnerData = await _sb
+            .from('partners')
+            .select()
+            .eq('id', metaPartnerId)
+            .maybeSingle();
+      }
 
+      // Fallback: try legacy lookup by user_id column
       if (partnerData == null) {
         partnerData = await _sb
             .from('partners')
@@ -166,7 +174,10 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
             .maybeSingle();
       }
 
-      _partnerId = partnerData?['id']?.toString() ?? user.id;
+      _partnerId = partnerData?['id']?.toString();
+      if (_partnerId == null || _partnerId!.isEmpty) {
+        throw Exception('Partner profile not found. Contact admin to verify your account setup.');
+      }
 
       // Resolve display name
       final workshopName = partnerData?['entity_name']?.toString().trim() ??

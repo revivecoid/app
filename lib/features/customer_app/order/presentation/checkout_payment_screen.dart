@@ -319,7 +319,8 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
           const SizedBox(height: 8),
           Text(
             'IDR ${state.estimatedCost.toStringAsFixed(2)}', 
-            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)
+            // UX-01 FIX: Use theme-aware color instead of hardcoded white (invisible on light theme)
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)
           ),
           const SizedBox(height: 8),
           if (state.deliveryOption == DeliveryOption.pickup)

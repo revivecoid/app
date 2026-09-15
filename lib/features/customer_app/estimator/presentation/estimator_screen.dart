@@ -111,6 +111,16 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
 
   Future<void> _submitToVisionAi() async {
     if (_selectedImages.isEmpty) return;
+
+    // SEC-03 FIX: Vision-estimation now requires auth — prompt login if needed
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppL.of(context)!.estimatorLoginRequired)),
+      );
+      context.push('/login?returnTo=/estimator');
+      return;
+    }
     
     setState(() {
       _isAnalyzing = true;
@@ -125,14 +135,16 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       for (int i = 0; i < _selectedImages.length; i++) {
         final compressedBytes =
             await ImageCompressor.compressImage(_selectedImages[i]);
-        final fileName = '${timestamp}_$i.jpg';
+        // SEC-04 FIX: User-scoped upload path — bucket policies enforce <user_id>/ prefix
+        final fileName = '${user.id}/${timestamp}_$i.jpg';
         await Supabase.instance.client.storage
             .from('revive-photos')
             .uploadBinary(fileName, compressedBytes);
-        final publicUrl = Supabase.instance.client.storage
+        // SEC-04 FIX: Use signed URL instead of public URL (bucket is now private)
+        final signedUrl = await Supabase.instance.client.storage
             .from('revive-photos')
-            .getPublicUrl(fileName);
-        photoUrls.add(publicUrl);
+            .createSignedUrl(fileName, 3600); // 1 hour expiry
+        photoUrls.add(signedUrl);
       }
 
       final selectedPanels = ref.read(selectedPanelsProvider);

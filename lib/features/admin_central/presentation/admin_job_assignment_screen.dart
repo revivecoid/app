@@ -54,15 +54,22 @@ class _AdminJobAssignmentScreenState extends ConsumerState<AdminJobAssignmentScr
 
   Future<void> _assignJob(String jobId, String partnerId) async {
     try {
-      await _supabase.from('repair_jobs').update({
-        'partner_id': partnerId,
-        'status': '3_booked'
-      }).eq('id', jobId);
+      // SEC-01 FIX: Use admin_assign_job RPC instead of direct UPDATE.
+      // The RPC validates that the caller is master_admin before executing.
+      await _supabase.rpc('admin_assign_job', params: {
+        'p_job_id': jobId,
+        'p_partner_id': partnerId,
+        'p_status': '3_booked',
+      });
       
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Job Assigned Successfully!'), backgroundColor: Colors.green));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Job Assigned Successfully!'), backgroundColor: Colors.green));
+      }
       _fetchData();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error assigning job'), backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error assigning job: $e'), backgroundColor: Colors.red));
+      }
     }
   }
 

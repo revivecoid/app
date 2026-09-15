@@ -115,10 +115,11 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
       final user = _supabase.auth.currentUser;
       if (user == null) throw Exception('Unauthorized Access: Active session not found.');
 
-      // Extract isolated Tenant ID securely mapped from the JWT
-      final tenantId = user.userMetadata?['partner_id'] as String?;
+      // SEC-08 FIX: Extract Tenant ID from app_metadata ONLY (set by service_role via approve-partner).
+      // user_metadata is self-writable and MUST NOT be trusted for tenant isolation.
+      final tenantId = user.appMetadata['partner_id'] as String?;
       if (tenantId == null || tenantId.isEmpty) {
-        throw Exception('Tenant Isolation Breach: No partner_id mapped to this authentication profile.');
+        throw Exception('Tenant Isolation Failure: No partner_id found in app_metadata. Contact admin.');
       }
 
       state = PartnerDashboardState(partnerId: tenantId, isLoading: true);
@@ -174,7 +175,8 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
         final photos = job['repair_photos'] as List?;
         if (photos != null && photos.isNotEmpty) {
           photos.sort((a, b) => DateTime.parse(b['uploaded_at'].toString()).compareTo(DateTime.parse(a['uploaded_at'].toString())));
-          latestPhotoUrl = _supabase.storage.from('revive-photos-r2-proxy').getPublicUrl(photos.first['r2_file_key'].toString());
+          // REL-04 FIX: Use unified 'revive-photos' bucket (same as customer upload)
+          latestPhotoUrl = _supabase.storage.from('revive-photos').getPublicUrl(photos.first['r2_file_key'].toString());
         }
 
         return PartnerJobNode(
@@ -263,7 +265,8 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
       final fileName = '${state.partnerId}_${jobId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       
       try {
-        await _supabase.storage.from('revive-photos-r2-proxy').uploadBinary(
+        // REL-04 FIX: Use unified 'revive-photos' bucket (same as customer upload)
+        await _supabase.storage.from('revive-photos').uploadBinary(
           fileName, 
           compressedBytes,
           fileOptions: const FileOptions(contentType: 'image/jpeg'),
@@ -320,8 +323,10 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
 
   Future<void> _queueOfflineAction(Map<String, dynamic> action) async {
     if (kIsWeb) {
-      // Web: no file system — in production this would use IndexedDB
-      debugPrint('[OfflineQueue] Queued action: ${action['type']}');
+      // REL-02 FIX: Web has no offline queue — be honest about failure.
+      // Previously this only called debugPrint but UI said "queued for retry".
+      // TODO(SEC-12): Implement IndexedDB-based queue for real offline support on Web.
+      debugPrint('[OfflineQueue] Web: action NOT queued (no IndexedDB impl): ${action['type']}');
       return;
     }
     // Mobile path

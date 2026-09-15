@@ -65,7 +65,8 @@ class PartnerSettingsController extends StateNotifier<PartnerSettingsState> {
     if (user == null) return;
     
     currentUserId = user.id;
-    partnerId = user.userMetadata?['partner_id'] ?? '';
+    // SEC-08 FIX: Read partner_id from app_metadata ONLY (set by service_role)
+    partnerId = user.appMetadata['partner_id']?.toString() ?? '';
     
     if (partnerId.isEmpty) {
       state = state.copyWith(isLoading: false, errorMessage: 'Partner ID not found in token.');
