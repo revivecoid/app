@@ -262,7 +262,9 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
       final compressedBytes = await ImageCompressor.compressImage(rawImage);
 
       // 3. Cloudflare R2 S3-Compatible Upload Layer
-      final fileName = '${state.partnerId}_${jobId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      // SEC-04 FIX: User-scoped upload path for private bucket RLS
+      final userId = _supabase.auth.currentUser!.id;
+      final fileName = '$userId/${state.partnerId}_${jobId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       
       try {
         // REL-04 FIX: Use unified 'revive-photos' bucket (same as customer upload)
