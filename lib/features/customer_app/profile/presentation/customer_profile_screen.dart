@@ -148,7 +148,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                       _buildProfileCard(
                           context, ref, userName, userEmail, userAvatar, initials,
                           phone: dbProfile?['phone']?.toString() ?? ''),
-                      SizedBox(height: 16), if (user?.appMetadata?['role'] == 'partner_staff' || user?.appMetadata?['role'] == 'partner_driver' || user?.userMetadata?['role'] == 'partner_staff' || user?.userMetadata?['role'] == 'partner_driver' || user?.appMetadata?['role'] == 'partner_mechanic' || user?.userMetadata?['role'] == 'partner_mechanic') Padding(padding: const EdgeInsets.only(bottom: 16), child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), ), onPressed: () => GoRouter.of(context).go('/ops'), icon: const Icon(Icons.rocket_launch), label: const Text('Open Workshop Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), ), ),
+                      SizedBox(height: 16), if (user?.appMetadata['role'] == 'partner_staff' || user?.appMetadata['role'] == 'partner_driver' || user?.appMetadata['role'] == 'partner_mechanic') Padding(padding: const EdgeInsets.only(bottom: 16), child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), ), onPressed: () => GoRouter.of(context).go('/ops'), icon: const Icon(Icons.rocket_launch), label: const Text('Open Workshop Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), ), ),
 
                       // ── Digital Garage ────────────────────────────────────
                       _buildGarageHeader(context, ref),
@@ -1492,9 +1492,8 @@ class CustomerProfileScreen extends ConsumerWidget {
     // ignore: unused_local_variable
     final alertsOn = ref.watch(whatsappAlertsProvider);
     final user = Supabase.instance.client.auth.currentUser;
-    final role = (user?.appMetadata['role'] as String?)
-        ?? (user?.userMetadata?['role'] as String?)
-        ?? 'customer';
+    // SEC-02 FIX: Only read role from appMetadata (trusted, set by service_role)
+    final role = (user?.appMetadata['role'] as String?) ?? 'customer';
     final cs = Theme.of(context).colorScheme;
 
     return Container(

@@ -30,7 +30,8 @@ class _OpsShellScreenState extends ConsumerState<OpsShellScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final role = Supabase.instance.client.auth.currentUser?.userMetadata?['role'] as String? ?? 'partner_staff';
+    // SEC-02 FIX: Read role from appMetadata (set by service_role only), NOT userMetadata (self-writable)
+    final role = Supabase.instance.client.auth.currentUser?.appMetadata['role'] as String? ?? 'partner_staff';
     final isDriver = role == 'partner_driver';
     
     // For drivers, we only show Logistics and Settings

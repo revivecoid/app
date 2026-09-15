@@ -28,7 +28,7 @@ class OpsSettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Role: ${user?.userMetadata?['role'] ?? 'partner_staff'}',
+            'Role: ${user?.appMetadata['role'] ?? 'partner_staff'}',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 14, color: Colors.grey),
           ),

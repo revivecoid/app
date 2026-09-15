@@ -157,7 +157,8 @@ class _PartnerCommLinkScreenState
 
   String get _partnerId {
     final user = Supabase.instance.client.auth.currentUser;
-    return user?.userMetadata?['partner_id']?.toString() ?? user?.id ?? '';
+    // SEC-02 FIX: Read partner_id from appMetadata (set by service_role only)
+    return user?.appMetadata['partner_id']?.toString() ?? user?.id ?? '';
   }
 
   @override

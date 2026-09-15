@@ -370,7 +370,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/ops',
         redirect: (context, state) {
-           final role = Supabase.instance.client.auth.currentUser?.userMetadata?['role'] as String?;
+           // SEC-02 FIX: Read role from appMetadata only
+           final role = Supabase.instance.client.auth.currentUser?.appMetadata['role'] as String?;
            if (role == 'partner_driver') return '/ops/logistics';
            return '/ops/floor';
         },
