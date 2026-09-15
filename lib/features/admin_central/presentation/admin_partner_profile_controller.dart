@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -137,6 +138,7 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
 
       // 5. Fetch facility photos from storage
       final photoUrls = <String>[];
+      try {
         // REL-04 FIX: Use unified 'revive-photos' bucket
         final objects = await _supabase.storage.from('revive-photos').list(path: 'facility/$partnerId/');
         for (final o in objects) {
