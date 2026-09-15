@@ -249,6 +249,7 @@ class NotificationPreferencesNotifier
     _debounceTimer?.cancel();
     super.dispose();
   }
+}
 
 final notificationPreferencesProvider = StateNotifierProvider<
     NotificationPreferencesNotifier, AsyncValue<NotificationPreferences>>(
