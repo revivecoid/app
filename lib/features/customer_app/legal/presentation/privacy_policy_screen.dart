@@ -68,7 +68,7 @@ class _PrivacyState extends ConsumerState<PrivacyPolicyScreen> {
     try {
       final res = await Supabase.instance.client.rpc('get_cms_settings');
       if (res is Map) _s = res.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
-    } catch (_) {}
+    } catch (e) { debugPrint('[PrivacyPolicy] load error: $e'); }
     if (mounted) setState(() => _loading = false);
   }
 

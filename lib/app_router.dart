@@ -108,7 +108,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           try {
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString('returnTo', _globalReturnToPath!);
-          } catch (_) {}
+          } catch (e) { debugPrint('[Router] SharedPreferences error: $e'); }
           return '/login?returnTo=$returnTo';
         }
         return null;
@@ -138,7 +138,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             if (targetPath != null) {
               await prefs.remove('returnTo');
             }
-          } catch (_) {}
+          } catch (e) { debugPrint('[Router] SharedPreferences error: $e'); }
         }
         
         if (role == 'master_admin') return targetPath ?? '/admin-central';
@@ -155,7 +155,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             await prefs.remove('returnTo');
             if (trappedPath.isNotEmpty) return trappedPath; 
           }
-        } catch (_) {}
+        } catch (e) { debugPrint('[Router] SharedPreferences error: $e'); }
 
         // We have securely landed on an authenticated route and are not in a login loop.
         // It is now strictly safe to garbage collect the global return path.
@@ -493,7 +493,7 @@ class _AuthCallbackScreenState extends State<_AuthCallbackScreen> {
           if (returnTo != null) {
             await prefs.remove('returnTo');
           }
-        } catch (_) {}
+        } catch (e) { debugPrint('[Router] SharedPreferences error: $e'); }
       }
       
       if (returnTo != null) {

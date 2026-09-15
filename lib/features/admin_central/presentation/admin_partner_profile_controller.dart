@@ -99,7 +99,7 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
       Map<String, dynamic>? schedData;
       try {
         schedData = await _supabase.from('partner_schedules').select().eq('partner_id', partnerId).single();
-      } catch (_) {}
+      } catch (e) { debugPrint('[AdminPartner] schedule fetch error: $e'); }
 
       // 3. Fetch Jobs
       final jobsRes = await _supabase.from('repair_jobs').select('''
@@ -137,14 +137,14 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
 
       // 5. Fetch facility photos from storage
       final photoUrls = <String>[];
-      try {
-        final objects = await _supabase.storage.from('revive-photos-r2-proxy').list(path: 'facility/$partnerId/');
+        // REL-04 FIX: Use unified 'revive-photos' bucket
+        final objects = await _supabase.storage.from('revive-photos').list(path: 'facility/$partnerId/');
         for (final o in objects) {
           if (o.name.isNotEmpty) {
-            photoUrls.add(_supabase.storage.from('revive-photos-r2-proxy').getPublicUrl('facility/$partnerId/${o.name}'));
+            photoUrls.add(_supabase.storage.from('revive-photos').getPublicUrl('facility/$partnerId/${o.name}'));
           }
         }
-      } catch (_) {}
+      } catch (e) { debugPrint('[AdminPartner] facility photos error: $e'); }
 
       state = state.copyWith(
         isLoading: false,
@@ -200,7 +200,7 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
         'sender_id': currentUserId,
         'content': text.trim(),
       });
-    } catch (_) {}
+    } catch (e) { debugPrint('[AdminPartner] sendMessage error: $e'); }
   }
 
   Future<void> suspendPartner() async {
