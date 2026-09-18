@@ -28,27 +28,42 @@ class _PartnerStaffManagementScreenState extends ConsumerState<PartnerStaffManag
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
-      
-      final profile = await Supabase.instance.client
-          .from('profiles')
-          .select('partner_id')
-          .eq('id', user.id)
-          .single();
-          
-      final partnerId = profile['partner_id'];
-      if (partnerId == null) return;
+
+      // SEC-02: Read partner_id from appMetadata (server-set) not from a
+      // profiles round-trip, which avoids an extra query and an RLS edge case
+      // where the mechanic's own profile row might not yet be readable.
+      final partnerId = user.appMetadata['partner_id'] as String?;
+
+      // Fallback: if appMetadata doesn't have it yet (JWT not refreshed),
+      // read from profiles — the new RLS policy now allows this.
+      String? resolvedPartnerId = partnerId;
+      if (resolvedPartnerId == null || resolvedPartnerId.isEmpty) {
+        final profile = await Supabase.instance.client
+            .from('profiles')
+            .select('partner_id')
+            .eq('id', user.id)
+            .maybeSingle();
+        resolvedPartnerId = profile?['partner_id'] as String?;
+      }
+
+      if (resolvedPartnerId == null || resolvedPartnerId.isEmpty) {
+        debugPrint('[Staff] No partner_id found for current user — cannot load staff.');
+        return;
+      }
 
       final res = await Supabase.instance.client
           .from('profiles')
           .select('id, full_name, email, role')
-          .eq('partner_id', partnerId)
+          .eq('partner_id', resolvedPartnerId)
           .inFilter('role', ['partner_staff', 'partner_driver']);
-          
-      setState(() {
-        _staff = List<Map<String, dynamic>>.from(res);
-      });
+
+      if (mounted) {
+        setState(() {
+          _staff = List<Map<String, dynamic>>.from(res);
+        });
+      }
     } catch (e) {
-      debugPrint('Error loading staff: $e');
+      debugPrint('[Staff] Error loading staff: $e');
     }
   }
 
