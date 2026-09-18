@@ -6,23 +6,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 final floorJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final user = Supabase.instance.client.auth.currentUser;
   if (user == null) return [];
-  
-  final profile = await Supabase.instance.client
-      .from('profiles')
-      .select('partner_id')
-      .eq('id', user.id)
-      .single();
-      
-  final partnerId = profile['partner_id'];
-  if (partnerId == null) return [];
 
+  // Read partner_id from appMetadata directly (SEC-02, avoids extra RLS hop)
+  final partnerId = user.appMetadata['partner_id'] as String?;
+  if (partnerId == null || partnerId.isEmpty) return [];
+
+  // Do NOT join profiles here — staff RLS now allows reading customer profiles
+  // via the "Partners can read customer profiles for their jobs" policy,
+  // but we keep the query minimal and join only vehicles to reduce RLS surface.
   final res = await Supabase.instance.client
       .from('repair_jobs')
-      .select('id, status, vehicles(make, model, license_plate)')
+      .select('id, status, customer_id, vehicles(make, model, license_plate)')
       .eq('partner_id', partnerId)
-      .eq('status', '6_in_progress')
+      .inFilter('status', ['5_admitted', '6_in_progress', '7_finished'])
       .order('created_at', ascending: true);
-      
+
   return List<Map<String, dynamic>>.from(res);
 });
 
@@ -50,7 +48,7 @@ class OpsFloorScreen extends ConsumerWidget {
                 children: [
                   Icon(Icons.build_circle_outlined, size: 64, color: cs.primary),
                   const SizedBox(height: 16),
-                  const Text('No active floor jobs yet.', style: TextStyle(fontSize: 16)),
+                  const Text('No active jobs in bay.', style: TextStyle(fontSize: 16)),
                 ],
               ),
             );
@@ -62,6 +60,13 @@ class OpsFloorScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final job = jobs[index];
               final vehicle = job['vehicles'];
+              final status = job['status'] as String? ?? '';
+              final statusLabel = status.replaceAll(RegExp(r'^\d+_'), '').replaceAll('_', ' ').toUpperCase();
+              final statusColor = status == '5_admitted'
+                  ? Colors.blue.shade700
+                  : status == '7_finished'
+                      ? Colors.green.shade700
+                      : Colors.orange.shade700;
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 16),
@@ -71,8 +76,26 @@ class OpsFloorScreen extends ConsumerWidget {
                     backgroundColor: Colors.orange.shade100,
                     child: Icon(Icons.directions_car, color: Colors.orange.shade900),
                   ),
-                  title: Text('${vehicle?['make']} ${vehicle?['model']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(vehicle?['license_plate'] ?? ''),
+                  title: Text('${vehicle?['make']} ${vehicle?['model']}',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(vehicle?['license_plate'] ?? ''),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.4)),
+                        ),
+                        child: Text(statusLabel,
+                            style: TextStyle(
+                                fontSize: 10, fontWeight: FontWeight.bold, color: statusColor)),
+                      ),
+                    ],
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     context.push('/ops/floor/milestones/${job['id']}');
