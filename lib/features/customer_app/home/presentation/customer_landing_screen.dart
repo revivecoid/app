@@ -224,10 +224,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     final jobId = job['id'].toString();
 
     // Determine what stage the job is at so we show the right actions
-    final isEstimated       = statusStr == '2_estimated';
-    final isBooked          = statusStr == '3_booked';
-    final isInvoiced        = statusStr == '3_inspected'; // Re-V invoice issued, awaiting payment
-    final needsAction       = isEstimated || isBooked || isInvoiced;
+    final isEstimated       = statusStr == '2_estimated';  // Needs booking
+    final isInvoiced        = statusStr == '3_inspected';  // Re-V invoice issued, needs payment
+    // 3_booked = waiting for workshop to admit vehicle — no customer action needed
+    final needsAction       = isEstimated || isInvoiced;
     final isActive          = !needsAction && statusStr != '0_cancelled';
 
     // Progress fraction for the progress bar
@@ -343,10 +343,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   Expanded(
                     child: Text(
                       isInvoiced
-                          ? 'Re-V has issued your invoice. Review the final cost and confirm payment.'
+                          ? 'Re-V has issued your invoice based on the workshop inspection. Review the final cost and confirm payment.'
                           : isEstimated
                               ? 'Your AI estimate is ready. Continue to complete your booking.'
-                              : 'Your booking is saved. Complete checkout to confirm your slot.',
+                              : 'Booking confirmed. Our team is performing the final inspection — you will be notified when the invoice is ready.',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.primaryContainer,
                         fontWeight: FontWeight.w500,
@@ -441,6 +441,78 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                   ),
+                ),
+              ],
+            ),
+          ] else if (statusStr == '3_booked') ...[
+            // WAITING STATE: Booking confirmed, vehicle not yet admitted
+            // Show informational card + Track + Cancel only
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withValues(alpha: 0.25)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.schedule_outlined, size: 16, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Waiting for Vehicle Intake',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue.shade700)),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Your booking is confirmed. Once your vehicle is received, '
+                              'our workshop will perform a final inspection and Re-V will issue your invoice. '
+                              'You will be notified by email and WhatsApp.',
+                              style: TextStyle(fontSize: 11, color: Colors.blue.shade700, height: 1.4),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _confirmAndCancelJob(context, jobId),
+                        icon: const Icon(Icons.cancel_outlined, size: 15),
+                        label: const Text('Cancel Booking', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: theme.colorScheme.error,
+                          side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.5)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.go('/track/$jobId'),
+                        icon: const Icon(Icons.sensors, size: 15),
+                        label: const Text('Track Live', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryContainer,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -140,10 +140,11 @@ class _LiveStepperTimelineState extends ConsumerState<LiveStepperTimeline> {
     final mutedColor = cs.onSurfaceVariant;
 
     final status = streamState.currentStatus;
-    final isEstimated  = status == '2_estimated';
-    final isBooked     = status == '3_booked';
-    final isInvoiced   = status == '3_inspected'; // Re-V invoice issued, awaiting payment
-    final needsAction  = isEstimated || isBooked || isInvoiced;
+    final isEstimated  = status == '2_estimated';   // Needs booking
+    final isBooked     = status == '3_booked';      // Waiting for intake — show info only
+    final isInvoiced   = status == '3_inspected';   // Re-V invoice issued, needs payment
+    final needsAction  = isEstimated || isInvoiced;
+    final showWaiting  = isBooked;                  // Informational state, no CTA
 
     return LayoutBuilder(builder: (context, constraints) {
       final isDesktop = constraints.maxWidth > 900;
@@ -212,7 +213,9 @@ class _LiveStepperTimelineState extends ConsumerState<LiveStepperTimeline> {
                 isCancelling: _isCancelling,
                 onCancel: _confirmAndCancelJob,
               )
-            : null,
+            : showWaiting
+                ? _WaitingBar(jobId: widget.jobId, isCancelling: _isCancelling, onCancel: _confirmAndCancelJob)
+                : null,
 
         body: streamState.isLoading
             ? const Center(child: CircularProgressIndicator(color: AppColors.fireRed))
@@ -435,6 +438,95 @@ class _TrackerBody extends StatelessWidget {
         boxShadow: [BoxShadow(color: Color(0xFF000000).withValues(alpha: 0.06), blurRadius: 6, offset: Offset(0, 2))],
       ),
       child: child,
+    );
+  }
+}
+
+// ─── Waiting Bar — shown for 3_booked: booking confirmed, awaiting vehicle intake ─
+class _WaitingBar extends StatelessWidget {
+  final String jobId;
+  final bool isCancelling;
+  final VoidCallback onCancel;
+
+  const _WaitingBar({
+    required this.jobId,
+    required this.isCancelling,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        boxShadow: [
+          BoxShadow(
+            color: cs.onSurface.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Info panel
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.07),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.schedule_outlined, size: 16, color: Colors.blue.shade700),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Waiting for Vehicle Intake',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue.shade700)),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Your booking is confirmed. Drop off your vehicle on the scheduled date. '
+                        'After inspection, Re-V will send you an invoice via email & WhatsApp.',
+                        style: TextStyle(fontSize: 11, color: Colors.blue.shade700, height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Cancel only — no continue button needed
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: isCancelling ? null : onCancel,
+              icon: isCancelling
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red))
+                  : const Icon(Icons.cancel_outlined, size: 16),
+              label: Text(
+                isCancelling ? 'Cancelling…' : 'Cancel Booking',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: cs.error,
+                side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
