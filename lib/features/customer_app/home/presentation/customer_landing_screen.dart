@@ -226,7 +226,8 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     // Determine what stage the job is at so we show the right actions
     final isEstimated       = statusStr == '2_estimated';
     final isBooked          = statusStr == '3_booked';
-    final needsAction       = isEstimated || isBooked; // pre-payment: resumable + cancellable
+    final isInvoiced        = statusStr == '3_inspected'; // Re-V invoice issued, awaiting payment
+    final needsAction       = isEstimated || isBooked || isInvoiced;
     final isActive          = !needsAction && statusStr != '0_cancelled';
 
     // Progress fraction for the progress bar
@@ -341,9 +342,11 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      isEstimated
-                          ? 'Your AI estimate is ready. Continue to complete your booking.'
-                          : 'Your booking is saved. Complete checkout to confirm your slot.',
+                      isInvoiced
+                          ? 'Re-V has issued your invoice. Review the final cost and confirm payment.'
+                          : isEstimated
+                              ? 'Your AI estimate is ready. Continue to complete your booking.'
+                              : 'Your booking is saved. Complete checkout to confirm your slot.',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.primaryContainer,
                         fontWeight: FontWeight.w500,
@@ -420,14 +423,15 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                     onPressed: () {
                       if (isEstimated) {
                         context.push('/booking/$jobId');
+                      } else if (isInvoiced) {
+                        context.push('/checkout/$jobId?paymentOnly=true');
                       } else {
-                        // 3_booked — go straight to checkout
                         context.push('/checkout/$jobId');
                       }
                     },
                     icon: const Icon(Icons.arrow_forward, size: 16),
                     label: Text(
-                      isEstimated ? 'Continue Booking' : 'Complete Checkout',
+                      isInvoiced ? 'Review Invoice & Pay' : (isEstimated ? 'Continue Booking' : 'Complete Checkout'),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(

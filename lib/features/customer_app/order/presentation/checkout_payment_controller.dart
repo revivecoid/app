@@ -24,6 +24,9 @@ class CheckoutState {
   final String? errorMessage;
   final bool isLoading;
   final XFile? transferProof;
+  /// When true, this checkout is payment-only (post-inspection invoice).
+  /// Calendar, logistics, and date selection are hidden.
+  final bool paymentOnlyMode;
 
   CheckoutState({
     required this.jobId,
@@ -38,6 +41,7 @@ class CheckoutState {
     this.errorMessage,
     this.isLoading = false,
     this.transferProof,
+    this.paymentOnlyMode = false,
   });
 
   CheckoutState copyWith({
@@ -53,6 +57,7 @@ class CheckoutState {
     String? errorMessage,
     bool? isLoading,
     XFile? transferProof,
+    bool? paymentOnlyMode,
   }) {
     return CheckoutState(
       jobId: jobId ?? this.jobId,
@@ -67,6 +72,7 @@ class CheckoutState {
       errorMessage: errorMessage ?? this.errorMessage,
       isLoading: isLoading ?? this.isLoading,
       transferProof: transferProof ?? this.transferProof,
+      paymentOnlyMode: paymentOnlyMode ?? this.paymentOnlyMode,
     );
   }
 }
@@ -77,13 +83,23 @@ final checkoutControllerProvider = StateNotifierProvider.family<CheckoutControll
   return CheckoutController(Supabase.instance.client, jobId, intakeState.estimatedCost);
 });
 
+/// Payment-only provider — used when the customer is paying after workshop inspection.
+/// Loads the final_cost set by the partner; hides calendar and logistics fields.
+final paymentOnlyCheckoutProvider = StateNotifierProvider.family<CheckoutController, CheckoutState, String>((ref, jobId) {
+  return CheckoutController(Supabase.instance.client, jobId, 0.0, paymentOnly: true);
+});
+
 class CheckoutController extends StateNotifier<CheckoutState> {
   final SupabaseClient _supabase;
   RealtimeChannel? _paymentChannel;
 
-  CheckoutController(this._supabase, String jobId, double fallbackEstimatedCost)
-      : super(CheckoutState(jobId: jobId, estimatedCost: fallbackEstimatedCost)) {
-    _loadInitialJobDetails(fallbackEstimatedCost);
+  CheckoutController(this._supabase, String jobId, double fallbackEstimatedCost,
+      {bool paymentOnly = false})
+      : super(CheckoutState(
+            jobId: jobId,
+            estimatedCost: fallbackEstimatedCost,
+            paymentOnlyMode: paymentOnly)) {
+    _loadInitialJobDetails(fallbackEstimatedCost, paymentOnly: paymentOnly);
   }
 
   @override
@@ -92,16 +108,20 @@ class CheckoutController extends StateNotifier<CheckoutState> {
     super.dispose();
   }
 
-  Future<void> _loadInitialJobDetails(double fallbackCost) async {
+  Future<void> _loadInitialJobDetails(double fallbackCost,
+      {bool paymentOnly = false}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
+      // Payment-only mode loads final_cost (set by partner after inspection)
+      // Standard mode loads initial_estimation_cost
+      final col = paymentOnly ? 'final_cost' : 'initial_estimation_cost';
       final response = await _supabase
           .from('repair_jobs')
-          .select('initial_estimation_cost')
+          .select(col)
           .eq('id', state.jobId)
           .single();
-          
-      final cost = (response['initial_estimation_cost'] as num?)?.toDouble() ?? fallbackCost;
+
+      final cost = (response[col] as num?)?.toDouble() ?? fallbackCost;
       state = state.copyWith(estimatedCost: cost, isLoading: false);
     } catch (e) {
       // If the job doesn't exist yet (e.g. dummy job id from Estimator), recover from SharedPreferences directly
@@ -222,6 +242,71 @@ class CheckoutController extends StateNotifier<CheckoutState> {
         errorMessage: 'Failed to verify schedule availability. Please try again later.'
       );
       return false;
+    }
+  }
+
+  /// Payment-only execution — used after partner issues invoice (3_inspected → 4_paid).
+  /// Skips booking/scheduling/logistics. Just records proof (if manual) and advances status.
+  Future<void> executePaymentOnly() async {
+    if (state.paymentMethod == PaymentMethod.manualTransfer &&
+        state.transferProof == null) {
+      state = state.copyWith(
+          errorMessage: 'Please upload your transfer proof before confirming.');
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    try {
+      // Upload transfer proof if applicable
+      if (state.paymentMethod == PaymentMethod.manualTransfer &&
+          state.transferProof != null) {
+        final fileExt = state.transferProof!.name.split('.').last;
+        final userId = _supabase.auth.currentUser!.id;
+        final fileName =
+            '$userId/proof_${state.jobId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+        final bytes = await state.transferProof!.readAsBytes();
+        await _supabase.storage.from('revive-photos').uploadBinary(
+              fileName,
+              bytes,
+              fileOptions: FileOptions(contentType: 'image/$fileExt'),
+            );
+        await _supabase.from('repair_photos').insert({
+          'job_id': state.jobId,
+          'step_context': 'payment',
+          'r2_file_key': fileName,
+        });
+      }
+
+      if (state.paymentMethod == PaymentMethod.manualTransfer) {
+        // Manual transfer: inform customer, advance will happen after admin verifies
+        state = state.copyWith(
+          paymentStatus: PaymentStatus.manualTransferPending,
+          isLoading: false,
+        );
+        return;
+      }
+
+      // Online/simulated: advance job to 4_paid via RPC
+      await _supabase.rpc('advance_job_status', params: {
+        'p_job_id': state.jobId,
+        'p_new_status': '4_paid',
+      });
+
+      state = state.copyWith(
+        paymentStatus: PaymentStatus.awaitingWebhook,
+        isLoading: false,
+      );
+      _listenForPaymentWebhook();
+    } catch (e, stackTrace) {
+      debugPrint('PAYMENT_ONLY_ERROR: $e');
+      debugPrint('STACKTRACE: $stackTrace');
+      state = state.copyWith(
+        isLoading: false,
+        paymentStatus: PaymentStatus.failed,
+        errorMessage:
+            'Payment failed to process. Please try again or contact support.',
+      );
     }
   }
 

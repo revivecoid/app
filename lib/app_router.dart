@@ -288,9 +288,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/checkout/:jobId',
         builder: (context, state) {
           final jobId = state.pathParameters['jobId']!;
-          // Provide the missing partnerId required by the earlier constructor
           final partnerId = state.uri.queryParameters['partnerId'] ?? '';
-          return CheckoutPaymentScreen(jobId: jobId, partnerId: partnerId);
+          final paymentOnly = state.uri.queryParameters['paymentOnly'] == 'true';
+          return CheckoutPaymentScreen(
+            jobId: jobId,
+            partnerId: partnerId,
+            paymentOnly: paymentOnly,
+          );
         },
       ),
       GoRoute(

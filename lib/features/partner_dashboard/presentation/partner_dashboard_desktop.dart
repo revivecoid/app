@@ -797,18 +797,35 @@ class _JobCard extends StatelessWidget {
                           SizedBox(width: 6),
                           SizedBox(
                             height: 28,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: color,
-                                foregroundColor: cs.surface,
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                elevation: 0,
-                              ),
-                              icon: Icon(Icons.arrow_forward, size: 13),
-                              label: Text((job.status == '3_booked' || job.status == '4_paid') ? 'Admit Vehicle' : 'Advance', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                              onPressed: () => controller.advanceJobStage(job.id, job.status),
-                            ),
+                            child: job.status == '5_admitted'
+                                // Issue Invoice replaces Advance for admitted jobs
+                                ? ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF059669),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                      elevation: 0,
+                                    ),
+                                    icon: const Icon(Icons.receipt_long_outlined, size: 13),
+                                    label: const Text('Issue Invoice', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    onPressed: () => _showIssueInvoiceDialog(context, job, controller),
+                                  )
+                                : ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: color,
+                                      foregroundColor: cs.surface,
+                                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                      elevation: 0,
+                                    ),
+                                    icon: const Icon(Icons.arrow_forward, size: 13),
+                                    label: Text(
+                                      (job.status == '3_booked' || job.status == '4_paid') ? 'Admit Vehicle' : 'Advance',
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                    onPressed: () => controller.advanceJobStage(job.id, job.status),
+                                  ),
                           ),
                         ],
                       ),
@@ -825,6 +842,128 @@ class _JobCard extends StatelessWidget {
 }
 
 // ─── Empty / Error States ────────────────────────────────────────────────────
+
+/// Shows a dialog for the partner to report the final inspection cost.
+/// Re-V then issues the formal invoice to the customer.
+void _showIssueInvoiceDialog(
+    BuildContext context, PartnerJobNode job, PartnerDashboardController controller) {
+  final cs = Theme.of(context).colorScheme;
+  final ctrl = TextEditingController();
+  bool loading = false;
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setS) => AlertDialog(
+        backgroundColor: cs.surfaceContainerLowest,
+        title: Row(children: [
+          const Icon(Icons.receipt_long_outlined, color: Color(0xFF059669), size: 20),
+          const SizedBox(width: 8),
+          Expanded(child: Text('Issue Invoice — ${job.carMake} ${job.carModel}',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cs.onSurface))),
+        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter the final repair cost based on your physical inspection. '
+              'Re-V will issue a formal invoice to the customer for payment approval.',
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, height: 1.5),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: ctrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Final Repair Cost (IDR)',
+                hintText: 'e.g. 2500000',
+                prefixText: 'Rp ',
+                border: const OutlineInputBorder(),
+                labelStyle: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: loading ? null : () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: cs.onSurfaceVariant)),
+          ),
+          ElevatedButton(
+            onPressed: loading
+                ? null
+                : () async {
+                    final raw = ctrl.text.trim().replaceAll(',', '').replaceAll('.', '');
+                    final amount = double.tryParse(raw);
+                    if (amount == null || amount <= 0) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                        content: Text('Please enter a valid repair cost.'),
+                        backgroundColor: Colors.red,
+                      ));
+                      return;
+                    }
+                    setS(() => loading = true);
+                    try {
+                      final result = await Supabase.instance.client.rpc(
+                        'partner_issue_invoice',
+                        params: {'p_job_id': job.id, 'p_final_cost': amount},
+                      );
+                      final response = result is Map<String, dynamic> ? result : <String, dynamic>{};
+                      if (!ctx.mounted) return;
+                      Navigator.pop(ctx);
+                      if (response['success'] == true) {
+                        // Dispatch notification to customer
+                        await Supabase.instance.client.functions.invoke(
+                          'send-notification',
+                          body: {
+                            'job_id': job.id,
+                            'customer_id': response['customer_id'],
+                            'new_status': '3_inspected',
+                          },
+                        );
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                              'Invoice issued: Rp ${amount.toStringAsFixed(0)}. Customer notified via email & WhatsApp.'),
+                            backgroundColor: const Color(0xFF059669),
+                            duration: const Duration(seconds: 4),
+                          ));
+                        }
+                      } else {
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(response['error']?.toString() ?? 'Failed to issue invoice.'),
+                            backgroundColor: Colors.red,
+                          ));
+                        }
+                      }
+                    } catch (e) {
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      debugPrint('[IssueInvoice] Error: $e');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Error: ${e.toString().replaceAll('PostgrestException', '').trim()}'),
+                          backgroundColor: Colors.red,
+                        ));
+                      }
+                    }
+                  },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF059669),
+              foregroundColor: Colors.white,
+            ),
+            child: loading
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Text('Issue Invoice', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

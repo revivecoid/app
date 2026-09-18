@@ -229,13 +229,22 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
   }
 
   /// Advances the vehicle to the next pipeline stage safely.
+  /// NOTE: 3_inspected and 4_paid are NOT in this path — invoice issuance
+  /// is done via partner_issue_invoice RPC, and payment is customer-initiated.
   Future<void> advanceJobStage(String jobId, String currentStage) async {
-    final idx = _stages.indexOf(currentStage);
-    if (idx == -1 || idx >= _stages.length - 1) return;
+    // Partner cannot advance to 3_inspected (done via Issue Invoice dialog)
+    // or to 4_paid (customer-only after invoice review).
+    // Handled stages: 3_booked/4_paid → 5_admitted, 5_admitted → 6_in_progress,
+    //                 6_in_progress → 7_finished, 7_finished → 8_awaiting_delivery
+    final partnerAdvanceMap = <String, String>{
+      '3_booked': '5_admitted',
+      '5_admitted': '6_in_progress',
+      '6_in_progress': '7_finished',
+      '7_finished': '8_awaiting_delivery',
+    };
 
-    final nextStage = (currentStage == '3_booked' || currentStage == '4_paid')
-        ? '5_admitted'
-        : _stages[idx + 1];
+    final nextStage = partnerAdvanceMap[currentStage];
+    if (nextStage == null) return; // No valid advance for this status
 
     try {
       // Optimistic local update — move card immediately in the UI

@@ -74,7 +74,7 @@ class BookingSchedulingScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 40),
                   ElevatedButton.icon(
-                    onPressed: () => context.push('/checkout/$jobId'),
+                    onPressed: () => context.go('/'),  // Booking confirmed — payment happens after workshop inspection
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.fireRed,
                       padding: const EdgeInsets.symmetric(

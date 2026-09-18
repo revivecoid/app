@@ -12,11 +12,13 @@ import 'checkout_payment_controller.dart';
 class CheckoutPaymentScreen extends ConsumerStatefulWidget {
   final String jobId;
   final String partnerId;
+  final bool paymentOnly;
 
   const CheckoutPaymentScreen({
     super.key,
     required this.jobId,
     required this.partnerId,
+    this.paymentOnly = false,
   });
 
   @override
@@ -85,11 +87,19 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(checkoutControllerProvider(widget.jobId));
-    final controller = ref.read(checkoutControllerProvider(widget.jobId).notifier);
+    final state = ref.watch(widget.paymentOnly
+        ? paymentOnlyCheckoutProvider(widget.jobId)
+        : checkoutControllerProvider(widget.jobId));
+    final controller = ref.read(widget.paymentOnly
+        ? paymentOnlyCheckoutProvider(widget.jobId).notifier
+        : checkoutControllerProvider(widget.jobId).notifier);
+
+    final activeProvider = widget.paymentOnly
+        ? paymentOnlyCheckoutProvider(widget.jobId)
+        : checkoutControllerProvider(widget.jobId);
 
     // Defensive structural listener for error states and network webhook confirmations
-    ref.listen<CheckoutState>(checkoutControllerProvider(widget.jobId), (previous, next) {
+    ref.listen<CheckoutState>(activeProvider, (previous, next) {
       if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(next.errorMessage!), backgroundColor: AppColors.fireRed),
@@ -109,6 +119,40 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
         return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Payment-only mode: show invoice header ─────────────────────────
+          if (state.paymentOnlyMode) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: AppColors.fireRed.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.fireRed.withValues(alpha: 0.25)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    const Icon(Icons.receipt_long_outlined, color: AppColors.fireRed, size: 18),
+                    const SizedBox(width: 8),
+                    Text('Workshop Invoice', style: TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 15,
+                      color: Theme.of(ctx).colorScheme.onSurface)),
+                  ]),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Your vehicle has been inspected. The workshop has set the final repair cost below. '
+                    'Please choose your payment method and confirm.',
+                    style: TextStyle(fontSize: 13, color: Theme.of(ctx).colorScheme.onSurfaceVariant, height: 1.5),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // ── Logistics (hidden in payment-only mode) ─────────────────────────
+          if (!state.paymentOnlyMode) ...[
           Text(l.checkoutLogistics, style: Theme.of(ctx).textTheme.headlineSmall),
           const SizedBox(height: 16),
           
@@ -206,10 +250,12 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
                 ),
               ),
             ),
+          ], // end !paymentOnlyMode logistics block
           
           const SizedBox(height: 32),
           
-          // STRICT REQUIREMENT 4: CALENDAR SCHEDULER
+          // STRICT REQUIREMENT 4: CALENDAR SCHEDULER (hidden in payment-only mode)
+          if (!state.paymentOnlyMode) ...[
           Text(AppL.of(ctx)!.checkoutSchedule, style: Theme.of(ctx).textTheme.headlineSmall),
           const SizedBox(height: 16),
           Container(
@@ -236,6 +282,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
             ),
 
           const SizedBox(height: 32),
+          ], // end !paymentOnlyMode calendar block
 
           Text(AppL.of(ctx)!.checkoutPayment, style: Theme.of(ctx).textTheme.headlineSmall),
           const SizedBox(height: 16),
@@ -315,7 +362,10 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('AI Estimate Summary', style: TextStyle(fontSize: 18, color: AppColors.textSecondary)),
+          Text(
+            state.paymentOnlyMode ? 'Workshop Invoice — Final Cost' : 'AI Estimate Summary',
+            style: const TextStyle(fontSize: 18, color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 8),
           Text(
             'IDR ${state.estimatedCost.toStringAsFixed(2)}', 
@@ -330,10 +380,16 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
             onPressed: state.isLoading || state.paymentStatus == PaymentStatus.awaitingWebhook
                 ? null 
                 : () {
-                    if (state.deliveryOption == DeliveryOption.pickup && !_formKey.currentState!.validate()) {
-                      return; // Block UI from advancing if validations fail
+                    if (!state.paymentOnlyMode &&
+                        state.deliveryOption == DeliveryOption.pickup &&
+                        !_formKey.currentState!.validate()) {
+                      return;
                     }
-                    controller.executePaymentAndBooking();
+                    if (state.paymentOnlyMode) {
+                      controller.executePaymentOnly();
+                    } else {
+                      controller.executePaymentAndBooking();
+                    }
                   },
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 20),

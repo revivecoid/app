@@ -11,8 +11,9 @@ const _statusSteps = [
   '1_intake',
   '2_estimated',
   '3_booked',
-  '4_paid',
   '5_admitted',
+  '3_inspected',       // Vehicle physically inspected, invoice issued by workshop
+  '4_paid',
   '6_in_progress',
   '7_finished',
   '8_awaiting_delivery',
@@ -23,20 +24,16 @@ const _statusSteps = [
 // See _stepLabel(l, index) / _stepDesc(l, index) helpers below.
 
 String _stepLabel(AppL l, int i) {
-  const keys = [
-    'trackingStepIntake', 'trackingStepEvaluated', 'trackingStepBooked',
-    'trackingStepPaid', 'trackingStepAdmitted', 'trackingStepActive',
-    'trackingStepQC', 'trackingStepReady', 'trackingStepDone',
-  ];
   switch (i) {
     case 0: return l.trackingStepIntake;
     case 1: return l.trackingStepEvaluated;
     case 2: return l.trackingStepBooked;
-    case 3: return l.trackingStepPaid;
-    case 4: return l.trackingStepAdmitted;
-    case 5: return l.trackingStepActive;
-    case 6: return l.trackingStepQC;
-    case 7: return l.trackingStepReady;
+    case 3: return l.trackingStepAdmitted;
+    case 4: return 'Invoice Issued';        // 3_inspected: workshop reports, Re-V issues invoice
+    case 5: return l.trackingStepPaid;
+    case 6: return l.trackingStepActive;
+    case 7: return l.trackingStepQC;
+    case 8: return l.trackingStepReady;
     default: return l.trackingStepDone;
   }
 }
@@ -46,11 +43,13 @@ String _stepDesc(AppL l, int i) {
     case 0: return l.trackingDescIntake;
     case 1: return l.trackingDescEvaluated;
     case 2: return l.trackingDescBooked;
-    case 3: return l.trackingDescPaid;
-    case 4: return l.trackingDescAdmitted;
-    case 5: return l.trackingDescActive;
-    case 6: return l.trackingDescQC;
-    case 7: return l.trackingDescReady;
+    case 3: return l.trackingDescAdmitted;
+    case 4: return 'The workshop has completed physical inspection and reported the final repair cost. '
+        'Re-V has issued your official invoice — please review and confirm payment to begin repairs.';
+    case 5: return l.trackingDescPaid;
+    case 6: return l.trackingDescActive;
+    case 7: return l.trackingDescQC;
+    case 8: return l.trackingDescReady;
     default: return l.trackingDescDone;
   }
 }
@@ -141,9 +140,10 @@ class _LiveStepperTimelineState extends ConsumerState<LiveStepperTimeline> {
     final mutedColor = cs.onSurfaceVariant;
 
     final status = streamState.currentStatus;
-    final isEstimated = status == '2_estimated';
-    final isBooked    = status == '3_booked';
-    final needsAction = isEstimated || isBooked;
+    final isEstimated  = status == '2_estimated';
+    final isBooked     = status == '3_booked';
+    final isInvoiced   = status == '3_inspected'; // Re-V invoice issued, awaiting payment
+    final needsAction  = isEstimated || isBooked || isInvoiced;
 
     return LayoutBuilder(builder: (context, constraints) {
       final isDesktop = constraints.maxWidth > 900;
@@ -207,6 +207,7 @@ class _LiveStepperTimelineState extends ConsumerState<LiveStepperTimeline> {
         bottomNavigationBar: needsAction
             ? _ActionBar(
                 isEstimated: isEstimated,
+                isInvoiced: isInvoiced,
                 jobId: widget.jobId,
                 isCancelling: _isCancelling,
                 onCancel: _confirmAndCancelJob,
@@ -441,16 +442,44 @@ class _TrackerBody extends StatelessWidget {
 // ─── Action Bar — shown only for pre-payment jobs ────────────────────────────
 class _ActionBar extends StatelessWidget {
   final bool isEstimated;
+  final bool isInvoiced;
   final String jobId;
   final bool isCancelling;
   final VoidCallback onCancel;
 
   const _ActionBar({
     required this.isEstimated,
+    required this.isInvoiced,
     required this.jobId,
     required this.isCancelling,
     required this.onCancel,
   });
+
+  String get _hint {
+    if (isInvoiced) {
+      return 'Re-V has issued your repair invoice based on the workshop inspection. '
+          'Review the final cost and choose your payment method.';
+    }
+    if (isEstimated) return 'Your AI estimate is ready — complete your booking to confirm.';
+    return 'Booking saved — complete checkout to secure your repair slot.';
+  }
+
+  String get _buttonLabel {
+    if (isInvoiced) return 'Review Invoice & Pay';
+    if (isEstimated) return 'Continue Booking';
+    return 'Complete Checkout';
+  }
+
+  void _onContinue(BuildContext context) {
+    if (isEstimated) {
+      context.push('/booking/$jobId');
+    } else if (isInvoiced) {
+      // Payment-only mode — loads final_cost from DB, hides calendar/logistics
+      context.push('/checkout/$jobId?paymentOnly=true');
+    } else {
+      context.push('/checkout/$jobId');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -485,16 +514,14 @@ class _ActionBar extends StatelessWidget {
                 const Icon(Icons.info_outline, size: 15, color: AppColors.fireRed),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    isEstimated
-                        ? 'Your AI estimate is ready — complete your booking to confirm.'
-                        : 'Booking saved — complete checkout to secure your repair slot.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.fireRed,
-                      fontWeight: FontWeight.w500,
-                    ),
+                child: Text(
+                  _hint,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.fireRed,
+                    fontWeight: FontWeight.w500,
                   ),
+                ),
                 ),
               ],
             ),
@@ -531,16 +558,10 @@ class _ActionBar extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: isCancelling
                       ? null
-                      : () {
-                          if (isEstimated) {
-                            context.push('/booking/$jobId');
-                          } else {
-                            context.push('/checkout/$jobId');
-                          }
-                        },
+                      : () => _onContinue(context),
                   icon: const Icon(Icons.arrow_forward, size: 16),
                   label: Text(
-                    isEstimated ? 'Continue Booking' : 'Complete Checkout',
+                    _buttonLabel,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
