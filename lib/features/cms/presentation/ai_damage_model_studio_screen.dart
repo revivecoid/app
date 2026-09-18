@@ -12,7 +12,7 @@ class AiDamageModelStudioScreen extends StatelessWidget {
     
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const ReVAppBar(),
+      appBar: const ReVAppBar(showBackButton: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(

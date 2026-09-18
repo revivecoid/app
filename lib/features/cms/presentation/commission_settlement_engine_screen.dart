@@ -120,7 +120,7 @@ class _CommissionSettlementEngineScreenState extends State<CommissionSettlementE
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: const ReVAppBar(),
+      appBar: const ReVAppBar(showBackButton: true),
       body: ResponsiveLayoutGuard(
         mobileWidget: content,
         desktopWidget: Center(

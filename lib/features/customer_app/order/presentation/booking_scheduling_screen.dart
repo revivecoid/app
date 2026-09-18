@@ -34,7 +34,7 @@ class BookingSchedulingScreen extends ConsumerWidget {
       final isDesktop = constraints.maxWidth > 900;
 
       Widget inner = Scaffold(
-        appBar: ReVAppBar(title: const Text('Book Your Repair')),
+        appBar: ReVAppBar(title: const Text('Book Your Repair'), showBackButton: true),
         body: SafeArea(
           child: Center(
             child: Padding(

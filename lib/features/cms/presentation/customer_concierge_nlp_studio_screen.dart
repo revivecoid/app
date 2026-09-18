@@ -115,7 +115,7 @@ class _CustomerConciergeNlpStudioScreenState extends State<CustomerConciergeNlpS
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: const ReVAppBar(),
+      appBar: const ReVAppBar(showBackButton: true),
       body: ResponsiveLayoutGuard(
         mobileWidget: content,
         desktopWidget: Center(

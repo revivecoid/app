@@ -327,7 +327,7 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
 
     return Scaffold(
       backgroundColor: cs.surface,
-      appBar: const ReVAppBar(),
+      appBar: const ReVAppBar(showBackButton: true),
       body: ResponsiveLayoutGuard(
         mobileWidget: body,
         desktopWidget: Center(

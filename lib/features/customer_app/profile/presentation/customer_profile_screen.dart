@@ -180,7 +180,9 @@ class CustomerProfileScreen extends ConsumerWidget {
     final userAvatar = user?.userMetadata?['avatar_url']?.toString();
     final initials = _initials(userName.isNotEmpty ? userName : userEmail);
 
-    return Scaffold(
+    return LayoutBuilder(builder: (context, constraints) {
+      final isDesktop = constraints.maxWidth > 900;
+      Widget inner = Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
@@ -320,7 +322,11 @@ class CustomerProfileScreen extends ConsumerWidget {
         ),
       ),
       bottomNavigationBar: _buildBottomNav(context),
-    );
+    );   // Scaffold
+      return isDesktop
+          ? Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: inner))
+          : inner;
+    });  // LayoutBuilder
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -377,8 +383,19 @@ class CustomerProfileScreen extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Logo
-          InkWell(
+          // Back button (if can pop) + Logo
+          Row(
+            children: [
+              if (context.canPop())
+                IconButton(
+                  icon: Icon(Icons.arrow_back,
+                      color: Theme.of(context).colorScheme.onSurface, size: 22),
+                  onPressed: () => context.pop(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              if (context.canPop()) const SizedBox(width: 4),
+              InkWell(
             onTap: () => context.go('/'),
             borderRadius: BorderRadius.circular(8),
             child: Row(
@@ -408,6 +425,8 @@ class CustomerProfileScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ),          // InkWell (logo)
+            ],          // inner Row: back + logo
           ),
           // Action icons
           Row(
