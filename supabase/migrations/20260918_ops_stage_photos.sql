@@ -353,36 +353,28 @@ GRANT EXECUTE ON FUNCTION public.ops_complete_delivery(UUID, TEXT[]) TO authenti
 
 
 -- ---------------------------------------------------------------------------
--- 6. Storage: Allow ops roles to upload to revive-photos bucket
---    The existing partner_mechanic policy covers the bucket; we extend it
---    to partner_staff and partner_driver for the ops/milestone folder only.
---    File path convention enforced by app code:
+-- 6. Storage: Allow ops roles to upload/read from revive-photos bucket.
+--    Policies live on storage.objects (Supabase RLS), NOT storage.policies.
+--    File path convention enforced by app:
 --      ops/{partner_id}/{job_id}/{stage_key}/{filename}
 -- ---------------------------------------------------------------------------
 
--- Allow ops roles to INSERT objects into revive-photos
--- (Supabase storage RLS policies live in the storage schema)
-INSERT INTO storage.policies (name, bucket_id, operation, definition)
-SELECT
-  'ops_roles_can_upload_milestone_photos',
-  'revive-photos',
-  'INSERT',
-  $$( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('partner_staff', 'partner_driver') )$$
-WHERE NOT EXISTS (
-  SELECT 1 FROM storage.policies
-  WHERE name = 'ops_roles_can_upload_milestone_photos'
-    AND bucket_id = 'revive-photos'
-);
+DROP POLICY IF EXISTS "Ops roles can upload milestone photos" ON storage.objects;
+CREATE POLICY "Ops roles can upload milestone photos"
+  ON storage.objects FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    bucket_id = 'revive-photos'
+    AND (auth.jwt() -> 'app_metadata' ->> 'role') IN ('partner_staff', 'partner_driver')
+    AND (storage.foldername(name))[1] = 'ops'
+  );
 
--- Allow ops roles to SELECT (read signed URLs) their own uploads
-INSERT INTO storage.policies (name, bucket_id, operation, definition)
-SELECT
-  'ops_roles_can_read_milestone_photos',
-  'revive-photos',
-  'SELECT',
-  $$( (auth.jwt() -> 'app_metadata' ->> 'role') IN ('partner_staff', 'partner_driver') )$$
-WHERE NOT EXISTS (
-  SELECT 1 FROM storage.policies
-  WHERE name = 'ops_roles_can_read_milestone_photos'
-    AND bucket_id = 'revive-photos'
-);
+DROP POLICY IF EXISTS "Ops roles can read milestone photos" ON storage.objects;
+CREATE POLICY "Ops roles can read milestone photos"
+  ON storage.objects FOR SELECT
+  TO authenticated
+  USING (
+    bucket_id = 'revive-photos'
+    AND (auth.jwt() -> 'app_metadata' ->> 'role') IN ('partner_staff', 'partner_driver')
+    AND (storage.foldername(name))[1] = 'ops'
+  );
