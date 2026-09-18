@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import 'job_stream_controller.dart';
@@ -55,13 +56,83 @@ String _stepDesc(AppL l, int i) {
 }
 
 // ─── Main Screen ────────────────────────────────────────────────────────────
-class LiveStepperTimeline extends ConsumerWidget {
+class LiveStepperTimeline extends ConsumerStatefulWidget {
   final String jobId;
-  LiveStepperTimeline({super.key, required this.jobId});
+  const LiveStepperTimeline({super.key, required this.jobId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final streamState = ref.watch(jobStreamProvider(jobId));
+  ConsumerState<LiveStepperTimeline> createState() => _LiveStepperTimelineState();
+}
+
+class _LiveStepperTimelineState extends ConsumerState<LiveStepperTimeline> {
+  bool _isCancelling = false;
+
+  // ── Cancel RPC ─────────────────────────────────────────────────────────────
+  Future<void> _confirmAndCancelJob() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.orange),
+          SizedBox(width: 10),
+          Text('Cancel Repair Job?'),
+        ]),
+        content: const Text(
+          'This will cancel your repair request and release any booking slot.\n\n'
+          'You can start a new estimate at any time.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep Job'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+    setState(() => _isCancelling = true);
+
+    try {
+      final result = await Supabase.instance.client
+          .rpc('customer_cancel_job', params: {'p_job_id': widget.jobId});
+      final response = result is Map<String, dynamic> ? result : <String, dynamic>{};
+
+      if (!mounted) return;
+      if (response['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Job cancelled. You can start a new estimate anytime.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 4),
+        ));
+        context.go('/'); // Back to landing
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(response['error']?.toString() ?? 'Could not cancel. Please try again.'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    } catch (e) {
+      debugPrint('[Tracker] Cancel error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error: ${e.toString().replaceAll('PostgrestException', '').trim()}'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _isCancelling = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final streamState = ref.watch(jobStreamProvider(widget.jobId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
     final bg = cs.surface;
@@ -69,76 +140,94 @@ class LiveStepperTimeline extends ConsumerWidget {
     final textColor = cs.onSurface;
     final mutedColor = cs.onSurfaceVariant;
 
+    final status = streamState.currentStatus;
+    final isEstimated = status == '2_estimated';
+    final isBooked    = status == '3_booked';
+    final needsAction = isEstimated || isBooked;
+
     return LayoutBuilder(builder: (context, constraints) {
       final isDesktop = constraints.maxWidth > 900;
       Widget inner = Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 1,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textColor),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(AppL.of(context)!.trackingLiveTracker, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
-            Text(
-              jobId.length > 8 ? '#${jobId.substring(0, 8).toUpperCase()}' : '#$jobId',
-              style: TextStyle(fontSize: 11, color: AppColors.fireRed, letterSpacing: 1.0),
+        backgroundColor: bg,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          elevation: 1,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: textColor),
+            onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(AppL.of(context)!.trackingLiveTracker, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
+              Text(
+                widget.jobId.length > 8 ? '#${widget.jobId.substring(0, 8).toUpperCase()}' : '#${widget.jobId}',
+                style: TextStyle(fontSize: 11, color: AppColors.fireRed, letterSpacing: 1.0),
+              ),
+            ],
+          ),
+          actions: [
+            if (streamState.isDisconnected)
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Chip(
+                  backgroundColor: Colors.orange,
+                  label: Text('Reconnecting…', style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 11)),
+                  padding: EdgeInsets.zero,
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Chip(
+                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.circle, size: 8, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 4),
+                      Text('LIVE', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 11, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+            IconButton(
+              icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: mutedColor),
+              tooltip: 'Toggle Theme',
+              onPressed: () {
+                ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
+              },
             ),
+            const SizedBox(width: 8),
           ],
         ),
-        actions: [
-          if (streamState.isDisconnected)
-            Padding(
-              padding: EdgeInsets.only(right: 12),
-              child: Chip(
-                backgroundColor: Colors.orange,
-                label: Text('Reconnecting…', style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 11)),
-                padding: EdgeInsets.zero,
+
+        // ── Bottom action bar — only shown for pre-payment states ──────────
+        bottomNavigationBar: needsAction
+            ? _ActionBar(
+                isEstimated: isEstimated,
+                jobId: widget.jobId,
+                isCancelling: _isCancelling,
+                onCancel: _confirmAndCancelJob,
+              )
+            : null,
+
+        body: streamState.isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppColors.fireRed))
+            : _TrackerBody(
+                jobId: widget.jobId,
+                status: status,
+                photos: streamState.photos,
+                cardColor: cardColor,
+                textColor: textColor,
+                mutedColor: mutedColor,
+                isDark: isDark,
               ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Chip(
-                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.circle, size: 8, color: Theme.of(context).colorScheme.primary),
-                    SizedBox(width: 4),
-                    Text('LIVE', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 11, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                padding: EdgeInsets.zero,
-              ),
-            ),
-          IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: mutedColor),
-            tooltip: 'Toggle Theme',
-            onPressed: () {
-              ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
-            },
-          ),
-          SizedBox(width: 8),
-        ],
-      ),
-      body: streamState.isLoading
-          ? Center(child: CircularProgressIndicator(color: AppColors.fireRed))
-          : _TrackerBody(
-              jobId: jobId,
-              status: streamState.currentStatus,
-              photos: streamState.photos,
-              cardColor: cardColor,
-              textColor: textColor,
-              mutedColor: mutedColor,
-              isDark: isDark,
-            ),
-    );
-      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+      );
+      return isDesktop
+          ? Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: inner))
+          : inner;
     });
   }
 }
@@ -345,6 +434,127 @@ class _TrackerBody extends StatelessWidget {
         boxShadow: [BoxShadow(color: Color(0xFF000000).withValues(alpha: 0.06), blurRadius: 6, offset: Offset(0, 2))],
       ),
       child: child,
+    );
+  }
+}
+
+// ─── Action Bar — shown only for pre-payment jobs ────────────────────────────
+class _ActionBar extends StatelessWidget {
+  final bool isEstimated;
+  final String jobId;
+  final bool isCancelling;
+  final VoidCallback onCancel;
+
+  const _ActionBar({
+    required this.isEstimated,
+    required this.jobId,
+    required this.isCancelling,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        boxShadow: [
+          BoxShadow(
+            color: cs.onSurface.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Info hint
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: AppColors.fireRed.withValues(alpha: 0.07),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.fireRed.withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, size: 15, color: AppColors.fireRed),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    isEstimated
+                        ? 'Your AI estimate is ready — complete your booking to confirm.'
+                        : 'Booking saved — complete checkout to secure your repair slot.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.fireRed,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Buttons
+          Row(
+            children: [
+              // Cancel
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: isCancelling ? null : onCancel,
+                  icon: isCancelling
+                      ? const SizedBox(
+                          width: 14, height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
+                        )
+                      : const Icon(Icons.cancel_outlined, size: 16),
+                  label: Text(
+                    isCancelling ? 'Cancelling…' : 'Cancel Job',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: cs.error,
+                    side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Continue
+              Expanded(
+                flex: 2,
+                child: ElevatedButton.icon(
+                  onPressed: isCancelling
+                      ? null
+                      : () {
+                          if (isEstimated) {
+                            context.push('/booking/$jobId');
+                          } else {
+                            context.push('/checkout/$jobId');
+                          }
+                        },
+                  icon: const Icon(Icons.arrow_forward, size: 16),
+                  label: Text(
+                    isEstimated ? 'Continue Booking' : 'Complete Checkout',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.fireRed,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
