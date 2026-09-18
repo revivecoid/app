@@ -70,7 +70,8 @@ class OpsLogisticsScreen extends ConsumerWidget {
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: () {
-                    context.push('/ops/logistics/intake/${job['id']}');
+                    final customerId = job['customer_id']?.toString() ?? '';
+                    context.push('/ops/logistics/intake/${job['id']}/$customerId');
                   },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,7 +122,8 @@ class OpsLogisticsScreen extends ConsumerWidget {
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 onPressed: () {
-                                  context.push('/ops/logistics/intake/${job['id']}');
+                                  final customerId = job['customer_id']?.toString() ?? '';
+                                  context.push('/ops/logistics/intake/${job['id']}/$customerId');
                                 },
                                 icon: Icon(isPickup ? Icons.camera_alt : Icons.check_circle),
                                 label: Text(isPickup ? 'Start Pickup Intake' : 'Complete Delivery'),

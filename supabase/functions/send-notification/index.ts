@@ -8,11 +8,25 @@ const STATUS_MESSAGES: Record<string, { title: string; body: string; type: strin
   "2_estimated": { title: "Estimasi Kerusakan Selesai", body: "AI vision kami telah selesai menganalisis kerusakan kendaraan Anda. Tinjau hasil estimasi dan konfirmasi booking.", type: "status_update" },
   "3_booked":    { title: "Booking Dikonfirmasi", body: "Workshop kami menerima booking Anda. Tim kami akan segera menghubungi Anda untuk konfirmasi jadwal.", type: "status_update" },
   "4_paid":      { title: "Pembayaran Diterima", body: "Pembayaran Anda telah dikonfirmasi. Kendaraan Anda akan segera diproses sesuai jadwal.", type: "status_update" },
-  "5_admitted":  { title: "Kendaraan Diterima di Bengkel", body: "Kendaraan Anda telah diterima dan sedang dalam pemeriksaan awal oleh tim teknisi kami.", type: "status_update" },
+  "5_admitted":  { title: "Kendaraan Diterima di Bengkel", body: "Kendaraan Anda telah diterima dan sedang dalam pemeriksaan awal oleh tim teknisi kami. Foto kondisi kendaraan saat masuk telah diambil.", type: "status_update" },
   "6_in_progress":{ title: "Proses Perbaikan Dimulai", body: "Kendaraan Anda sedang dalam proses perbaikan di divisi Body dan Paint. Kami akan memberi tahu Anda saat selesai.", type: "status_update" },
   "7_finished":  { title: "Perbaikan Selesai - Quality Check", body: "Perbaikan hampir selesai! Kendaraan Anda sedang memasuki tahap Quality Control untuk memastikan standar terbaik.", type: "status_update" },
   "8_awaiting_delivery": { title: "Kendaraan Siap Diambil!", body: "Kendaraan Anda telah selesai diperbaiki dan siap untuk diambil. Silakan datang ke workshop kami.", type: "pickup_ready" },
   "9_done":      { title: "Terima Kasih!", body: "Kendaraan Anda telah diserahkan. Kami harap Anda puas dengan layanan Revive. Sampai jumpa!", type: "general" },
+};
+
+// Milestone stage notifications — triggered by ops staff per repair stage.
+// These are ADDITIONAL in-app + multi-channel updates sent to the customer
+// as each physical repair stage is completed with photographic evidence.
+const MILESTONE_MESSAGES: Record<string, { title: string; body: string }> = {
+  "vehicle_intake":  { title: "Kendaraan Tiba di Bengkel", body: "Kendaraan Anda telah diterima oleh tim kami. Dokumentasi kondisi awal kendaraan sudah tersimpan." },
+  "disassembly":     { title: "Tahap Pembongkaran Selesai", body: "Panel yang rusak telah dibongkar dan diidentifikasi. Tim teknisi kami sedang memulai proses perbaikan." },
+  "welding":         { title: "Tahap Pengelasan Selesai", body: "Perbaikan struktur bodi dan pengelasan telah selesai dilakukan oleh teknisi berpengalaman kami." },
+  "body_filler":     { title: "Tahap Dempul Selesai", body: "Aplikasi dempul (body filler) telah selesai. Permukaan kendaraan Anda sedang dipersiapkan untuk pengecatan." },
+  "painting":        { title: "Tahap Pengecatan Selesai", body: "Kendaraan Anda telah melalui proses pengecatan. Warna disesuaikan dengan warna asli kendaraan Anda." },
+  "polishing":       { title: "Tahap Poles Selesai", body: "Proses poles dan detailing telah selesai. Kendaraan Anda kini terlihat seperti baru!" },
+  "qc_finished":     { title: "Quality Control Lulus!", body: "Kendaraan Anda telah lulus Quality Control dan siap untuk diserahkan. Terima kasih atas kepercayaan Anda." },
+  "delivery":        { title: "Kendaraan Telah Diserahkan", body: "Proses serah terima kendaraan Anda telah selesai dengan dokumentasi lengkap. Terima kasih telah memilih Revive!" },
 };
 
 // SEC-15 FIX: Escape HTML special characters to prevent XSS
@@ -100,15 +114,53 @@ serve(async (req) => {
   const supabaseUrl     = Deno.env.get("SUPABASE_URL")!;
   const supabase        = createClient(supabaseUrl, serviceRoleKey);
 
-  let payload: { job_id: string; customer_id: string; old_status: string; new_status: string };
+  // Payload supports two modes:
+  //   1. Status transition: { job_id, customer_id, old_status, new_status }
+  //   2. Milestone stage:   { job_id, customer_id, milestone_stage_key }
+  let payload: {
+    job_id: string;
+    customer_id: string;
+    old_status?: string;
+    new_status?: string;
+    milestone_stage_key?: string;
+  };
   try { payload = await req.json(); }
   catch { return new Response("Invalid JSON", { status: 400 }); }
 
-  const { job_id, customer_id, new_status } = payload;
-  const message = STATUS_MESSAGES[new_status];
-  if (!message) {
-    console.log(`[Notification] No message for status: ${new_status}`);
-    return new Response(JSON.stringify({ skipped: true }), { status: 200 });
+  const { job_id, customer_id, new_status, milestone_stage_key } = payload;
+
+  // ── Resolve which message to send ─────────────────────────────────────────
+  let title: string;
+  let body: string;
+  let type: string;
+  let notifType: string;
+
+  if (milestone_stage_key) {
+    // Milestone notification path
+    const ms = MILESTONE_MESSAGES[milestone_stage_key];
+    if (!ms) {
+      console.log(`[Notification] No message for milestone: ${milestone_stage_key}`);
+      return new Response(JSON.stringify({ skipped: true }), { status: 200 });
+    }
+    title = ms.title;
+    body  = ms.body;
+    type  = "milestone_update";
+    notifType = "milestone_update";
+    console.log(`[Notification] Milestone ${milestone_stage_key} for job ${job_id}`);
+  } else if (new_status) {
+    // Status transition path
+    const message = STATUS_MESSAGES[new_status];
+    if (!message) {
+      console.log(`[Notification] No message for status: ${new_status}`);
+      return new Response(JSON.stringify({ skipped: true }), { status: 200 });
+    }
+    title = message.title;
+    body  = message.body;
+    type  = message.type;
+    notifType = message.type;
+    console.log(`[Notification] Status ${new_status} for job ${job_id}`);
+  } else {
+    return new Response(JSON.stringify({ error: "Must provide new_status or milestone_stage_key" }), { status: 400 });
   }
 
   const { data: prefs } = await supabase
@@ -126,24 +178,25 @@ serve(async (req) => {
   // 1. In-App
   if ((prefs as any)?.in_app !== false) {
     const { error } = await supabase.from("notifications").insert({
-      user_id: customer_id, job_id, title: message.title, body: message.body, type: message.type,
+      user_id: customer_id, job_id, title, body, type: notifType,
     });
     results.in_app = error ? "error" : "sent";
   } else { results.in_app = "disabled"; }
 
   // 2. Email
   if ((prefs as any)?.email !== false && (prefs as any)?.email_address) {
-    await sendEmail((prefs as any).email_address, message.title, message.body, job_id);
+    await sendEmail((prefs as any).email_address, title, body, job_id);
     results.email = "sent";
   } else { results.email = (prefs as any)?.email !== false ? "no_address" : "disabled"; }
 
   // 3. WhatsApp
   if ((prefs as any)?.whatsapp === true && (prefs as any)?.whatsapp_number) {
-    await sendWhatsApp((prefs as any).whatsapp_number, customerName, message.title, message.body);
+    await sendWhatsApp((prefs as any).whatsapp_number, customerName, title, body);
     results.whatsapp = "sent";
   } else { results.whatsapp = (prefs as any)?.whatsapp ? "no_number" : "disabled"; }
 
-  console.log(`[Notification] Job ${job_id} -> ${new_status}:`, results);
+  const logKey = milestone_stage_key ?? new_status ?? "unknown";
+  console.log(`[Notification] Job ${job_id} -> ${logKey}:`, results);
   return new Response(JSON.stringify({ success: true, results }), {
     status: 200, headers: { "Content-Type": "application/json" },
   });
