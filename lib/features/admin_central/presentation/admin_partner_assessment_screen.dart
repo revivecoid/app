@@ -211,7 +211,7 @@ class _AdminPartnerAssessmentScreenState
 
     return Scaffold(
       backgroundColor: cs.surface,
-      appBar: const ReVAppBar(),
+      appBar: const ReVAppBar(showBackButton: true),
       body: Column(children: [
           // Header bar
           Container(

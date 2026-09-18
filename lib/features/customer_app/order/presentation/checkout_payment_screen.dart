@@ -354,7 +354,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
 
     // STRICT REQUIREMENT 2: Responsive Layout implementation
     return Scaffold(
-      appBar: ReVAppBar(title: Builder(builder: (ctx) => Text(AppL.of(ctx)!.checkoutTitle))),
+      appBar: ReVAppBar(title: Builder(builder: (ctx) => Text(AppL.of(ctx)!.checkoutTitle)), showBackButton: true),
       body: ResponsiveLayoutGuard(
         mobileWidget: Column(
           children: [

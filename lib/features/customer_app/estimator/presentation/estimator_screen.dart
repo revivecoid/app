@@ -1253,8 +1253,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       Widget inner = Scaffold(
       backgroundColor: (isDark ? AppColors.surface : Theme.of(context).colorScheme.surface),
       appBar: ReVAppBar(
-        title: Text('AI Body Repair Estimator'),
-      ),
+              title: const Text('AI Body Repair Estimator'),
+              showBackButton: true,
+            ),
       body: Stack(
         children: [
           SingleChildScrollView(

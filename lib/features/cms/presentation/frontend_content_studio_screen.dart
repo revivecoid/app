@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
@@ -159,6 +160,16 @@ class _Header extends StatelessWidget {
         Container(height: 56, padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(border: Border(bottom: BorderSide(color: cs.surfaceContainerHigh))),
           child: Row(children: [
+            // Back to Admin Central
+            InkWell(
+              onTap: () => context.canPop() ? context.pop() : context.go('/admin-central'),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                child: Icon(Icons.arrow_back, size: 20, color: cs.onSurfaceVariant),
+              ),
+            ),
+            const SizedBox(width: 8),
             Icon(Icons.tune_rounded, color: cs.primary, size: 20),
             const SizedBox(width: 8),
             Text('Frontend CMS', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w800, fontSize: 15)),
