@@ -47,7 +47,8 @@ class ReVApp extends ConsumerWidget {
     final currentThemeMode = ref.watch(themeModeProvider);
     final currentLocale = ref.watch(localeProvider);
 
-    return MaterialApp.router(
+    return SelectionArea(
+      child: MaterialApp.router(
       title: 're-V.co.id | Automotive Body Repair Portal',
       debugShowCheckedModeBanner: false,
 
@@ -73,6 +74,7 @@ class ReVApp extends ConsumerWidget {
 
       // Hook Flutter directly into our GoRouter instance
       routerConfig: router,
-    );
+    ),   // MaterialApp.router
+    );   // SelectionArea
   }
 }
