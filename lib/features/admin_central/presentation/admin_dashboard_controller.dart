@@ -714,16 +714,29 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
 
   Future<void> assignJobToPartner(
       String jobId, String partnerId, String partnerName) async {
+    // Determine the right status to set — keep existing if already past 3_booked
+    final job = state.activeJobs.firstWhere((j) => j.id == jobId,
+        orElse: () => AdminJobNode(
+            id: jobId, customerName: '', carIdentity: '', status: '3_booked',
+            partnerName: '', createdAt: DateTime.now(), lastUpdatedAt: DateTime.now()));
+
+    // Only set 3_booked if the job is still at 2_estimated.
+    // If already at 3_booked or beyond, keep the current status.
+    final targetStatus = job.status == '2_estimated' ? '3_booked' : job.status;
+
     try {
-      // INT-03 FIX: RPC only — no fallback direct UPDATE (bypass risk)
       await _supabase.rpc('admin_assign_job', params: {
         'p_job_id': jobId,
         'p_partner_id': partnerId,
-        'p_status': '3_booked',
+        'p_status': targetStatus,
       });
     } catch (e) {
       debugPrint('❌ assignJobToPartner error: $e');
-      state = state.copyWith(errorMessage: 'Assignment failed. Please verify the admin_assign_job RPC is deployed.');
+      final msg = e.toString()
+          .replaceAll('PostgrestException', '')
+          .replaceAll('Exception:', '')
+          .trim();
+      state = state.copyWith(errorMessage: 'Assignment failed: $msg');
       return;
     }
 
