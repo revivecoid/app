@@ -36,6 +36,11 @@
 
   <title>re_v</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* Allow text selection — Flutter web disables this by default in the
+       widget tree, but this 404 page is plain HTML so CSS is needed here. */
+    body, * { user-select: text; -webkit-user-select: text; }
+  </style>
 </head>
 <body>
   <!--

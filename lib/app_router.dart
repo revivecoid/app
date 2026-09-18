@@ -271,10 +271,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/booking/schedule/:jobId',
-      builder: (context, state) {
-        final jobId = state.pathParameters['jobId']!;
-        return BookingSchedulingScreen(jobId: jobId);
-      },
+        builder: (context, state) {
+          final jobId = state.pathParameters['jobId']!;
+          return BookingSchedulingScreen(jobId: jobId);
+        },
+      ),
+      // Alias: /booking/:jobId — used by tracker/landing "Continue Booking" button
+      GoRoute(
+        path: '/booking/:jobId',
+        builder: (context, state) {
+          final jobId = state.pathParameters['jobId']!;
+          return BookingSchedulingScreen(jobId: jobId);
+        },
       ),
       GoRoute(
         path: '/checkout/:jobId',
