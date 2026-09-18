@@ -7,7 +7,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const STATUS_MESSAGES: Record<string, { title: string; body: string; type: string }> = {
   "2_estimated": { title: "Estimasi Kerusakan Selesai", body: "AI vision kami telah selesai menganalisis kerusakan kendaraan Anda. Tinjau hasil estimasi dan konfirmasi booking.", type: "status_update" },
   "3_booked":    { title: "Booking Dikonfirmasi", body: "Workshop kami menerima booking Anda. Tim kami akan segera menghubungi Anda untuk konfirmasi jadwal.", type: "status_update" },
-  "4_paid":      { title: "Pembayaran Diterima", body: "Pembayaran Anda telah dikonfirmasi. Kendaraan Anda akan segera diproses sesuai jadwal.", type: "status_update" },
+  "3_inspected": { title: "Faktur Siap — Tinjau Biaya Perbaikan Anda", body: "Teknisi kami telah menyelesaikan inspeksi fisik kendaraan Anda. Faktur perbaikan sudah siap untuk ditinjau. Silakan buka aplikasi untuk melihat rincian biaya dan melakukan pembayaran.", type: "invoice_ready" },
+  "4_paid":      { title: "Pembayaran Diterima — Perbaikan Dimulai", body: "Pembayaran Anda telah dikonfirmasi. Tim teknisi kami akan segera memulai proses perbaikan kendaraan Anda.", type: "status_update" },
   "5_admitted":  { title: "Kendaraan Diterima di Bengkel", body: "Kendaraan Anda telah diterima dan sedang dalam pemeriksaan awal oleh tim teknisi kami. Foto kondisi kendaraan saat masuk telah diambil.", type: "status_update" },
   "6_in_progress":{ title: "Proses Perbaikan Dimulai", body: "Kendaraan Anda sedang dalam proses perbaikan di divisi Body dan Paint. Kami akan memberi tahu Anda saat selesai.", type: "status_update" },
   "7_finished":  { title: "Perbaikan Selesai - Quality Check", body: "Perbaikan hampir selesai! Kendaraan Anda sedang memasuki tahap Quality Control untuk memastikan standar terbaik.", type: "status_update" },

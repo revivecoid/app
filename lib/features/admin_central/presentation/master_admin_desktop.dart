@@ -1161,8 +1161,9 @@ class _JobRow extends StatelessWidget {
     final statuses = [
       ('2_estimated', 'Estimated'),
       ('3_booked', 'Booked'),
+      ('3_inspected', 'Inspected (Invoice Issued)'),
       ('4_paid', 'Paid'),
-      ('5_scheduled', 'Scheduled'),
+      ('5_admitted', 'Admitted'),
       ('6_in_progress', 'In Progress'),
       ('7_finished', 'Finished'),
       ('8_awaiting_delivery', 'Awaiting Delivery'),
