@@ -45,8 +45,26 @@
   <!-- SEO-01 FIX: Proper page title -->
   <title>Revive — Perbaikan Bodi Kendaraan</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* Allow text selection globally — Flutter web disables this by default */
+    flt-glass-pane { user-select: text !important; -webkit-user-select: text !important; }
+  </style>
 </head>
 <body>
+  <!-- Forward Ctrl+C / Cmd+C to the clipboard using the native Selection API.
+       Flutter's engine captures keyboard events before the browser can act on
+       them, so SelectionArea alone is not enough to make copy work on web.
+       This handler fires after Flutter has updated window.getSelection() and
+       writes it to the clipboard directly. -->
+  <script>
+    document.addEventListener('copy', function(e) {
+      var sel = window.getSelection();
+      if (sel && sel.toString().length > 0) {
+        e.clipboardData.setData('text/plain', sel.toString());
+        e.preventDefault();
+      }
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

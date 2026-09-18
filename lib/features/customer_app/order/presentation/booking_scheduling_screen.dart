@@ -96,11 +96,16 @@ class _BookingSchedulingScreenState
     });
 
     try {
-      // book_slot RPC: atomic capacity check + books slot + advances 2_estimated → 3_booked
-      await _sb.rpc('book_slot', params: {
+      // 1. Save delivery type + scheduled date on the job
+      await _sb.from('repair_jobs').update({
+        'delivery_type': _deliveryType,
+        'scheduled_date': _selectedDate!.toIso8601String(),
+      }).eq('id', widget.jobId);
+
+      // 2. Advance status 2_estimated → 3_booked via RPC (validates transition)
+      await _sb.rpc('advance_job_status', params: {
         'p_job_id': widget.jobId,
-        'p_delivery_type': _deliveryType,
-        'p_scheduled_date': _selectedDate!.toIso8601String(),
+        'p_new_status': '3_booked',
       });
 
       if (!mounted) return;

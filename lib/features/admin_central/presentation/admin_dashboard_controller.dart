@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -312,7 +313,11 @@ class AdminDashboardState {
       case AssignStatusFilter.unassigned:
         jobs = jobs.where((j) => j.isUnassigned).toList();
       case AssignStatusFilter.assigned:
-        jobs = jobs.where((j) => !j.isUnassigned && j.status == '3_booked').toList();
+        // Assigned = has a partner, not yet in active repair
+        jobs = jobs.where((j) =>
+          !j.isUnassigned &&
+          !['6_in_progress','7_finished','8_awaiting_delivery'].contains(j.status)
+        ).toList();
       case AssignStatusFilter.inProgress:
         jobs = jobs.where((j) => j.status == '6_in_progress').toList();
       case AssignStatusFilter.all:
@@ -551,15 +556,23 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
 
   Future<void> _fetchActiveJobs() async {
     try {
-      // Use SECURITY DEFINER RPC to bypass RLS on repair_jobs
+      // get_admin_active_jobs returns JSONB (a JSON array)
       final response = await _supabase.rpc('get_admin_active_jobs');
 
-      final List<dynamic> rows = response is List
-          ? response
-          : (response == null ? [] : [response]);
+      // RPC returns JSONB — decode if it's a String, or use directly if already List
+      List<dynamic> rows;
+      if (response is String) {
+        rows = (jsonDecode(response) as List?) ?? [];
+      } else if (response is List) {
+        rows = response;
+      } else if (response is Map) {
+        // Wrapped — shouldn't happen but handle gracefully
+        rows = [response];
+      } else {
+        rows = [];
+      }
 
       debugPrint('Admin jobs via RPC: ${rows.length} rows');
-
 
       final List<AdminJobNode> jobs = rows.map((job) {
         final j = job as Map<String, dynamic>;
@@ -578,7 +591,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
               DateTime.now(),
           lastUpdatedAt: DateTime.now(),
           paymentProofUrl: null,
-          finalPrice: null, // column doesn't exist in repair_jobs
+          finalPrice: (j['final_cost'] as num?)?.toDouble(),
         );
       }).toList();
 
@@ -586,14 +599,14 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       state = state.copyWith(activeJobs: jobs);
     } catch (e) {
       debugPrint('⚠️ _fetchActiveJobs RPC error: $e');
-      // Fallback: try direct query without filter
+      // Fallback: direct query — includes all non-terminal statuses for new workflow
       try {
         final response = await _supabase.from('repair_jobs').select('''
-          id, status, scheduled_date, created_at, partner_id, final_price,
+          id, status, scheduled_date, created_at, partner_id, final_cost,
           profiles:customer_id (full_name),
           vehicles:vehicle_id (make, model, license_plate),
           partners:partner_id (shop_name)
-        ''').limit(50);
+        ''').not('status', 'in', '("0_cancelled","9_done")').limit(100);
         final List<AdminJobNode> jobs = (response as List).map((job) {
           final customerData = job['profiles'] as Map<String, dynamic>? ?? {};
           final vehicleData = job['vehicles'] as Map<String, dynamic>? ?? {};
@@ -683,6 +696,21 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
   }
 
   // ── Assign Jobs ───────────────────────────────────────────────────────────
+//
+// MANUAL ASSIGNMENT — TEMPORARY IMPLEMENTATION
+// ─────────────────────────────────────────────
+// Admin manually selects a workshop per job. This is the operational fallback
+// until the automated distribution engine is built.
+//
+// FUTURE: Replace/supplement with an auto-assignment engine that:
+//   - Calculates distance between customer location and partner workshops
+//   - Weighs by partner capacity, specialisation, and current load
+//   - Runs as a background job triggered on 3_booked status
+//   - Exposes a "Suggest Workshop" button here that pre-fills the dropdown
+//   - Admin can override the suggestion or let it run fully automatically
+//
+// The manual UI below stays as an optional override regardless of automation.
+// ─────────────────────────────────────────────
 
   Future<void> assignJobToPartner(
       String jobId, String partnerId, String partnerName) async {
@@ -732,7 +760,9 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
     if (idx != -1) {
       final updated = List<AdminJobNode>.from(state.activeJobs);
       updated[idx] = state.activeJobs[idx].copyWith(
-        status: '2_estimated',
+        // Server decides: 3_booked if booking confirmed, 2_estimated otherwise
+        // Refresh via Realtime will correct this; optimistic = 3_booked (common case)
+        status: state.activeJobs[idx].scheduledDate != null ? '3_booked' : '2_estimated',
         partnerName: 'Unassigned',
         partnerId: '',
         lastUpdatedAt: DateTime.now(),
