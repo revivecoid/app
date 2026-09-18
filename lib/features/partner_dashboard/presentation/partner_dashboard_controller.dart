@@ -232,96 +232,103 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
   Future<void> advanceJobStage(String jobId, String currentStage) async {
     final idx = _stages.indexOf(currentStage);
     if (idx == -1 || idx >= _stages.length - 1) return;
-    
-    final nextStage = (currentStage == '3_booked' || currentStage == '4_paid') ? '5_admitted' : _stages[idx + 1];
-    
+
+    final nextStage = (currentStage == '3_booked' || currentStage == '4_paid')
+        ? '5_admitted'
+        : _stages[idx + 1];
+
     try {
-      // INT-02 FIX: Use RPC for server-side transition validation (BIZ-02)
+      // Optimistic local update — move card immediately in the UI
+      final jobIndex = state.activeJobs.indexWhere((j) => j.id == jobId);
+      if (jobIndex != -1) {
+        final updated = List<PartnerJobNode>.from(state.activeJobs);
+        if (nextStage == '9_done') {
+          updated.removeAt(jobIndex);
+        } else {
+          updated[jobIndex] = updated[jobIndex].copyWith(status: nextStage);
+        }
+        state = state.copyWith(activeJobs: updated, errorMessage: null);
+      }
+
+      // Server-side RPC with validated transition
       await _supabase.rpc('advance_job_status', params: {
         'p_job_id': jobId,
         'p_new_status': nextStage,
       });
+
+      // Refresh to ensure consistency (Realtime may not catch own updates)
+      await _fetchIsolatedData();
+
     } catch (e) {
-      // Offline fallback: Queue the stage advancement locally
-      await _queueOfflineAction({
-        'type': 'UPDATE_STATUS',
-        'job_id': jobId,
-        'payload': nextStage,
-      });
-      state = state.copyWith(errorMessage: 'Status update queued offline.');
+      // Roll back optimistic update on failure
+      await _fetchIsolatedData();
+      final errText = e.toString()
+          .replaceAll('PostgrestException', '')
+          .replaceAll('Exception:', '')
+          .trim();
+      state = state.copyWith(
+        errorMessage: 'Could not advance stage: $errText',
+      );
     }
   }
 
   /// Executes the Mobile Client-Side Compression & Streaming Pipeline
   Future<void> captureAndUploadProgressPhoto(String jobId, String currentContext) async {
     try {
-      // 1. Pick image — camera on mobile, gallery on web (camera not available in browser)
+      // 1. Pick image — camera on mobile, gallery on web
       final source = kIsWeb ? ImageSource.gallery : ImageSource.camera;
       final XFile? rawImage = await _imagePicker.pickImage(source: source);
       if (rawImage == null) return; // User cancelled
 
       state = state.copyWith(isLoading: true, errorMessage: null);
 
-      // 2. Client-Side Compression Engine (<300KB constraint execution)
+      // 2. Client-side compression (<300KB constraint)
       final compressedBytes = await ImageCompressor.compressImage(rawImage);
 
-      // 3. Cloudflare R2 S3-Compatible Upload Layer
-      // SEC-04 FIX: User-scoped upload path for private bucket RLS
+      // 3. Upload to Supabase Storage (user-scoped path for RLS)
       final userId = _supabase.auth.currentUser!.id;
       final fileName = '$userId/${state.partnerId}_${jobId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
-      try {
-        // REL-04 FIX: Use unified 'revive-photos' bucket (same as customer upload)
-        await _supabase.storage.from('revive-photos').uploadBinary(
-          fileName, 
-          compressedBytes,
-          fileOptions: const FileOptions(contentType: 'image/jpeg'),
+
+      await _supabase.storage.from('revive-photos').uploadBinary(
+        fileName,
+        compressedBytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg'),
+      );
+
+      // 4. Insert photo record
+      await _supabase.from('repair_photos').insert({
+        'job_id': jobId,
+        'step_context': currentContext.replaceAll(RegExp(r'^\d+_'), ''),
+        'r2_file_key': fileName,
+        'uploaded_at': DateTime.now().toIso8601String(),
+      });
+
+      // 5. Immediately update the job card thumbnail in local state
+      final publicUrl = _supabase.storage.from('revive-photos').getPublicUrl(fileName);
+      final jobIndex = state.activeJobs.indexWhere((j) => j.id == jobId);
+      if (jobIndex != -1) {
+        final updated = List<PartnerJobNode>.from(state.activeJobs);
+        updated[jobIndex] = updated[jobIndex].copyWith(latestPhotoUrl: publicUrl);
+        state = state.copyWith(
+          activeJobs: updated,
+          isLoading: false,
+          errorMessage: 'Photo uploaded successfully.',
         );
-
-        // 4. Ledger row attachment bridging the image payload to the live customer tracking stream
-        await _supabase.from('repair_photos').insert({
-          'job_id': jobId,
-          'step_context': currentContext.replaceAll(RegExp(r'^\d+_'), ''), // e.g. 'in_progress'
-          'r2_file_key': fileName,
-          'uploaded_at': DateTime.now().toIso8601String(),
-        });
-
-        state = state.copyWith(isLoading: false, errorMessage: 'Photo streamed successfully.');
-
-      } catch (networkError) {
-        if (kIsWeb) {
-          // On web: no local filesystem - queue action in memory
-          await _queueOfflineAction({
-            'type': 'UPLOAD_PHOTO',
-            'job_id': jobId,
-            'context': currentContext,
-            'r2_key': fileName,
-          });
-          state = state.copyWith(
-            isLoading: false,
-            errorMessage: 'Upload failed: $networkError',
-          );
-        } else {
-          // Mobile: queue for background sync
-          final tempDir = await getTemporaryDirectory();
-          final localFile = File('${tempDir.path}/$fileName');
-          await localFile.writeAsBytes(compressedBytes);
-
-          await _queueOfflineAction({
-            'type': 'UPLOAD_PHOTO',
-            'job_id': jobId,
-            'context': currentContext,
-            'local_path': localFile.path,
-            'r2_key': fileName,
-          });
-          state = state.copyWith(
-            isLoading: false, 
-            errorMessage: 'Workshop offline. Photo queued for upload when connection resumes.'
-          );
-        }
+      } else {
+        state = state.copyWith(isLoading: false, errorMessage: 'Photo uploaded successfully.');
       }
+
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Pipeline Exception: $e');
+      debugPrint('[PhotoUpload] Error: $e');
+      final errText = e.toString()
+          .replaceAll('PostgrestException', '')
+          .replaceAll('StorageException', '')
+          .replaceAll('Exception:', '')
+          .trim();
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Upload failed: $errText',
+      );
     }
   }
 

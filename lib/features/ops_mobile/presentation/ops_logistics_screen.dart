@@ -6,15 +6,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final user = Supabase.instance.client.auth.currentUser;
   if (user == null) return [];
-  
-  final profile = await Supabase.instance.client
-      .from('profiles')
-      .select('partner_id')
-      .eq('id', user.id)
-      .single();
-      
-  final partnerId = profile['partner_id'];
-  if (partnerId == null) return [];
+
+  // Read partner_id from appMetadata directly (SEC-02)
+  final partnerId = user.appMetadata['partner_id'] as String?;
+  if (partnerId == null || partnerId.isEmpty) return [];
 
   final res = await Supabase.instance.client
       .from('repair_jobs')
