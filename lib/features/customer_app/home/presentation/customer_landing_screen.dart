@@ -42,7 +42,8 @@ final activeJobProvider =
       .from('repair_jobs')
       .select('*, vehicles(*)')
       .eq('customer_id', user.id)
-      .not('status', 'in', '("8_completed","9_cancelled")')
+      // Exclude terminal states: cancelled and done
+      .not('status', 'in', '("0_cancelled","9_done")')
       .order('created_at', ascending: false)
       .limit(1);
   final list = List<Map<String, dynamic>>.from(data);
@@ -220,20 +221,42 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
 
   Widget _buildActiveRepairWidget(ThemeData theme, Map<String, dynamic> job) {
     final statusStr = job['status'] as String? ?? 'Unknown';
-    final isAllocated = statusStr.compareTo('1') > 0;
-    
+    final jobId = job['id'].toString();
+
+    // Determine what stage the job is at so we show the right actions
+    final isEstimated       = statusStr == '2_estimated';
+    final isBooked          = statusStr == '3_booked';
+    final needsAction       = isEstimated || isBooked; // pre-payment: resumable + cancellable
+    final isActive          = !needsAction && statusStr != '0_cancelled';
+
+    // Progress fraction for the progress bar
+    final stages = ['1_intake','2_estimated','3_booked','4_paid','5_admitted','6_in_progress','7_finished','8_awaiting_delivery','9_done'];
+    final stageIdx = stages.indexOf(statusStr);
+    final progressFraction = stageIdx < 0 ? 0.0 : (stageIdx + 1) / stages.length;
+
+    // Human-readable label
+    final statusLabel = statusStr
+        .replaceAll(RegExp(r'^\d+_'), '')
+        .replaceAll('_', ' ')
+        .toUpperCase();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
+        // Highlight pre-payment jobs that need attention
+        border: needsAction
+            ? Border.all(color: AppColors.primaryContainer.withValues(alpha: 0.5), width: 1.5)
+            : null,
         boxShadow: [
-          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Header row ──────────────────────────────────────────────────
           Row(
             children: [
               Container(
@@ -244,34 +267,94 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                 ),
                 child: Icon(Icons.directions_car, color: AppColors.primary),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('ACTIVE REPAIR', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
-                    Text('Job #' + job['id'].toString().substring(0, 8), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                    Text(
+                      needsAction ? 'ACTION REQUIRED' : 'ACTIVE REPAIR',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: needsAction ? AppColors.primaryContainer : theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Job #${jobId.length > 8 ? jobId.substring(0, 8) : jobId}',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
+              // Status badge
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainer,
+                  color: needsAction
+                      ? AppColors.primaryContainer.withValues(alpha: 0.12)
+                      : theme.colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(16),
+                  border: needsAction
+                      ? Border.all(color: AppColors.primaryContainer.withValues(alpha: 0.4))
+                      : null,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(width: 8, height: 8, decoration: BoxDecoration(color: theme.colorScheme.secondary, shape: BoxShape.circle)),
-                    SizedBox(width: 4),
-                    Text(statusStr.replaceAll('_', ' ').toUpperCase(), style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    Container(
+                      width: 8, height: 8,
+                      decoration: BoxDecoration(
+                        color: needsAction ? AppColors.primaryContainer : theme.colorScheme.secondary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      statusLabel,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: needsAction ? AppColors.primaryContainer : null,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
+
+          // ── Action-required banner ───────────────────────────────────────
+          if (needsAction)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.primaryContainer.withValues(alpha: 0.25)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: AppColors.primaryContainer),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isEstimated
+                          ? 'Your AI estimate is ready. Continue to complete your booking.'
+                          : 'Your booking is saved. Complete checkout to confirm your slot.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.primaryContainer,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // ── Progress bar ─────────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -287,16 +370,19 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                     Row(
                       children: [
                         Container(width: 6, height: 6, decoration: BoxDecoration(color: AppColors.primaryContainer, shape: BoxShape.circle)),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Text('Repair Progress', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                       ],
                     ),
-                    Text(isAllocated ? 'In Progress' : 'Pending', style: theme.textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                    Text(
+                      isActive ? 'In Progress' : (needsAction ? 'Awaiting Confirmation' : 'Pending'),
+                      style: theme.textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 LinearProgressIndicator(
-                  value: isAllocated ? null : 0.1,
+                  value: progressFraction,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                   color: AppColors.primaryContainer,
                   borderRadius: BorderRadius.circular(4),
@@ -305,34 +391,159 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               ],
             ),
           ),
-          SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.schedule, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                  SizedBox(width: 4),
-                  Text('Updated: ' + job['created_at'].toString().substring(0, 10), style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                ],
-              ),
-              ElevatedButton.icon(
-                onPressed: () => context.go('/track/' + job['id'].toString()),
-                icon: Icon(Icons.sensors, size: 16),
-                label: Text('Track Live', style: TextStyle(fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryContainer,
-                  foregroundColor: Theme.of(context).colorScheme.surface,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  minimumSize: Size(0, 36),
+          const SizedBox(height: 12),
+
+          // ── Action buttons — status-aware ────────────────────────────────
+          if (needsAction) ...[
+            // PRE-PAYMENT: Continue + Cancel
+            Row(
+              children: [
+                // Cancel button
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmAndCancelJob(context, jobId),
+                    icon: const Icon(Icons.cancel_outlined, size: 16),
+                    label: const Text('Cancel Job', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                      side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.5)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 10),
+                // Continue button
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      if (isEstimated) {
+                        context.push('/booking/$jobId');
+                      } else {
+                        // 3_booked — go straight to checkout
+                        context.push('/checkout/$jobId');
+                      }
+                    },
+                    icon: const Icon(Icons.arrow_forward, size: 16),
+                    label: Text(
+                      isEstimated ? 'Continue Booking' : 'Complete Checkout',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryContainer,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            // POST-PAYMENT or tracking state: Track Live only
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.schedule, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Updated: ${job['created_at'].toString().substring(0, 10)}',
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => context.go('/track/$jobId'),
+                  icon: const Icon(Icons.sensors, size: 16),
+                  label: const Text('Track Live', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryContainer,
+                    foregroundColor: Theme.of(context).colorScheme.surface,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    minimumSize: const Size(0, 36),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Shows a confirmation dialog then calls the customer_cancel_job RPC.
+  Future<void> _confirmAndCancelJob(BuildContext context, String jobId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange),
+            SizedBox(width: 10),
+            Text('Cancel Repair Job?'),
+          ],
+        ),
+        content: const Text(
+          'This will cancel your repair request. Your estimation data will be preserved '
+          'but the booking slot will be released.\n\n'
+          'You can start a new estimate at any time.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep Job'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      final result = await Supabase.instance.client
+          .rpc('customer_cancel_job', params: {'p_job_id': jobId});
+
+      final response = result is Map<String, dynamic> ? result : <String, dynamic>{};
+
+      if (!mounted) return;
+
+      if (response['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Job cancelled. You can start a new estimate anytime.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        // Refresh the active job widget
+        ref.invalidate(activeJobProvider);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['error']?.toString() ?? 'Could not cancel job. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('[CancelJob] Error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString().replaceAll('PostgrestException', '').trim()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
   Widget _buildQuickActions(ThemeData theme) {
     return Row(
