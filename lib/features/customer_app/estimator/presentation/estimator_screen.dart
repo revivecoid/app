@@ -237,15 +237,15 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           'customer_id': user.id,
           'vehicle_id': vehicleRes['id'],
           'initial_estimation_cost': intake.estimatedCost,
+          'estimation_result': _structuredData,   // Persist full AI breakdown for booking screen
           'status': '2_estimated',
           'service_area': intake.location.isEmpty ? null : intake.location,
         }).select('id').single();
         
         if (context.mounted) {
           Navigator.of(context).pop();
-          // [FUTURE] Workshop selection by customer — preserved in booking_scheduling_screen.dart
-          // Workshop assignment is handled by admin until partner network is live.
-          context.push('/checkout/${jobRes['id']}');
+          // Route to booking screen where customer reviews estimate + picks admission date
+          context.push('/booking/${jobRes['id']}');
         }
       } catch (e) {
         if (context.mounted) {
