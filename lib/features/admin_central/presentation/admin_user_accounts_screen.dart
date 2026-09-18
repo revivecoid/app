@@ -4,8 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/rev_app_bar.dart';
 
-/// Calls the `list_all_users` RPC which must exist in Supabase with SECURITY DEFINER.
-/// Falls back gracefully if not available.
+/// Admin User Accounts — calls `list_all_users` and `set_user_role` RPCs
 class AdminUserAccountsScreen extends ConsumerStatefulWidget {
   const AdminUserAccountsScreen({super.key});
   @override
@@ -17,9 +16,12 @@ class _AdminUserAccountsState extends ConsumerState<AdminUserAccountsScreen> {
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _users = [];
+  List<Map<String, dynamic>> _partners = []; // For assigning staff/driver to a workshop
   String _search = '';
   String _roleFilter = 'all';
   final _searchCtrl = TextEditingController();
+
+  static const _allRoles = ['customer', 'partner_mechanic', 'partner_staff', 'partner_driver', 'master_admin'];
 
   @override
   void initState() {
@@ -36,99 +38,123 @@ class _AdminUserAccountsState extends ConsumerState<AdminUserAccountsScreen> {
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
-      // Try RPC first (requires a SECURITY DEFINER function in Supabase)
       final rpcResult = await _sb.rpc('list_all_users');
       if (rpcResult is List) {
         _users = List<Map<String, dynamic>>.from(rpcResult.map((e) => Map<String, dynamic>.from(e as Map)));
       } else {
         _users = [];
       }
-    } catch (rpcErr) {
-      // Fallback: build a combined list from partners + repair_jobs customer IDs
+
+      // Also load partners for the role-change dialog
       try {
-        final partners = await _sb
+        final partnerRes = await _sb
             .from('partners')
-            .select('id, workshop_name, contact_email, is_active, created_at');
-        final jobs = await _sb
-            .from('repair_jobs')
-            .select('customer_id, created_at')
-            .order('created_at', ascending: false);
-
-        // Unique customers from repair_jobs
-        final seenCustomers = <String>{};
-        final customerRows = <Map<String, dynamic>>[];
-        for (final j in List<Map<String, dynamic>>.from(jobs)) {
-          final cid = j['customer_id']?.toString() ?? '';
-          if (cid.isNotEmpty && seenCustomers.add(cid)) {
-            customerRows.add({
-              'id': cid,
-              'display_name': 'Customer',
-              'email': cid.substring(0, 8) + '…',
-              'role': 'customer',
-              'created_at': j['created_at'],
-            });
-          }
-        }
-
-        final partnerRows = List<Map<String, dynamic>>.from(partners).map((p) => {
-          'id': p['id'],
-          'display_name': p['workshop_name'] ?? 'Partner Workshop',
-          'email': p['contact_email'] ?? '',
-          'role': 'partner',
-          'created_at': p['created_at'],
-          'is_active': p['is_active'],
-        }).toList();
-
-        _users = [...partnerRows, ...customerRows];
-      } catch (e) {
-        _error = 'Unable to load users.\n\nTechnical details: $e\n\n'
-            'To fix: create a Supabase RPC function named "list_all_users" '
-            'with SECURITY DEFINER that selects from auth.users.';
+            .select('id, shop_name, entity_name, workshop_name, is_active')
+            .eq('is_active', true)
+            .order('shop_name');
+        _partners = List<Map<String, dynamic>>.from(partnerRes);
+      } catch (_) {
+        _partners = [];
       }
+    } catch (rpcErr) {
+      _error = 'Unable to load users.\n\nTechnical details: $rpcErr\n\n'
+          'Ensure the "list_all_users" RPC exists in Supabase (migration 20260916).';
     }
     if (mounted) setState(() => _loading = false);
   }
 
-  Future<void> _setRole(String userId, String newRole) async {
+  Future<void> _setRole(String userId, String currentRole, String newRole) async {
+    // If assigning staff/driver, we need to pick a partner workshop
+    String? partnerId;
+    if (newRole == 'partner_staff' || newRole == 'partner_driver') {
+      partnerId = await _showPartnerPickerDialog(newRole);
+      if (partnerId == null) return; // User cancelled
+    }
+
+    // If promoting to partner_mechanic, we also need a partner_id
+    // but that's handled separately via the partner approval flow.
+    // For now, allow admin to assign partner_mechanic if a partner is selected.
+    if (newRole == 'partner_mechanic') {
+      partnerId = await _showPartnerPickerDialog(newRole);
+      if (partnerId == null) return;
+    }
+
     try {
-      // Requires set_user_role RPC in Supabase (see banner below if missing)
-      await _sb.rpc('set_user_role', params: {
+      final result = await _sb.rpc('set_user_role', params: {
         'target_user_id': userId,
         'new_role': newRole,
+        if (partnerId != null) 'new_partner_id': partnerId,
       });
+
+      final Map<String, dynamic> response = result is Map<String, dynamic> ? result : {};
+      final success = response['success'] == true;
+
       await _load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Role updated to $newRole'),
-          backgroundColor: const Color(0xFF059669),
+          content: Text(success
+              ? 'Role updated: ${response['email'] ?? userId} → $newRole'
+              : 'Failed: ${response['error'] ?? 'Unknown error'}'),
+          backgroundColor: success ? const Color(0xFF059669) : const Color(0xFFDC2626),
         ));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          duration: const Duration(seconds: 8),
+          duration: const Duration(seconds: 6),
           backgroundColor: const Color(0xFFDC2626),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Role update failed — run this SQL in Supabase once:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-              const SizedBox(height: 4),
-              const SelectableText(
-                'create or replace function set_user_role(target_user_id uuid, new_role text)\n'
-                'returns void security definer language sql as \$\$\n'
-                '  update auth.users set raw_user_meta_data =\n'
-                '    raw_user_meta_data || jsonb_build_object(\'role\', new_role)\n'
-                '  where id = target_user_id;\n'
-                '\$\$;',
-                style: TextStyle(fontSize: 10, color: Colors.white70, fontFamily: 'monospace'),
-              ),
-            ],
-          ),
+          content: Text('Role update failed: $e'),
         ));
       }
     }
+  }
+
+  Future<String?> _showPartnerPickerDialog(String targetRole) async {
+    if (_partners.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('No active partners found. Create a partner workshop first.'),
+          backgroundColor: Color(0xFFDC2626),
+        ));
+      }
+      return null;
+    }
+
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final roleName = targetRole == 'partner_driver' ? 'Driver' :
+                         targetRole == 'partner_staff' ? 'Staff' : 'Partner Owner';
+        return AlertDialog(
+          title: Text('Assign $roleName to Workshop'),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Select the workshop this user will be assigned to:',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                const SizedBox(height: 16),
+                ..._partners.map((p) {
+                  final name = p['workshop_name'] ?? p['entity_name'] ?? p['shop_name'] ?? 'Unknown';
+                  return ListTile(
+                    leading: const Icon(Icons.store, size: 20),
+                    title: Text(name, style: const TextStyle(fontSize: 14)),
+                    subtitle: Text(p['id'].toString().substring(0, 8), style: const TextStyle(fontSize: 10)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    onTap: () => Navigator.pop(ctx, p['id'].toString()),
+                  );
+                }),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, null), child: const Text('Cancel')),
+          ],
+        );
+      },
+    );
   }
 
   List<Map<String, dynamic>> get _filtered {
@@ -141,6 +167,28 @@ class _AdminUserAccountsState extends ConsumerState<AdminUserAccountsScreen> {
         (p['email'] ?? '').toString().toLowerCase().contains(q)).toList();
     }
     return list;
+  }
+
+  String _roleBadgeLabel(String role) {
+    switch (role) {
+      case 'master_admin': return 'Admin';
+      case 'partner_mechanic': return 'Partner';
+      case 'partner_staff': return 'Staff';
+      case 'partner_driver': return 'Driver';
+      case 'customer': return 'Customer';
+      default: return role;
+    }
+  }
+
+  Color _roleColor(String role, ColorScheme cs) {
+    switch (role) {
+      case 'master_admin': return AppColors.fireRed;
+      case 'partner_mechanic': return Colors.blue;
+      case 'partner_staff': return Colors.orange;
+      case 'partner_driver': return Colors.teal;
+      case 'customer': return cs.primary;
+      default: return cs.primary;
+    }
   }
 
   @override
@@ -156,20 +204,6 @@ class _AdminUserAccountsState extends ConsumerState<AdminUserAccountsScreen> {
         title: Text('User Accounts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: cs.onSurface)),
       ),
       body: Column(children: [
-        // Info banner if using fallback data
-        if (!_loading && _error == null && _users.isNotEmpty && _users.any((u) => u['display_name'] == 'Customer'))
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: cs.tertiaryContainer.withValues(alpha: 0.5),
-            child: Row(children: [
-              Icon(Icons.info_outline, size: 14, color: cs.onTertiaryContainer),
-              const SizedBox(width: 8),
-              Expanded(child: Text(
-                'Showing fallback data. For full auth.users access, create a "list_all_users" RPC in Supabase.',
-                style: TextStyle(fontSize: 11, color: cs.onTertiaryContainer),
-              )),
-            ]),
-          ),
         // Toolbar
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -201,12 +235,12 @@ class _AdminUserAccountsState extends ConsumerState<AdminUserAccountsScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            // Role filter
-            for (final r in ['all', 'customer', 'partner', 'admin', 'sysadmin'])
+            // Role filter chips — now using actual DB roles
+            for (final r in ['all', ..._allRoles])
               Padding(
                 padding: const EdgeInsets.only(left: 6),
                 child: FilterChip(
-                  label: Text(r == 'all' ? 'All' : r, style: const TextStyle(fontSize: 11)),
+                  label: Text(r == 'all' ? 'All' : _roleBadgeLabel(r), style: const TextStyle(fontSize: 11)),
                   selected: _roleFilter == r,
                   onSelected: (_) => setState(() => _roleFilter = r),
                   selectedColor: AppColors.primaryContainer.withValues(alpha: 0.15),
@@ -228,9 +262,13 @@ class _AdminUserAccountsState extends ConsumerState<AdminUserAccountsScreen> {
             const SizedBox(width: 12),
             _StatChip(cs: cs, label: 'Customers', value: _users.where((p) => p['role'] == 'customer').length.toString(), color: cs.secondary),
             const SizedBox(width: 12),
-            _StatChip(cs: cs, label: 'Partners', value: _users.where((p) => p['role'] == 'partner').length.toString(), color: Colors.orange),
+            _StatChip(cs: cs, label: 'Partners', value: _users.where((p) => p['role'] == 'partner_mechanic').length.toString(), color: Colors.blue),
             const SizedBox(width: 12),
-            _StatChip(cs: cs, label: 'Admins', value: _users.where((p) => ['admin','sysadmin'].contains(p['role'])).length.toString(), color: AppColors.fireRed),
+            _StatChip(cs: cs, label: 'Staff', value: _users.where((p) => p['role'] == 'partner_staff').length.toString(), color: Colors.orange),
+            const SizedBox(width: 12),
+            _StatChip(cs: cs, label: 'Drivers', value: _users.where((p) => p['role'] == 'partner_driver').length.toString(), color: Colors.teal),
+            const SizedBox(width: 12),
+            _StatChip(cs: cs, label: 'Admins', value: _users.where((p) => p['role'] == 'master_admin').length.toString(), color: AppColors.fireRed),
             const Spacer(),
             Text('Showing ${_filtered.length} of ${_users.length}', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
           ]),
@@ -259,7 +297,10 @@ class _AdminUserAccountsState extends ConsumerState<AdminUserAccountsScreen> {
                     cs: cs,
                     theme: theme,
                     profile: _filtered[i],
-                    onSetRole: (role) => _setRole(_filtered[i]['id'], role),
+                    roleBadgeLabel: _roleBadgeLabel,
+                    roleColor: _roleColor,
+                    allRoles: _allRoles,
+                    onSetRole: (role) => _setRole(_filtered[i]['id'], _filtered[i]['role'] ?? 'customer', role),
                   ),
                 ),
         ),
@@ -285,8 +326,19 @@ class _UserRow extends StatelessWidget {
   final ColorScheme cs;
   final ThemeData theme;
   final Map<String, dynamic> profile;
+  final String Function(String) roleBadgeLabel;
+  final Color Function(String, ColorScheme) roleColor;
+  final List<String> allRoles;
   final void Function(String) onSetRole;
-  const _UserRow({required this.cs, required this.theme, required this.profile, required this.onSetRole});
+  const _UserRow({
+    required this.cs,
+    required this.theme,
+    required this.profile,
+    required this.roleBadgeLabel,
+    required this.roleColor,
+    required this.allRoles,
+    required this.onSetRole,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -294,17 +346,14 @@ class _UserRow extends StatelessWidget {
     final email = profile['email']?.toString() ?? '';
     final role = profile['role']?.toString() ?? 'customer';
     final createdAt = profile['created_at']?.toString().substring(0, 10) ?? '';
+    final lastSignIn = profile['last_sign_in_at']?.toString();
+    final partnerName = profile['partner_name']?.toString();
     final avatarUrl = profile['avatar_url']?.toString();
     final initials = name.isNotEmpty
         ? name.trim().split(' ').take(2).map((w) => w.isEmpty ? '' : w[0].toUpperCase()).join()
         : '?';
 
-    final roleColor = {
-      'sysadmin': AppColors.fireRed,
-      'admin': Colors.orange,
-      'partner': Colors.blue,
-      'customer': cs.primary,
-    }[role] ?? cs.primary;
+    final badgeColor = roleColor(role, cs);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -331,18 +380,28 @@ class _UserRow extends StatelessWidget {
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(name, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.onSurface)),
           Text(email, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+          if (partnerName != null && partnerName.isNotEmpty)
+            Text('Workshop: $partnerName', style: TextStyle(fontSize: 10, color: badgeColor, fontWeight: FontWeight.w500)),
         ])),
         // Role badge
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: roleColor.withValues(alpha: 0.1),
+            color: badgeColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: roleColor.withValues(alpha: 0.3))),
-          child: Text(role, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: roleColor)),
+            border: Border.all(color: badgeColor.withValues(alpha: 0.3))),
+          child: Text(roleBadgeLabel(role), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: badgeColor)),
         ),
         const SizedBox(width: 12),
-        Text(createdAt, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+        // Last sign in
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text('Joined $createdAt', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+            if (lastSignIn != null)
+              Text('Last seen ${lastSignIn.substring(0, 10)}', style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant.withValues(alpha: 0.6))),
+          ],
+        ),
         const SizedBox(width: 12),
         // Role change menu
         PopupMenuButton<String>(
@@ -351,14 +410,18 @@ class _UserRow extends StatelessWidget {
           icon: Icon(Icons.more_vert_rounded, size: 18, color: cs.onSurfaceVariant),
           onSelected: onSetRole,
           itemBuilder: (_) => [
-            for (final r in ['customer', 'partner', 'admin', 'sysadmin'])
+            for (final r in allRoles)
               PopupMenuItem(value: r, child: Row(children: [
-                Icon(Icons.circle, size: 8, color: {
-                  'sysadmin': AppColors.fireRed, 'admin': Colors.orange,
-                  'partner': Colors.blue, 'customer': cs.primary,
-                }[r] ?? cs.primary),
+                Icon(Icons.circle, size: 8, color: roleColor(r, cs)),
                 const SizedBox(width: 8),
-                Text(r, style: TextStyle(fontWeight: r == role ? FontWeight.bold : FontWeight.normal)),
+                Text(roleBadgeLabel(r), style: TextStyle(
+                  fontWeight: r == role ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 13,
+                )),
+                if (r == role) ...[
+                  const SizedBox(width: 6),
+                  Icon(Icons.check, size: 14, color: roleColor(r, cs)),
+                ],
               ])),
           ],
         ),

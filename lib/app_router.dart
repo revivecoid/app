@@ -37,6 +37,7 @@ import 'features/ops_mobile/presentation/ops_logistics_screen.dart';
 import 'features/ops_mobile/presentation/ops_settings_screen.dart';
 import 'features/ops_mobile/presentation/ops_intake_photo_screen.dart';
 import 'features/ops_mobile/presentation/ops_milestones_screen.dart';
+import 'features/ops_mobile/presentation/ops_stage_photo_screen.dart';
 
 
 // --- IMPORTING CMS SCREENS ---
@@ -393,8 +394,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
         routes: [
           GoRoute(
+            // jobId — milestones screen fetches customer_id internally
             path: 'milestones/:jobId',
-            builder: (context, state) => OpsMilestonesScreen(jobId: state.pathParameters['jobId']!),
+            builder: (context, state) => OpsMilestonesScreen(
+              jobId: state.pathParameters['jobId']!,
+            ),
           ),
         ],
       ),
@@ -406,10 +410,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
         routes: [
           GoRoute(
-            path: 'intake/:jobId',
-            builder: (context, state) => OpsIntakePhotoScreen(jobId: state.pathParameters['jobId']!),
+            // jobId + customerId — intake screen needs both for RPC + notification
+            path: 'intake/:jobId/:customerId',
+            builder: (context, state) => OpsIntakePhotoScreen(
+              jobId: state.pathParameters['jobId']!,
+              customerId: state.pathParameters['customerId']!,
+            ),
           ),
         ],
+      ),
+      // Generic stage photo route — used by OpsMilestonesScreen for all stages
+      // Path: /ops/stage-photo/:jobId/:customerId/:stageKey
+      GoRoute(
+        path: '/ops/stage-photo/:jobId/:customerId/:stageKey',
+        builder: (context, state) => OpsStagePhotoScreen(
+          jobId: state.pathParameters['jobId']!,
+          customerId: state.pathParameters['customerId']!,
+          stageKey: state.pathParameters['stageKey']!,
+        ),
       ),
       GoRoute(
         path: '/ops/settings',

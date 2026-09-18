@@ -41,10 +41,23 @@ final customerJobsProvider =
 // otherwise falls back to in-memory state.
 final whatsappAlertsProvider = StateProvider<bool>((ref) => false);
 
+/// Refreshes the Supabase session to pick up any role changes made
+/// server-side (e.g. admin promoted user to partner_staff).
+/// This ensures appMetadata['role'] in the JWT is current.
+final _sessionRefreshProvider = FutureProvider.autoDispose<void>((ref) async {
+  try {
+    await Supabase.instance.client.auth.refreshSession();
+  } catch (e) {
+    debugPrint('[Profile] Session refresh failed (non-fatal): $e');
+  }
+});
+
 /// Fetches the current user's row from the profiles table.
 /// Used to show DB-saved name/phone and to pre-populate the edit form.
 final customerProfileDataProvider =
     FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
+  // Ensure session is refreshed first so appMetadata is current
+  await ref.watch(_sessionRefreshProvider.future);
   final user = Supabase.instance.client.auth.currentUser;
   if (user == null) return null;
   return await Supabase.instance.client
@@ -107,6 +120,48 @@ class CustomerProfileScreen extends ConsumerWidget {
         .join(' ');
   }
 
+  // ── Role badge helpers ────────────────────────────────────────────────────
+
+  String _roleBadgeLabel(String role, BuildContext context) {
+    switch (role) {
+      case 'partner_staff':   return 'Workshop Staff';
+      case 'partner_driver':  return 'Driver';
+      case 'partner_mechanic': return 'Partner';
+      case 'master_admin':    return 'Admin';
+      default:                return AppL.of(context)!.profileMember;
+    }
+  }
+
+  IconData _roleBadgeIcon(String role) {
+    switch (role) {
+      case 'partner_staff':    return Icons.build;
+      case 'partner_driver':   return Icons.local_shipping;
+      case 'partner_mechanic': return Icons.store;
+      case 'master_admin':     return Icons.admin_panel_settings;
+      default:                 return Icons.verified;
+    }
+  }
+
+  Color _roleBadgeColor(String role, BuildContext context) {
+    switch (role) {
+      case 'partner_staff':    return Colors.orange.withValues(alpha: 0.15);
+      case 'partner_driver':   return Colors.teal.withValues(alpha: 0.15);
+      case 'partner_mechanic': return Colors.blue.withValues(alpha: 0.15);
+      case 'master_admin':     return AppColors.fireRed.withValues(alpha: 0.15);
+      default:                 return Theme.of(context).colorScheme.surfaceContainerHighest;
+    }
+  }
+
+  Color _roleBadgeForeground(String role, BuildContext context) {
+    switch (role) {
+      case 'partner_staff':    return Colors.orange[800]!;
+      case 'partner_driver':   return Colors.teal[700]!;
+      case 'partner_mechanic': return Colors.blue[700]!;
+      case 'master_admin':     return AppColors.fireRed;
+      default:                 return AppColors.primaryContainer;
+    }
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -134,8 +189,10 @@ class CustomerProfileScreen extends ConsumerWidget {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
+                  ref.invalidate(_sessionRefreshProvider);
                   ref.invalidate(customerVehiclesProvider);
                   ref.invalidate(customerJobsProvider);
+                  ref.invalidate(customerProfileDataProvider);
                 },
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -147,7 +204,8 @@ class CustomerProfileScreen extends ConsumerWidget {
                       // ── Profile Card ──────────────────────────────────────
                       _buildProfileCard(
                           context, ref, userName, userEmail, userAvatar, initials,
-                          phone: dbProfile?['phone']?.toString() ?? ''),
+                          phone: dbProfile?['phone']?.toString() ?? '',
+                          role: user?.appMetadata['role']?.toString() ?? 'customer'),
                       SizedBox(height: 16), if (user?.appMetadata['role'] == 'partner_staff' || user?.appMetadata['role'] == 'partner_driver' || user?.appMetadata['role'] == 'partner_mechanic') Padding(padding: const EdgeInsets.only(bottom: 16), child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), ), onPressed: () => GoRouter.of(context).go('/ops'), icon: const Icon(Icons.rocket_launch), label: const Text('Open Workshop Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), ), ),
 
                       // ── Digital Garage ────────────────────────────────────
@@ -518,6 +576,7 @@ class CustomerProfileScreen extends ConsumerWidget {
     String? userAvatar,
     String initials, {
     String phone = '',
+    String role = 'customer',
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -635,21 +694,21 @@ class CustomerProfileScreen extends ConsumerWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  color: _roleBadgeColor(role, context),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.verified,
-                                        color: AppColors.primaryContainer,
+                                    Icon(_roleBadgeIcon(role),
+                                        color: _roleBadgeForeground(role, context),
                                         size: 12),
                                     SizedBox(width: 4),
-                                    Text(AppL.of(context)!.profileMember,
+                                    Text(_roleBadgeLabel(role, context),
                                         style: TextStyle(
                                             fontSize: 10,
                                             fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).colorScheme.onSurface)),
+                                            color: _roleBadgeForeground(role, context))),
                                   ],
                                 ),
                               ),
