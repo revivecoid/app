@@ -184,15 +184,24 @@ class _Sidebar extends StatelessWidget {
             height: 64,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              Icon(Icons.shield_rounded,
-                  color: cs.primary, size: 28),
-              const SizedBox(width: 10),
-              Text('REVIVE',
-                  style: TextStyle(
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                      letterSpacing: 0.5)),
+              InkWell(
+                onTap: () => context.go('/'),
+                borderRadius: BorderRadius.circular(8),
+                child: Row(children: [
+                  Image.asset(
+                    'assets/images/revive_logo.png',
+                    height: 26,
+                    color: cs.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text('re-V',
+                      style: TextStyle(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                          letterSpacing: 0.5)),
+                ]),
+              ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(

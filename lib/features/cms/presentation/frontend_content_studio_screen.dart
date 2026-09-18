@@ -170,6 +170,12 @@ class _Header extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
+            Image.asset(
+              'assets/images/revive_logo.png',
+              height: 20,
+              color: cs.primary,
+            ),
+            const SizedBox(width: 6),
             Icon(Icons.tune_rounded, color: cs.primary, size: 20),
             const SizedBox(width: 8),
             Text('Frontend CMS', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w800, fontSize: 15)),
