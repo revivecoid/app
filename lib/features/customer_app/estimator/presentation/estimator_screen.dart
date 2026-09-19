@@ -1097,6 +1097,61 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                         ),
                       );
                     }).toList(),
+                    
+                    // Render omitted panels (selected by user but not found by AI)
+                    ...ref.watch(selectedPanelsProvider).where((selectedPanel) {
+                      final aiPanelNames = panels.map((p) => p['panel_name']?.toString().toLowerCase() ?? '').toSet();
+                      return !aiPanelNames.contains(selectedPanel.label.toLowerCase());
+                    }).map((omittedPanel) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: (isDark ? AppColors.surfaceContainerLowest : Theme.of(context).colorScheme.surfaceContainerLowest),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: (isDark ? AppColors.surfaceContainerHigh : Theme.of(context).colorScheme.outlineVariant)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    omittedPanel.label,
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+                                  ),
+                                  SizedBox(height: 3),
+                                  Text(
+                                    'Tidak ditemukan kerusakan di foto',
+                                    style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Rp 0',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+                                ),
+                                SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: (isDark ? AppColors.surfaceContainerHighest : Theme.of(context).colorScheme.surfaceContainerHighest),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text('AMAN', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+
                     // Total cost row
                     if (panels.isNotEmpty) ...[
                       Divider(height: 20),
