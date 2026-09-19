@@ -45,36 +45,39 @@ class _Section {
 
 List<_Section> _defaultSections() => [
       _Section(title: 'Depan', items: [
-        _PricingItem(key: 'bumper_depan', label: 'Bumper Depan', basePrice: 500500),
+        _PricingItem(key: 'PANEL_FRONT_BUMP', label: 'Bumper Depan', basePrice: 500500),
         _PricingItem(key: 'spoiler_bumper_depan', label: 'Spoiler Bumper depan', basePrice: 286000),
-        _PricingItem(key: 'kap_mesin', label: 'Kap Mesin', basePrice: 715000),
+        _PricingItem(key: 'PANEL_HOOD_ENG', label: 'Kap Mesin', basePrice: 715000),
       ]),
       _Section(title: 'Belakang', items: [
-        _PricingItem(key: 'bumper_belakang', label: 'Bumper Belakang', basePrice: 500500),
+        _PricingItem(key: 'PANEL_REAR_BUMP', label: 'Bumper Belakang', basePrice: 500500),
         _PricingItem(key: 'spoiler_bumper_belakang', label: 'Spoiler Bumper Belakang', basePrice: 286000),
-        _PricingItem(key: 'bagasi', label: 'Bagasi', basePrice: 643500),
+        _PricingItem(key: 'PANEL_TRUNK', label: 'Bagasi', basePrice: 643500),
         _PricingItem(key: 'spoiler_bagasi', label: 'Spoiler Bagasi', basePrice: 286000),
       ]),
       _Section(title: 'Sisi Kanan (RH)', items: [
-        _PricingItem(key: 'fender_rh', label: 'Fender RH', basePrice: 572000),
-        _PricingItem(key: 'pintu_depan_rh', label: 'Pintu Depan RH', basePrice: 572000),
+        _PricingItem(key: 'PANEL_FENDER_FR_RH', label: 'Fender RH', basePrice: 572000),
+        _PricingItem(key: 'PANEL_DOOR_FR_RH', label: 'Pintu Depan RH', basePrice: 572000),
         _PricingItem(key: 'spion_rh', label: 'Spion RH', basePrice: 143000),
-        _PricingItem(key: 'pintu_belakang_rh', label: 'Pintu Belakang RH', basePrice: 572000),
+        _PricingItem(key: 'PANEL_DOOR_RR_RH', label: 'Pintu Belakang RH', basePrice: 572000),
         _PricingItem(key: 'quarter_rh', label: 'Quarter RH', basePrice: 572000),
         _PricingItem(key: 'trisplang_rh', label: 'Trisplang RH', basePrice: 357500),
         _PricingItem(key: 'side_roof_rh', label: 'Side Roof RH', basePrice: 357500),
+        _PricingItem(key: 'PANEL_FENDER_RR_RH', label: 'Fender Belakang RH', basePrice: 572000),
       ]),
       _Section(title: 'Sisi Kiri (LH)', items: [
-        _PricingItem(key: 'fender_lh', label: 'Fender LH', basePrice: 572000),
-        _PricingItem(key: 'pintu_depan_lh', label: 'Pintu Depan LH', basePrice: 572000),
+        _PricingItem(key: 'PANEL_FENDER_FR_LH', label: 'Fender LH', basePrice: 572000),
+        _PricingItem(key: 'PANEL_DOOR_FR_LH', label: 'Pintu Depan LH', basePrice: 572000),
         _PricingItem(key: 'spion_lh', label: 'Spion LH', basePrice: 143000),
-        _PricingItem(key: 'pintu_belakang_lh', label: 'Pintu Belakang LH', basePrice: 572000),
+        _PricingItem(key: 'PANEL_DOOR_RR_LH', label: 'Pintu Belakang LH', basePrice: 572000),
         _PricingItem(key: 'quarter_lh', label: 'Quarter LH', basePrice: 572000),
         _PricingItem(key: 'trisplang_lh', label: 'Trisplang LH', basePrice: 357500),
         _PricingItem(key: 'side_roof_lh', label: 'Side Roof LH', basePrice: 357500),
+        _PricingItem(key: 'PANEL_FENDER_RR_LH', label: 'Fender Belakang LH', basePrice: 572000),
       ]),
-      _Section(title: 'Atap', items: [
-        _PricingItem(key: 'roof', label: 'Roof', basePrice: 1001000),
+      _Section(title: 'Atap & Pillar', items: [
+        _PricingItem(key: 'PANEL_ROOF', label: 'Roof', basePrice: 1001000),
+        _PricingItem(key: 'PANEL_A_PILLAR', label: 'A-Pillar / Rocker', basePrice: 875000),
       ]),
       _Section(title: 'Lainnya', items: [
         _PricingItem(key: 'cover', label: 'Cover', basePrice: 286000),
