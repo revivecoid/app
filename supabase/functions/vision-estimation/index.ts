@@ -268,12 +268,20 @@ Return precise counts for dents, scratches, and broken panels in the exact follo
       try {
         const provider = configData.provider.toLowerCase();
         
+        // Per-row API key: ai_config.api_key_env names the Edge Function secret
+        // to use. Empty/missing falls back to the legacy hardcoded provider key,
+        // so existing rows behave exactly as before.
+        const rowKey = configData.api_key_env
+          ? (Deno.env.get(configData.api_key_env) ?? "")
+          : "";
+
         if (provider.includes("google") || provider.includes("gemini")) {
-          estimationResult = await callGoogleGemini(photoUrls, masterPrompt, configData.model_name, googleApiKey);
+          estimationResult = await callGoogleGemini(photoUrls, masterPrompt, configData.model_name, rowKey || googleApiKey);
         } else if (provider.includes("groq")) {
-          estimationResult = await callOpenAICompatible(photoUrls, masterPrompt, configData.model_name, groqApiKey, configData.api_base_url);
-        } else if (provider.includes("openai")) {
-          estimationResult = await callOpenAICompatible(photoUrls, masterPrompt, configData.model_name, openaiApiKey, configData.api_base_url);
+          estimationResult = await callOpenAICompatible(photoUrls, masterPrompt, configData.model_name, rowKey || groqApiKey, configData.api_base_url);
+        } else if (provider.includes("openai") || provider.includes("router")) {
+          // Covers OpenAI, OpenRouter and 9Router-style gateways
+          estimationResult = await callOpenAICompatible(photoUrls, masterPrompt, configData.model_name, rowKey || openaiApiKey, configData.api_base_url);
         } else {
           throw new Error(`Unsupported model provider: ${provider}`);
         }
@@ -367,7 +375,10 @@ async function callGoogleGemini(photoUrls: string[], prompt: string, modelName: 
   });
 
   if (!response.ok) {
-    throw new Error(`Google API error: ${response.status} ${response.statusText}`);
+    const errBody = await response.text().catch(() => "<unreadable body>");
+    throw new Error(
+      `Google API error: ${response.status} ${response.statusText} — ${errBody.slice(0, 400)}`
+    );
   }
   const data = await response.json();
   if (data.candidates && data.candidates[0].content.parts[0].text) {
@@ -408,8 +419,40 @@ async function callOpenAICompatible(photoUrls: string[], prompt: string, modelNa
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI-compatible API error: ${response.status} ${response.statusText}`);
+    const errBody = await response.text().catch(() => "<unreadable body>");
+    throw new Error(
+      `OpenAI-compatible API error: ${response.status} ${response.statusText} — ${errBody.slice(0, 400)}`
+    );
   }
+
+  // Some gateways (e.g. 9Router) always answer with SSE, even when `stream` is
+  // never requested — `response.json()` throws on that body. Detect by
+  // content-type and reassemble the streamed deltas when present. Groq/OpenAI
+  // reply with plain JSON and keep taking the branch below.
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("text/event-stream")) {
+    const raw = await response.text();
+    let assembled = "";
+    for (const line of raw.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const chunkStr = trimmed.slice(5).trim();
+      if (!chunkStr || chunkStr === "[DONE]") continue;
+      try {
+        const chunk = JSON.parse(chunkStr);
+        const choice = (chunk.choices ?? [])[0] ?? {};
+        const piece = choice.delta?.content ?? choice.message?.content;
+        if (piece) assembled += piece;
+      } catch {
+        // Skip keep-alive / non-JSON frames
+      }
+    }
+    if (!assembled.trim()) {
+      throw new Error("OpenAI-compatible API returned an SSE stream with no content");
+    }
+    return assembled;
+  }
+
   const data = await response.json();
   return data.choices[0].message.content;
 }
