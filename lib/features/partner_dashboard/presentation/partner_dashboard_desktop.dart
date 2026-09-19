@@ -723,7 +723,16 @@ class _JobCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('#$jobIdShort', style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      job.licensePlate.isNotEmpty ? job.licensePlate.toUpperCase() : 'NO PLATE',
+                      style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                    ),
+                    Text('#$jobIdShort', style: TextStyle(color: color.withValues(alpha: 0.55), fontSize: 9)),
+                  ],
+                ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
@@ -743,12 +752,6 @@ class _JobCard extends StatelessWidget {
                 SizedBox(height: 4),
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(4), border: Border.all(color: cs.outlineVariant)),
-                      child: Text(job.licensePlate.toUpperCase(), style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.2)),
-                    ),
-                    SizedBox(width: 8),
                     Text('• ${job.customerName}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
                   ],
                 ),
