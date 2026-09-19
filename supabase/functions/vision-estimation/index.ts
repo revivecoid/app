@@ -391,10 +391,30 @@ async function callOpenAICompatible(photoUrls: string[], prompt: string, modelNa
   const isGroq = apiBaseUrl.includes("groq");
   const isOpenRouterFree = modelName.includes("free");
 
-  // Build content array: text prompt first, then one image_url entry per photo
+  // Build content array: text prompt first, then one image_url entry per photo.
+  // Images are downloaded and inlined as base64 data URLs rather than passed as
+  // remote links. Gemini-backed gateways have no remote-URL image input (the
+  // native API takes inline_data only), so handing them an https URL makes the
+  // upstream call stall or silently drop the image. Groq/OpenAI also accept
+  // data URLs, so this path is safe for every provider.
+  const imageParts: object[] = [];
+  for (const url of photoUrls) {
+    const imageResp = await fetch(url);
+    if (!imageResp.ok) {
+      throw new Error(`Failed to fetch image from URL (${imageResp.status}): ${url}`);
+    }
+    const imageBuffer = await imageResp.arrayBuffer();
+    const base64Image = base64Encode(new Uint8Array(imageBuffer));
+    const mimeType = imageResp.headers.get("content-type") || "image/jpeg";
+    imageParts.push({
+      type: "image_url",
+      image_url: { url: `data:${mimeType};base64,${base64Image}` },
+    });
+  }
+
   const contentArray: object[] = [
     { type: "text", text: prompt },
-    ...photoUrls.map((url) => ({ type: "image_url", image_url: { url } })),
+    ...imageParts,
   ];
 
   const payload: any = {
