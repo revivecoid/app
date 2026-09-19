@@ -13,7 +13,7 @@ final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynami
 
   final res = await Supabase.instance.client
       .from('repair_jobs')
-      .select('id, status, customer_id, profiles!repair_jobs_customer_id_fkey(full_name, phone, address), vehicles(make, model, license_plate)')
+      .select('id, status, customer_id, profiles!repair_jobs_customer_id_fkey(full_name, phone), vehicles(make, model, license_plate)')
       .eq('partner_id', partnerId)
       .inFilter('status', ['4_paid', '8_awaiting_delivery'])
       .order('created_at', ascending: true);
@@ -107,9 +107,9 @@ class OpsLogisticsScreen extends ConsumerWidget {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                                const Icon(Icons.phone_outlined, size: 16, color: Colors.grey),
                                 const SizedBox(width: 8),
-                                Expanded(child: Text(customer?['address'] ?? 'No address provided')),
+                                Expanded(child: Text(customer?['phone'] ?? 'No phone provided')),
                               ],
                             ),
                             const SizedBox(height: 16),
