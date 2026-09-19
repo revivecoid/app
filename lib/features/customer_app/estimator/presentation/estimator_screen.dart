@@ -936,6 +936,18 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     final totalCost = _structuredData?['financial_estimation']?['calculated_base_cost'] ?? 0;
     final overallSeverity = _structuredData?['assessment']?['severity_classification'] ?? '-';
 
+    // Panels the customer flagged but that the AI did not return. The AI only
+    // reports panels it can visually confirm in the photo, so an omitted panel
+    // means "not visible / not assessable" — NOT "confirmed undamaged".
+    // Rendered explicitly so the total never silently excludes a flagged panel.
+    final aiPanelNames = panels
+        .map((p) => (p['panel_name'] ?? '').toString().trim().toLowerCase())
+        .toSet();
+    final omittedPanels = ref
+        .watch(selectedPanelsProvider)
+        .where((sp) => !aiPanelNames.contains(sp.label.trim().toLowerCase()))
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1098,11 +1110,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                       );
                     }).toList(),
                     
-                    // Render omitted panels (selected by user but not found by AI)
-                    ...ref.watch(selectedPanelsProvider).where((selectedPanel) {
-                      final aiPanelNames = panels.map((p) => p['panel_name']?.toString().toLowerCase() ?? '').toSet();
-                      return !aiPanelNames.contains(selectedPanel.label.toLowerCase());
-                    }).map((omittedPanel) {
+                    // Render omitted panels (flagged by user, not returned by AI)
+                    ...omittedPanels.map((omittedPanel) {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1123,7 +1132,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                   ),
                                   SizedBox(height: 3),
                                   Text(
-                                    'Tidak ditemukan kerusakan di foto',
+                                    'Tidak terlihat di foto — tidak dapat dinilai AI estimator',
                                     style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
                                   ),
                                 ],
@@ -1133,8 +1142,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  'Rp 0',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+                                  'Belum dinilai',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
                                 ),
                                 SizedBox(height: 4),
                                 Container(
@@ -1143,7 +1152,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                     color: (isDark ? AppColors.surfaceContainerHighest : Theme.of(context).colorScheme.surfaceContainerHighest),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: Text('AMAN', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                                  child: Text('TIDAK DINILAI', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
                                 ),
                               ],
                             ),
@@ -1151,6 +1160,31 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                         ),
                       );
                     }),
+
+                    // Explicit note: why flagged panels are absent from the total
+                    if (omittedPanels.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.fireRed.withValues(alpha: 0.07),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.fireRed.withValues(alpha: 0.2)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.info_outline, size: 15, color: AppColors.fireRed),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Catatan: ${omittedPanels.length} panel yang Anda pilih tidak terlihat dengan jelas pada foto, sehingga tidak dapat dilihat dan dinilai oleh AI estimator. Panel tersebut belum termasuk dalam estimasi ini. Unggah foto yang lebih jelas untuk area tersebut agar dapat dinilai.',
+                                style: TextStyle(fontSize: 11, height: 1.35, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
 
                     // Total cost row
                     if (panels.isNotEmpty) ...[
