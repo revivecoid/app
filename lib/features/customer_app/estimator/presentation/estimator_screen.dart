@@ -669,6 +669,101 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     );
   }
 
+  /// Panels the customer flagged that the AI did not return.
+  ///
+  /// The AI is instructed to report a panel only when it can visually confirm
+  /// damage, so an omitted panel means it could not be seen or assessed in the
+  /// uploaded photo — NOT that the panel is undamaged. Matching is
+  /// case-insensitive because [CarPanel.label] and `pricing_rules.panel_name`
+  /// differ in casing for 'Spoiler Bumper Depan'.
+  List<CarPanel> _omittedSelectedPanels(List<dynamic> aiPanels) {
+    final aiNames = aiPanels
+        .map((p) => (p['panel_name'] ?? '').toString().trim().toLowerCase())
+        .toSet();
+    return ref
+        .watch(selectedPanelsProvider)
+        .where((sp) => !aiNames.contains(sp.label.trim().toLowerCase()))
+        .toList();
+  }
+
+  /// Rows for [_omittedSelectedPanels] plus the note explaining why those panels
+  /// are absent from the total. Shared by the assessment report and the review
+  /// step so both screens word it identically.
+  List<Widget> _buildOmittedPanelWidgets(List<CarPanel> omitted, bool isDark) {
+    if (omitted.isEmpty) return const [];
+    return [
+      ...omitted.map((panel) => Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: (isDark ? AppColors.surfaceContainerLowest : Theme.of(context).colorScheme.surfaceContainerLowest),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: (isDark ? AppColors.surfaceContainerHigh : Theme.of(context).colorScheme.outlineVariant)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        panel.label,
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Tidak terlihat di foto — tidak dapat dinilai AI estimator',
+                        style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Belum dinilai',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: (isDark ? AppColors.surfaceContainerHighest : Theme.of(context).colorScheme.surfaceContainerHighest),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text('TIDAK DINILAI', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          )),
+      Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.fireRed.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.fireRed.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.info_outline, size: 15, color: AppColors.fireRed),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Catatan: ${omitted.length} panel yang Anda pilih tidak terlihat dengan jelas pada foto, sehingga tidak dapat dilihat dan dinilai oleh AI estimator. Panel tersebut belum termasuk dalam estimasi ini. Unggah foto yang lebih jelas untuk area tersebut agar dapat dinilai.',
+                style: TextStyle(fontSize: 11, height: 1.35, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+  }
+
   Widget _buildDamageAssessmentReport() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_aiResult == null) return const SizedBox.shrink();
@@ -677,6 +772,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         ? (_structuredData!['assessment']['damaged_panels_detail'] as List<dynamic>? ?? [])
         : [];
     final totalCost = _structuredData?['financial_estimation']?['calculated_base_cost'] ?? 0;
+    final omittedPanels = _omittedSelectedPanels(panels);
 
     return Container(
       decoration: BoxDecoration(
@@ -788,6 +884,11 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                     ),
                   );
                 }).toList(),
+
+                // Flagged panels the AI could not see or assess, plus the note
+                // explaining why they are excluded from the total below
+                ..._buildOmittedPanelWidgets(omittedPanels, isDark),
+
                 SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -1110,81 +1211,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                       );
                     }).toList(),
                     
-                    // Render omitted panels (flagged by user, not returned by AI)
-                    ...omittedPanels.map((omittedPanel) {
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: (isDark ? AppColors.surfaceContainerLowest : Theme.of(context).colorScheme.surfaceContainerLowest),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: (isDark ? AppColors.surfaceContainerHigh : Theme.of(context).colorScheme.outlineVariant)),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    omittedPanel.label,
-                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
-                                  ),
-                                  SizedBox(height: 3),
-                                  Text(
-                                    'Tidak terlihat di foto — tidak dapat dinilai AI estimator',
-                                    style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'Belum dinilai',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
-                                ),
-                                SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: (isDark ? AppColors.surfaceContainerHighest : Theme.of(context).colorScheme.surfaceContainerHighest),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text('TIDAK DINILAI', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-
-                    // Explicit note: why flagged panels are absent from the total
-                    if (omittedPanels.isNotEmpty)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.fireRed.withValues(alpha: 0.07),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.fireRed.withValues(alpha: 0.2)),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.info_outline, size: 15, color: AppColors.fireRed),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Catatan: ${omittedPanels.length} panel yang Anda pilih tidak terlihat dengan jelas pada foto, sehingga tidak dapat dilihat dan dinilai oleh AI estimator. Panel tersebut belum termasuk dalam estimasi ini. Unggah foto yang lebih jelas untuk area tersebut agar dapat dinilai.',
-                                style: TextStyle(fontSize: 11, height: 1.35, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    // Flagged panels the AI could not see or assess, plus the note
+                    // explaining why they are excluded from the total below
+                    ..._buildOmittedPanelWidgets(omittedPanels, isDark),
 
                     // Total cost row
                     if (panels.isNotEmpty) ...[
