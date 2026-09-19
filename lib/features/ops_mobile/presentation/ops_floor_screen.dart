@@ -16,12 +16,18 @@ final floorJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>
   // but we keep the query minimal and join only vehicles to reduce RLS surface.
   final res = await Supabase.instance.client
       .from('repair_jobs')
-      .select('id, status, customer_id, vehicles(make, model, license_plate)')
+      .select('id, status, delivery_type, customer_id, vehicles(make, model, license_plate)')
       .eq('partner_id', partnerId)
-      .inFilter('status', ['5_admitted', '6_in_progress', '7_finished'])
+      .inFilter('status', ['3_booked', '5_admitted', '6_in_progress', '7_finished'])
       .order('created_at', ascending: true);
 
-  return List<Map<String, dynamic>>.from(res);
+  final rawJobs = List<Map<String, dynamic>>.from(res);
+  return rawJobs.where((job) {
+    // Floor handles intake only for self_deliver.
+    // Pickup intake is handled by Logistics driver.
+    if (job['status'] == '3_booked' && job['delivery_type'] == 'pickup') return false;
+    return true;
+  }).toList();
 });
 
 class OpsFloorScreen extends ConsumerWidget {

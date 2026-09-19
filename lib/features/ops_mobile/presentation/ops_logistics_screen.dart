@@ -13,12 +13,18 @@ final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynami
 
   final res = await Supabase.instance.client
       .from('repair_jobs')
-      .select('id, status, customer_id, profiles!repair_jobs_customer_id_fkey(full_name, phone), vehicles(make, model, license_plate)')
+      .select('id, status, delivery_type, customer_id, profiles!repair_jobs_customer_id_fkey(full_name, phone), vehicles(make, model, license_plate)')
       .eq('partner_id', partnerId)
-      .inFilter('status', ['4_paid', '8_awaiting_delivery'])
+      .inFilter('status', ['3_booked', '8_awaiting_delivery'])
       .order('created_at', ascending: true);
       
-  return List<Map<String, dynamic>>.from(res);
+  // Filter locally: we only want 3_booked if it requires a valet pickup.
+  // 8_awaiting_delivery always shows (either valet return or ready for customer).
+  final rawJobs = List<Map<String, dynamic>>.from(res);
+  return rawJobs.where((job) {
+    if (job['status'] == '3_booked' && job['delivery_type'] != 'pickup') return false;
+    return true;
+  }).toList();
 });
 
 class OpsLogisticsScreen extends ConsumerWidget {
