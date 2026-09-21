@@ -28,10 +28,11 @@ final floorJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>
 
   final rawJobs = List<Map<String, dynamic>>.from(res);
   return rawJobs.where((job) {
-    // In all_access the floor shows every job regardless of how the vehicle
-    // arrives, so a customer switching from self-delivery to pickup mid-job
-    // does not make the job disappear from the operator's list.
-    if (mode == OpsViewMode.allAccess) return true;
+    // Under all_access AND view_all_act_own the floor shows every job regardless
+    // of how the vehicle arrives, so a customer switching from self-delivery to
+    // pickup mid-job does not make the job disappear from the operator's list.
+    // Both modes are "see everything"; they differ only in what may be completed.
+    if (mode != OpsViewMode.originalRole) return true;
     // original_role: floor handles intake only for self_deliver.
     // Pickup intake is handled by the Logistics driver.
     if (job['status'] == '3_booked' && job['delivery_type'] == 'pickup') return false;

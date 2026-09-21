@@ -2,70 +2,97 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:re_v/features/ops_mobile/ops_access.dart';
 import 'package:re_v/features/ops_mobile/presentation/ops_stage_photo_screen.dart';
 
-/// The workshop owner chooses between letting staff and drivers see everything
-/// (all_access, the database default) and restoring the original strict per-role
-/// split (original_role). These tests pin the rules both modes must satisfy.
+/// The workshop owner picks between three access modes. The distinction that
+/// matters is VIEW vs ACT: view_all_act_own exists precisely so an operator can
+/// see every stage without being able to complete another role's work.
+///
+/// Acting is enforced by the database (`ops_may_act_on_stage()` reading
+/// `ops_stage_roles`, which seeds itself from these same Dart lists). These tests
+/// pin the Dart side of that agreement — if the two disagree the UI offers taps
+/// the server then refuses.
 void main() {
-  group('OpsViewMode parsing', () {
-    test('reads original_role from the database value', () {
+  group('OpsViewMode parsing — three values, unknown falls to the DB default', () {
+    test('reads each stored value', () {
       expect(OpsViewMode.fromDb('original_role'), OpsViewMode.originalRole);
-    });
-
-    test('reads all_access from the database value', () {
       expect(OpsViewMode.fromDb('all_access'), OpsViewMode.allAccess);
+      expect(OpsViewMode.fromDb('view_all_act_own'), OpsViewMode.viewAllActOwn);
     });
 
     test('unknown and missing values fall back to all_access (the DB default)', () {
       expect(OpsViewMode.fromDb(null), OpsViewMode.allAccess);
       expect(OpsViewMode.fromDb(''), OpsViewMode.allAccess);
       expect(OpsViewMode.fromDb('typo'), OpsViewMode.allAccess);
+      // A near-miss must not silently become a restrictive mode.
+      expect(OpsViewMode.fromDb('view_all_act_own '), OpsViewMode.allAccess);
     });
 
-    test('round-trips back to the database values', () {
-      expect(OpsViewMode.allAccess.dbValue, 'all_access');
-      expect(OpsViewMode.originalRole.dbValue, 'original_role');
-    });
-  });
-
-  group('opsTabsFor — all_access shows every tab to both roles', () {
-    test('staff sees floor, logistics and settings', () {
-      expect(opsTabsFor(OpsViewMode.allAccess, 'partner_staff'), OpsTab.values);
+    test('dbValue round-trips through fromDb for every mode', () {
+      for (final m in OpsViewMode.values) {
+        expect(OpsViewMode.fromDb(m.dbValue), m, reason: m.name);
+      }
     });
 
-    test('driver sees floor, logistics and settings', () {
-      expect(opsTabsFor(OpsViewMode.allAccess, 'partner_driver'), OpsTab.values);
-    });
-
-    test('mechanic and admin see every tab', () {
-      expect(opsTabsFor(OpsViewMode.allAccess, 'partner_mechanic'), OpsTab.values);
-      expect(opsTabsFor(OpsViewMode.allAccess, 'master_admin'), OpsTab.values);
+    test('every mode carries a label and description for the settings UI', () {
+      for (final m in OpsViewMode.values) {
+        expect(m.label, isNotEmpty, reason: m.name);
+        expect(m.description, isNotEmpty, reason: m.name);
+      }
     });
   });
 
-  group('opsTabsFor — original_role restores the previous behaviour', () {
-    test('driver is limited to logistics and settings', () {
-      expect(opsTabsFor(OpsViewMode.originalRole, 'partner_driver'),
-          const [OpsTab.logistics, OpsTab.settings]);
+  group('view vs act — the distinction that makes view_all_act_own work', () {
+    final floorStage = stageByKey('disassembly')!.allowedRoles;
+
+    test('view_all_act_own shows every stage to every operator', () {
+      for (final role in ['partner_driver', 'partner_staff', 'partner_mechanic']) {
+        expect(opsRoleMayViewStage(OpsViewMode.viewAllActOwn, role, floorStage), isTrue,
+            reason: role);
+      }
     });
 
-    test('staff keeps all three tabs (it always had them)', () {
-      expect(opsTabsFor(OpsViewMode.originalRole, 'partner_staff'), OpsTab.values);
+    test('view_all_act_own does NOT let a driver act on a floor stage', () {
+      // The whole point: visible, but read-only for this role.
+      expect(
+        opsRoleMayActOnStage(OpsViewMode.viewAllActOwn, 'partner_driver', floorStage),
+        isFalse,
+      );
     });
 
-    test('mechanic keeps all three tabs', () {
-      expect(opsTabsFor(OpsViewMode.originalRole, 'partner_mechanic'), OpsTab.values);
-    });
-  });
-
-  group('opsHomeRouteFor', () {
-    test('all_access always lands on the floor', () {
-      expect(opsHomeRouteFor(OpsViewMode.allAccess, 'partner_driver'), '/ops/floor');
-      expect(opsHomeRouteFor(OpsViewMode.allAccess, 'partner_staff'), '/ops/floor');
+    test('view_all_act_own still lets the owning roles act', () {
+      expect(opsRoleMayActOnStage(OpsViewMode.viewAllActOwn, 'partner_staff', floorStage), isTrue);
+      expect(opsRoleMayActOnStage(OpsViewMode.viewAllActOwn, 'partner_mechanic', floorStage), isTrue);
     });
 
-    test('original_role sends a driver to logistics, everyone else to the floor', () {
-      expect(opsHomeRouteFor(OpsViewMode.originalRole, 'partner_driver'), '/ops/logistics');
-      expect(opsHomeRouteFor(OpsViewMode.originalRole, 'partner_staff'), '/ops/floor');
+    test('all_access lets a driver act on every stage', () {
+      for (final s in kOpsStages) {
+        expect(opsRoleMayActOnStage(OpsViewMode.allAccess, 'partner_driver', s.allowedRoles), isTrue,
+            reason: s.stageKey);
+      }
+    });
+
+    test('original_role hides AND blocks a floor stage from a driver', () {
+      expect(opsRoleMayViewStage(OpsViewMode.originalRole, 'partner_driver', floorStage), isFalse);
+      expect(opsRoleMayActOnStage(OpsViewMode.originalRole, 'partner_driver', floorStage), isFalse);
+    });
+
+    test('acting implies viewing in every mode — no invisible-but-tappable stage', () {
+      for (final mode in OpsViewMode.values) {
+        for (final role in kOpsOperatorRoles) {
+          for (final s in kOpsStages) {
+            if (opsRoleMayActOnStage(mode, role, s.allowedRoles)) {
+              expect(opsRoleMayViewStage(mode, role, s.allowedRoles), isTrue,
+                  reason: '${mode.name}/$role/${s.stageKey}');
+            }
+          }
+        }
+      }
+    });
+
+    test('a non-operator is refused both view and act', () {
+      for (final role in ['customer', null, '']) {
+        expect(opsRoleMayViewStage(OpsViewMode.allAccess, role, floorStage), isFalse);
+        expect(opsRoleMayActOnStage(OpsViewMode.allAccess, role, floorStage), isFalse);
+      }
     });
   });
 
@@ -89,6 +116,18 @@ void main() {
       expect(intake.advancesStatus, '5_admitted');
     });
 
+    test('the new mode genuinely restricts a driver somewhere', () {
+      // If every stage admitted every role, view_all_act_own would restrict
+      // nothing and the feature would be cosmetic. Guard against that.
+      final blocked = kOpsStages
+          .where((s) =>
+              !opsRoleMayActOnStage(OpsViewMode.viewAllActOwn, 'partner_driver', s.allowedRoles))
+          .toList();
+      expect(blocked, isNotEmpty,
+          reason: 'view_all_act_own would restrict nothing for a driver');
+      expect(blocked.map((s) => s.stageKey), contains('disassembly'));
+    });
+
     test('every stage admits at least one ops role and an admin', () {
       for (final s in kOpsStages) {
         expect(s.allowedRoles, isNotEmpty, reason: '${s.stageKey} admits nobody');
@@ -104,74 +143,38 @@ void main() {
     });
   });
 
-  group('opsRoleMayActOnStage — all_access lets either role do any stage', () {
-    test('a driver may complete the floor-only disassembly stage', () {
-      expect(
-        opsRoleMayActOnStage(
-            OpsViewMode.allAccess, 'partner_driver', stageByKey('disassembly')!.allowedRoles),
-        isTrue,
-      );
+  group('opsTabsFor — both seeing modes give every operator every tab', () {
+    test('all_access shows floor, logistics and settings to everyone', () {
+      for (final role in kOpsOperatorRoles) {
+        expect(opsTabsFor(OpsViewMode.allAccess, role), OpsTab.values, reason: role);
+      }
     });
 
-    test('a staff member may complete the delivery stage', () {
-      expect(
-        opsRoleMayActOnStage(
-            OpsViewMode.allAccess, 'partner_staff', stageByKey('delivery')!.allowedRoles),
-        isTrue,
-      );
+    test('view_all_act_own also shows everything — seeing is not acting', () {
+      for (final role in kOpsOperatorRoles) {
+        expect(opsTabsFor(OpsViewMode.viewAllActOwn, role), OpsTab.values, reason: role);
+      }
     });
 
-    test('both roles may complete vehicle intake', () {
-      final intake = stageByKey('vehicle_intake')!.allowedRoles;
-      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, 'partner_staff', intake), isTrue);
-      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, 'partner_driver', intake), isTrue);
-    });
-
-    test('customers are still refused', () {
-      expect(
-        opsRoleMayActOnStage(
-            OpsViewMode.allAccess, 'customer', stageByKey('disassembly')!.allowedRoles),
-        isFalse,
-      );
-    });
-
-    test('a missing role is refused', () {
-      final floor = stageByKey('disassembly')!.allowedRoles;
-      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, null, floor), isFalse);
-      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, '', floor), isFalse);
+    test('original_role limits the driver to logistics and settings', () {
+      expect(opsTabsFor(OpsViewMode.originalRole, 'partner_driver'),
+          const [OpsTab.logistics, OpsTab.settings]);
+      expect(opsTabsFor(OpsViewMode.originalRole, 'partner_staff'), OpsTab.values);
+      expect(opsTabsFor(OpsViewMode.originalRole, 'partner_mechanic'), OpsTab.values);
     });
   });
 
-  group('opsRoleMayActOnStage — original_role keeps the stage role lists', () {
-    test('a staff member MAY complete delivery (changed deliberately)', () {
-      // Staff deliver cars to clients, so excluding them left a stage the UI
-      // offered under all_access and the RPC refused.
-      expect(
-        opsRoleMayActOnStage(
-            OpsViewMode.originalRole, 'partner_staff', stageByKey('delivery')!.allowedRoles),
-        isTrue,
-      );
+  group('opsHomeRouteFor', () {
+    test('all_access and view_all_act_own always land on the floor', () {
+      for (final mode in [OpsViewMode.allAccess, OpsViewMode.viewAllActOwn]) {
+        expect(opsHomeRouteFor(mode, 'partner_driver'), '/ops/floor', reason: mode.name);
+        expect(opsHomeRouteFor(mode, 'partner_staff'), '/ops/floor', reason: mode.name);
+      }
     });
 
-    test('a driver may NOT complete a floor-only stage', () {
-      expect(
-        opsRoleMayActOnStage(
-            OpsViewMode.originalRole, 'partner_driver', stageByKey('disassembly')!.allowedRoles),
-        isFalse,
-      );
-    });
-
-    test('a driver may still complete intake and delivery', () {
-      expect(
-        opsRoleMayActOnStage(
-            OpsViewMode.originalRole, 'partner_driver', stageByKey('vehicle_intake')!.allowedRoles),
-        isTrue,
-      );
-      expect(
-        opsRoleMayActOnStage(
-            OpsViewMode.originalRole, 'partner_driver', stageByKey('delivery')!.allowedRoles),
-        isTrue,
-      );
+    test('original_role sends a driver to logistics, everyone else to the floor', () {
+      expect(opsHomeRouteFor(OpsViewMode.originalRole, 'partner_driver'), '/ops/logistics');
+      expect(opsHomeRouteFor(OpsViewMode.originalRole, 'partner_staff'), '/ops/floor');
     });
   });
 }
