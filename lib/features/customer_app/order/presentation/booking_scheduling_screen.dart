@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
+import '../../estimator/providers/customer_intake_provider.dart';
 
 // ─── Provider: load job + estimation data ─────────────────────────────────────
 
@@ -39,6 +40,28 @@ class _BookingSchedulingScreenState
   bool _isBooking = false;
   String? _error;
   String? _dateError;
+
+  /// The number the workshop will ring — to confirm a valet pickup, or to reach
+  /// the customer about the car once it is in. Prefilled from the estimator's
+  /// contact step when the customer came through it, but editable here because
+  /// this is the screen where pickup is actually chosen and the number finally
+  /// matters.
+  final _phoneCtrl = TextEditingController();
+  String? _phoneError;
+
+  @override
+  void initState() {
+    super.initState();
+    // Carry over what they typed in the estimator rather than asking twice.
+    final carried = ref.read(customerIntakeProvider).phone.trim();
+    if (carried.isNotEmpty) _phoneCtrl.text = carried;
+  }
+
+  @override
+  void dispose() {
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
 
   // ── Date availability check ───────────────────────────────────────────────
   Future<bool> _checkDateAvailable(DateTime date) async {
@@ -89,20 +112,51 @@ class _BookingSchedulingScreenState
       return;
     }
 
+    final contactPhone = _phoneCtrl.text.trim();
+    if (contactPhone.isEmpty) {
+      setState(() =>
+          _phoneError = 'Please enter a number the workshop can reach you on.');
+      return;
+    }
+
     setState(() {
       _isBooking = true;
       _error = null;
       _dateError = null;
+      _phoneError = null;
     });
 
     try {
-      // 1. Save delivery type + scheduled date on the job
+      // 1. Save delivery type, scheduled date, and the contact number on the job.
+      // The number is written here as well as at estimation time because this is
+      // the screen where the customer commits to a valet pickup — the workshop
+      // needs a number it can actually ring, and previously nothing was stored.
       await _sb.from('repair_jobs').update({
         'delivery_type': _deliveryType,
         'scheduled_date': _selectedDate!.toIso8601String(),
+        'contact_phone': contactPhone,
       }).eq('id', widget.jobId);
 
-      // 2. Advance status 2_estimated → 3_booked via RPC (validates transition)
+      // 2. Keep the person record in step, so future bookings prefill and the
+      //    profile editor shows the same number. A targeted UPDATE, not an
+      //    upsert: `profiles.full_name` and `role` are NOT NULL with no defaults,
+      //    and Postgres validates those before resolving ON CONFLICT, so a
+      //    partial upsert fails with 23502 even for an existing row. Non-fatal —
+      //    the job carries its own copy, which is what ops reads, so a failure
+      //    here must not lose the booking the customer just confirmed.
+      final user = _sb.auth.currentUser;
+      if (user != null) {
+        try {
+          await _sb
+              .from('profiles')
+              .update({'phone': contactPhone})
+              .eq('id', user.id);
+        } catch (e) {
+          debugPrint('[Booking] profile phone save failed (non-fatal): $e');
+        }
+      }
+
+      // 3. Advance status 2_estimated → 3_booked via RPC (validates transition)
       await _sb.rpc('advance_job_status', params: {
         'p_job_id': widget.jobId,
         'p_new_status': '3_booked',
@@ -110,12 +164,15 @@ class _BookingSchedulingScreenState
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
-            'Booking confirmed! Drop off your vehicle on the selected date. '
-            'We\'ll notify you once inspection is complete.'),
-        backgroundColor: Color(0xFF059669),
-        duration: Duration(seconds: 4),
+            _deliveryType == 'pickup'
+                ? 'Booking confirmed! We will contact you on $contactPhone to '
+                    'arrange collection of your vehicle.'
+                : 'Booking confirmed! Drop off your vehicle on the selected date. '
+                    "We'll notify you once inspection is complete."),
+        backgroundColor: const Color(0xFF059669),
+        duration: const Duration(seconds: 4),
       ));
 
       context.go('/');
@@ -193,6 +250,52 @@ class _BookingSchedulingScreenState
                           onChanged: (v) => setState(() => _deliveryType = v),
                           cs: cs,
                         ),
+                        const SizedBox(height: 24),
+
+                        // ── Contact number ──────────────────────────────────
+                        Text('Contact Number',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: cs.onSurface)),
+                        const SizedBox(height: 4),
+                        Text(
+                          _deliveryType == 'pickup'
+                              ? 'The driver will call this number to arrange '
+                                  'collection of your vehicle.'
+                              : 'The workshop will use this number to reach you '
+                                  'about your vehicle.',
+                          style: TextStyle(
+                              fontSize: 12, color: cs.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _phoneCtrl,
+                          keyboardType: TextInputType.phone,
+                          decoration: const InputDecoration(
+                            labelText: 'WhatsApp / Phone',
+                            hintText: '0812 3456 7890',
+                          ),
+                          onChanged: (_) {
+                            // Clear the complaint as soon as they start fixing it.
+                            if (_phoneError != null) {
+                              setState(() => _phoneError = null);
+                            }
+                          },
+                        ),
+                        if (_phoneError != null) ...[
+                          const SizedBox(height: 8),
+                          Row(children: [
+                            const Icon(Icons.warning_amber_rounded,
+                                size: 14, color: Colors.orange),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(_phoneError!,
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.orange)),
+                            ),
+                          ]),
+                        ],
                         const SizedBox(height: 24),
 
                         // ── Date picker ─────────────────────────────────────

@@ -237,23 +237,29 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         // The contact step is the only place the app asks for a phone, and until
         // now nothing wrote it anywhere: it lived in SharedPreferences (browser
         // localStorage) and died there, leaving the workshop with no way to reach
-        // the customer and ops rendering "No phone provided". Persist it in both
-        // places it is needed — the person record, and the job the workshop sees.
-        final profileUpdate = <String, dynamic>{
-          'id': user.id,
-          'email': user.email ?? '',
-          'role': (user.appMetadata['role'] as String?) ?? 'customer',
-        };
-        if (intake.name.trim().isNotEmpty) profileUpdate['full_name'] = intake.name.trim();
-        // Only sent when present so an upsert can never blank an existing number.
-        if (contactPhone.isNotEmpty) profileUpdate['phone'] = contactPhone;
+        // the customer and ops rendering "No phone provided".
+        //
+        // A targeted UPDATE, not an upsert. `profiles.full_name` and
+        // `profiles.role` are NOT NULL with no defaults, and Postgres validates
+        // those before resolving ON CONFLICT — so a partial upsert fails with
+        // 23502 even for a row that already exists. It also keeps this off
+        // `role`, which is derived from memberships and must not be rewritten
+        // from the token here.
+        final profileFields = <String, dynamic>{};
+        if (intake.name.trim().isNotEmpty) profileFields['full_name'] = intake.name.trim();
+        if (contactPhone.isNotEmpty) profileFields['phone'] = contactPhone;
 
-        try {
-          await Supabase.instance.client.from('profiles').upsert(profileUpdate);
-        } catch (e) {
-          // Non-fatal: the per-job snapshot below is what the workshop reads, so
-          // a profile write failure must not block the booking.
-          debugPrint('[Estimator] profile contact save failed (non-fatal): $e');
+        if (profileFields.isNotEmpty) {
+          try {
+            await Supabase.instance.client
+                .from('profiles')
+                .update(profileFields)
+                .eq('id', user.id);
+          } catch (e) {
+            // Non-fatal: the per-job snapshot below is what the workshop reads, so
+            // a profile write failure must not block the booking.
+            debugPrint('[Estimator] profile contact save failed (non-fatal): $e');
+          }
         }
 
         final vehicleRes = await Supabase.instance.client.from('vehicles').insert({
