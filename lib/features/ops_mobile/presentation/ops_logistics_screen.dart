@@ -29,10 +29,11 @@ final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynami
       
   final rawJobs = List<Map<String, dynamic>>.from(res);
   return rawJobs.where((job) {
-    // In all_access logistics also lists self-delivery jobs that are booked, so
-    // the valet team can pick up a job the customer switched to pickup-style
-    // collection. 8_awaiting_delivery always shows either way.
-    if (mode == OpsViewMode.allAccess) return true;
+    // Under all_access AND view_all_act_own, logistics also lists self-delivery
+    // jobs that are booked, so the valet team can see every job the workshop has
+    // (8_awaiting_delivery always shows either way). The two modes are both "see
+    // everything"; they differ only in what may be completed.
+    if (mode != OpsViewMode.originalRole) return true;
     // original_role: only 3_booked jobs that require a valet pickup.
     if (job['status'] == '3_booked' && job['delivery_type'] != 'pickup') return false;
     return true;

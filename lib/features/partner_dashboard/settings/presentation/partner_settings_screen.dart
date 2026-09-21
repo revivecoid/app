@@ -385,6 +385,26 @@ class _OpsAccessModeCardState extends ConsumerState<_OpsAccessModeCard> {
     return role == 'partner_mechanic' || role == 'master_admin';
   }
 
+  /// Longer owner-facing explanation per mode, with the "why you'd pick this"
+  /// that the one-line enum description cannot carry. The ops settings screen
+  /// shows [OpsViewMode.description] to the operator, so these two must agree.
+  String _modeDetail(OpsViewMode mode) => switch (mode) {
+        OpsViewMode.allAccess =>
+          'Full access — staff and drivers both see every tab and every job in this '
+              'workshop, and either role can complete any repair stage. Use this when a '
+              'customer may change their mind about pickup or self-delivery mid-job.',
+        OpsViewMode.viewAllActOwn =>
+          'View all, act on their own — staff and drivers see every job and every repair '
+              'stage, so anyone can tell a customer where their car is. Completing a stage '
+              'stays with the role responsible for it: a driver cannot close out '
+              'disassembly, welding or QC. Enforced by the database, not just hidden in '
+              'the app.',
+        OpsViewMode.originalRole =>
+          'Strict roles — staff only handle self-delivery intake and drivers only handle '
+              'valet pickup, each completing just their own repair stages, and neither '
+              'sees the other\'s jobs at all. This is the original behaviour.',
+      };
+
   Future<void> _save(OpsViewMode mode) async {
     final user = Supabase.instance.client.auth.currentUser;
     final partnerId = user?.appMetadata['partner_id'] as String?;
@@ -403,9 +423,17 @@ class _OpsAccessModeCardState extends ConsumerState<_OpsAccessModeCard> {
       // Refresh the shared provider so the ops app reflects this immediately.
       ref.invalidate(opsViewModeProvider);
 
-      _notify(mode == OpsViewMode.allAccess
-          ? 'Staff and drivers can now see and handle every job.'
-          : 'Staff and drivers are back to their role-specific jobs.');
+      // Three modes, so the confirmation has to say which one landed — a binary
+      // message would report the new mode as "back to role-specific", which is
+      // wrong in both directions for view_all_act_own.
+      _notify(switch (mode) {
+        OpsViewMode.allAccess =>
+          'Staff and drivers can now see and handle every job.',
+        OpsViewMode.viewAllActOwn =>
+          'Staff and drivers can see every job, but only complete their own stages.',
+        OpsViewMode.originalRole =>
+          'Staff and drivers are back to their role-specific jobs.',
+      });
     } catch (e) {
       _notify('Could not save access mode: ${e.toString().replaceAll('PostgrestException', '').trim()}',
           isError: true);
@@ -461,9 +489,14 @@ class _OpsAccessModeCardState extends ConsumerState<_OpsAccessModeCard> {
                           label: Text('Full access'),
                         ),
                         ButtonSegment(
+                          value: OpsViewMode.viewAllActOwn,
+                          icon: Icon(Icons.remove_red_eye_outlined, size: 16),
+                          label: Text('View all, act own'),
+                        ),
+                        ButtonSegment(
                           value: OpsViewMode.originalRole,
                           icon: Icon(Icons.badge_outlined, size: 16),
-                          label: Text('Role-based'),
+                          label: Text('Strict roles'),
                         ),
                       ],
                       selected: {mode},
@@ -484,15 +517,13 @@ class _OpsAccessModeCardState extends ConsumerState<_OpsAccessModeCard> {
                       ),
                     ),
                     const SizedBox(height: 14),
+                    // One source for the wording: the enum, which the ops
+                    // settings screen shows back to the operator. Keeping the
+                    // copy here and there in step matters — a driver reading a
+                    // different explanation than the owner chose is how a
+                    // deliberate restriction looks like a bug.
                     Text(
-                      mode == OpsViewMode.allAccess
-                          ? 'Full access — staff and drivers both see every tab and every job '
-                            'in this workshop, and either role can complete any repair stage. '
-                            'Use this when a customer may change their mind about pickup or '
-                            'self-delivery mid-job.'
-                          : 'Role-based — staff only handle self-delivery intake and drivers only '
-                            'handle valet pickup, each completing just their own repair stages. '
-                            'This is the original strict behaviour.',
+                      _modeDetail(mode),
                       style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, height: 1.4),
                     ),
                     if (_saving) ...[

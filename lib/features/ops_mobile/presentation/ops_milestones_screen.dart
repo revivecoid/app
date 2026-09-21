@@ -84,9 +84,13 @@ class OpsMilestonesScreen extends ConsumerWidget {
     // there.
     final mode = ref.watch(opsViewModeProvider).valueOrNull ?? OpsViewMode.allAccess;
 
-    // Determine which stages are visible to this role
+    // VIEW and ACT are separate. Under view_all_act_own an operator sees every
+    // stage so they know where the car is in production, but only the stages
+    // their role owns are tappable. The database enforces the same split, so a
+    // visible-but-not-tappable tile reflects a real restriction rather than a
+    // cosmetic one.
     final visibleStages = kOpsStages
-        .where((s) => opsRoleMayActOnStage(mode, role, s.allowedRoles))
+        .where((s) => opsRoleMayViewStage(mode, role, s.allowedRoles))
         .toList();
 
     return Scaffold(
@@ -157,12 +161,22 @@ class OpsMilestonesScreen extends ConsumerWidget {
                           role: role,
                         );
 
+                        // Visible but not completable BY THIS ROLE — as opposed
+                        // to a stage that is merely waiting on an earlier one.
+                        // The two need different wording: "waiting" implies it
+                        // will open later, which for a role restriction is false.
+                        final blockedByRole = !canAct &&
+                            !isComplete &&
+                            !opsRoleMayActOnStage(
+                                mode, role, stage.allowedRoles);
+
                         return _StageTile(
                           stage: stage,
                           isComplete: isComplete,
                           photoCount: photoCount,
                           completedAt: completedAt,
                           canAct: canAct,
+                          blockedByRole: blockedByRole,
                           onTap: canAct
                               ? () async {
                                   final refreshed = await context.push<bool>(
@@ -189,7 +203,9 @@ class OpsMilestonesScreen extends ConsumerWidget {
 
   /// A stage is actionable when:
   ///   - It has not been completed yet
-  ///   - The caller may act on it for this workshop's access mode
+  ///   - The caller may ACT on it for this workshop's access mode (viewing is
+  ///     governed separately by `opsRoleMayViewStage`; a stage can be visible and
+  ///     still not actionable, which is the point of view_all_act_own)
   ///   - The job's current status is consistent with starting this stage
   bool _stageIsActionable({
     required OpsStageDefinition stage,
@@ -229,6 +245,11 @@ class _StageTile extends StatelessWidget {
   final int photoCount;
   final String? completedAt;
   final bool canAct;
+
+  /// Visible to this operator, but their role may not complete it. Rendered
+  /// distinctly from "not yet available", because that message promises the
+  /// stage will open later and here it never will for this role.
+  final bool blockedByRole;
   final VoidCallback? onTap;
 
   const _StageTile({
@@ -237,6 +258,7 @@ class _StageTile extends StatelessWidget {
     required this.photoCount,
     required this.completedAt,
     required this.canAct,
+    required this.blockedByRole,
     required this.onTap,
   });
 
@@ -256,6 +278,12 @@ class _StageTile extends StatelessWidget {
       leadingBg = const Color(0xFFFFE1DE);
       leadingFg = const Color(0xFFD10721);
       leadingIcon = Icons.play_circle_outline;
+    } else if (blockedByRole) {
+      // A lock, not an empty circle: this stage is not "not yet", it is
+      // "not yours", and the two must not look alike.
+      leadingBg = cs.surfaceContainerHighest;
+      leadingFg = cs.onSurfaceVariant;
+      leadingIcon = Icons.lock_outline;
     } else {
       leadingBg = cs.surfaceContainerHighest;
       leadingFg = cs.onSurfaceVariant;
@@ -310,6 +338,11 @@ class _StageTile extends StatelessWidget {
                       Text(
                         'Tap to add photos & complete stage',
                         style: TextStyle(fontSize: 11, color: const Color(0xFFD10721)),
+                      ),
+                    ] else if (blockedByRole) ...[
+                      Text(
+                        'Read-only — another role completes this stage',
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
                       ),
                     ] else ...[
                       Text(

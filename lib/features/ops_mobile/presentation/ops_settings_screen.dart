@@ -44,7 +44,14 @@ class OpsSettingsScreen extends ConsumerWidget {
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
             data: (value) {
-              final allAccess = value == OpsViewMode.allAccess;
+              // Three modes, so this is a switch rather than a boolean: reading
+              // view_all_act_own as "role-based" would understate what an
+              // operator can see and misreport why a stage is locked.
+              final (icon, colour) = switch (value) {
+                OpsViewMode.allAccess => (Icons.visibility_outlined, Colors.green.shade700),
+                OpsViewMode.viewAllActOwn => (Icons.remove_red_eye_outlined, Colors.blue.shade700),
+                OpsViewMode.originalRole => (Icons.badge_outlined, Colors.orange.shade800),
+              };
               return Card(
                 margin: const EdgeInsets.only(bottom: 24),
                 child: Padding(
@@ -54,11 +61,7 @@ class OpsSettingsScreen extends ConsumerWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(
-                            allAccess ? Icons.visibility_outlined : Icons.badge_outlined,
-                            size: 18,
-                            color: allAccess ? Colors.green.shade700 : Colors.orange.shade800,
-                          ),
+                          Icon(icon, size: 18, color: colour),
                           const SizedBox(width: 8),
                           const Text(
                             'Workshop Access Mode',
@@ -67,14 +70,11 @@ class OpsSettingsScreen extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        allAccess
-                            ? 'Full access — you can see every job in this workshop and '
-                              'complete any repair stage, whichever role you hold.'
-                            : 'Role-based — you see the jobs and stages for your own role only. '
-                              'Your workshop owner controls this.',
-                        style: const TextStyle(fontSize: 13),
-                      ),
+                      Text(value.label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      // The same wording the owner saw when choosing it, so the
+                      // operator is not told a different story than the setting.
+                      Text(value.description, style: const TextStyle(fontSize: 13)),
                       const SizedBox(height: 8),
                       const Text(
                         'Only the workshop owner can change this.',
