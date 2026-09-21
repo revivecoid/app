@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/rev_app_bar.dart';
 import 'core/utils/auth_url.dart';
+import 'features/ops_mobile/ops_access.dart';
 
 // --- IMPORTING ESTABLISHED FEATURE MODULES ---
 import 'features/partner_dashboard/presentation/partner_profile_screen.dart';
@@ -403,11 +404,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // --- PARTNER WORKSHOP DOMAIN ---
       GoRoute(
         path: '/ops',
-        redirect: (context, state) {
+        redirect: (context, state) async {
            // SEC-02 FIX: Read role from appMetadata only
            final role = Supabase.instance.client.auth.currentUser?.appMetadata['role'] as String?;
-           if (role == 'partner_driver') return '/ops/logistics';
-           return '/ops/floor';
+           // Await the workshop's mode so a driver deep-linking to /ops under the
+           // strict mode lands on logistics rather than a tab they do not have.
+           final mode = await ref.read(opsViewModeProvider.future);
+           return opsHomeRouteFor(mode, role);
         },
       ),
       GoRoute(

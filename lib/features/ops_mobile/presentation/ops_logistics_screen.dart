@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../ops_access.dart';
 
 final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final user = Supabase.instance.client.auth.currentUser;
@@ -11,6 +12,8 @@ final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynami
   final partnerId = user.appMetadata['partner_id'] as String?;
   if (partnerId == null || partnerId.isEmpty) return [];
 
+  final mode = await ref.watch(opsViewModeProvider.future);
+
   final res = await Supabase.instance.client
       .from('repair_jobs')
       .select('id, status, delivery_type, customer_id, profiles!repair_jobs_customer_id_fkey(full_name, phone), vehicles(make, model, license_plate)')
@@ -18,10 +21,13 @@ final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynami
       .inFilter('status', ['3_booked', '8_awaiting_delivery'])
       .order('created_at', ascending: true);
       
-  // Filter locally: we only want 3_booked if it requires a valet pickup.
-  // 8_awaiting_delivery always shows (either valet return or ready for customer).
   final rawJobs = List<Map<String, dynamic>>.from(res);
   return rawJobs.where((job) {
+    // In all_access logistics also lists self-delivery jobs that are booked, so
+    // the valet team can pick up a job the customer switched to pickup-style
+    // collection. 8_awaiting_delivery always shows either way.
+    if (mode == OpsViewMode.allAccess) return true;
+    // original_role: only 3_booked jobs that require a valet pickup.
     if (job['status'] == '3_booked' && job['delivery_type'] != 'pickup') return false;
     return true;
   }).toList();

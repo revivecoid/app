@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../presentation/partner_shell_screen.dart';
+import '../../../ops_mobile/ops_access.dart';
 
 class PartnerSettingsScreen extends ConsumerWidget {
   PartnerSettingsScreen({super.key});
@@ -106,6 +107,13 @@ class PartnerSettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
+
+            const SizedBox(height: 28),
+
+            // ── Section: Workshop Ops Access ────────────────────────────────
+            // Owner-only; the card renders nothing for staff, drivers and anyone
+            // else who cannot write the partner row.
+            const _OpsAccessModeCard(),
 
             const SizedBox(height: 28),
 
@@ -351,6 +359,158 @@ class _InfoRow extends StatelessWidget {
                     color: cs.onSurface,
                     fontWeight: FontWeight.w500))),
       ]),
+    );
+  }
+}
+
+// ─── Workshop ops access control ──────────────────────────────────────────────
+
+/// Owner-only switch for how staff and drivers may operate the workshop.
+///
+/// Renders nothing for anyone who cannot write the partner row, so this is safe
+/// to place unconditionally. The write is additionally enforced server-side by
+/// the partner UPDATE policy — this widget's guard is only cosmetic.
+class _OpsAccessModeCard extends ConsumerStatefulWidget {
+  const _OpsAccessModeCard();
+
+  @override
+  ConsumerState<_OpsAccessModeCard> createState() => _OpsAccessModeCardState();
+}
+
+class _OpsAccessModeCardState extends ConsumerState<_OpsAccessModeCard> {
+  bool _saving = false;
+
+  bool get _mayConfigure {
+    final role = Supabase.instance.client.auth.currentUser?.appMetadata['role'] as String?;
+    return role == 'partner_mechanic' || role == 'master_admin';
+  }
+
+  Future<void> _save(OpsViewMode mode) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    final partnerId = user?.appMetadata['partner_id'] as String?;
+    if (partnerId == null || partnerId.isEmpty) {
+      _notify('No workshop linked to your account.', isError: true);
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      await Supabase.instance.client
+          .from('partners')
+          .update({'ops_view_mode': mode.dbValue})
+          .eq('id', partnerId);
+
+      // Refresh the shared provider so the ops app reflects this immediately.
+      ref.invalidate(opsViewModeProvider);
+
+      _notify(mode == OpsViewMode.allAccess
+          ? 'Staff and drivers can now see and handle every job.'
+          : 'Staff and drivers are back to their role-specific jobs.');
+    } catch (e) {
+      _notify('Could not save access mode: ${e.toString().replaceAll('PostgrestException', '').trim()}',
+          isError: true);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _notify(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? Colors.red.shade700 : Colors.green.shade700,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_mayConfigure) return const SizedBox.shrink();
+
+    final cs = Theme.of(context).colorScheme;
+    final modeAsync = ref.watch(opsViewModeProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(
+          icon: Icons.badge_outlined,
+          title: 'Workshop Access',
+          subtitle: 'Control what your staff and drivers can see and handle.',
+        ),
+        const SizedBox(height: 16),
+        _SettingsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _SettingsLabel(icon: Icons.tune, label: 'Staff & Driver Access'),
+              const SizedBox(height: 12),
+              modeAsync.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (err, _) => Text('Could not load access mode: $err'),
+                data: (mode) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SegmentedButton<OpsViewMode>(
+                      segments: const [
+                        ButtonSegment(
+                          value: OpsViewMode.allAccess,
+                          icon: Icon(Icons.visibility_outlined, size: 16),
+                          label: Text('Full access'),
+                        ),
+                        ButtonSegment(
+                          value: OpsViewMode.originalRole,
+                          icon: Icon(Icons.badge_outlined, size: 16),
+                          label: Text('Role-based'),
+                        ),
+                      ],
+                      selected: {mode},
+                      onSelectionChanged: _saving
+                          ? null
+                          : (val) {
+                              if (val.first != mode) _save(val.first);
+                            },
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) return AppColors.fireRed;
+                          return cs.surfaceContainerHighest.withValues(alpha: 0.5);
+                        }),
+                        foregroundColor: WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) return Colors.white;
+                          return cs.onSurfaceVariant;
+                        }),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      mode == OpsViewMode.allAccess
+                          ? 'Full access — staff and drivers both see every tab and every job '
+                            'in this workshop, and either role can complete any repair stage. '
+                            'Use this when a customer may change their mind about pickup or '
+                            'self-delivery mid-job.'
+                          : 'Role-based — staff only handle self-delivery intake and drivers only '
+                            'handle valet pickup, each completing just their own repair stages. '
+                            'This is the original strict behaviour.',
+                      style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, height: 1.4),
+                    ),
+                    if (_saving) ...[
+                      const SizedBox(height: 12),
+                      Row(children: [
+                        const SizedBox(width: 14, height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2)),
+                        const SizedBox(width: 10),
+                        Text('Saving…', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                      ]),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
