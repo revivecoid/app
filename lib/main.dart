@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_web_plugins/url_strategy.dart';
 import 'app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/l10n/app_localizations.dart';
@@ -14,8 +13,13 @@ void main() async {
   // 1. Ensure Flutter engine is fully initialized before async network bindings run
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set URL strategy to Path to prevent go_router from crashing on Supabase auth hash fragments
-  usePathUrlStrategy();
+  // URL strategy: HASH (Flutter web default) — deliberate.
+  // GitHub Pages cannot rewrite unknown paths to index.html, so deep links
+  // served 404.html with a 404 status and the app never booted. Hash URLs keep
+  // every route inside '/', which GitHub Pages always serves as 200.
+  // Revisit if/when the site moves to Cloudflare Pages (web/_redirects is
+  // already prepared for that switch); at that point usePathUrlStrategy() may
+  // be restored for clean URLs.
 
   // 2. Load environment variables securely from the local filesystem
   await dotenv.load(fileName: ".env");
