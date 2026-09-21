@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../ops_access.dart';
 
 final floorJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final user = Supabase.instance.client.auth.currentUser;
@@ -10,6 +11,8 @@ final floorJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>
   // Read partner_id from appMetadata directly (SEC-02, avoids extra RLS hop)
   final partnerId = user.appMetadata['partner_id'] as String?;
   if (partnerId == null || partnerId.isEmpty) return [];
+
+  final mode = await ref.watch(opsViewModeProvider.future);
 
   // Do NOT join profiles here — staff RLS now allows reading customer profiles
   // via the "Partners can read customer profiles for their jobs" policy,
@@ -23,8 +26,12 @@ final floorJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>
 
   final rawJobs = List<Map<String, dynamic>>.from(res);
   return rawJobs.where((job) {
-    // Floor handles intake only for self_deliver.
-    // Pickup intake is handled by Logistics driver.
+    // In all_access the floor shows every job regardless of how the vehicle
+    // arrives, so a customer switching from self-delivery to pickup mid-job
+    // does not make the job disappear from the operator's list.
+    if (mode == OpsViewMode.allAccess) return true;
+    // original_role: floor handles intake only for self_deliver.
+    // Pickup intake is handled by the Logistics driver.
     if (job['status'] == '3_booked' && job['delivery_type'] == 'pickup') return false;
     return true;
   }).toList();

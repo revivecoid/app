@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/utils/image_compressor.dart';
+import '../ops_access.dart';
 
 // ─── Stage metadata ───────────────────────────────────────────────────────────
 
@@ -159,8 +160,11 @@ class _OpsStagePhotoScreenState extends ConsumerState<OpsStagePhotoScreen> {
 
   // ── Role guard ─────────────────────────────────────────────────────────────
   bool _callerIsAllowed() {
-    final role = _sb.auth.currentUser?.appMetadata['role'] as String? ?? '';
-    return _stage?.allowedRoles.contains(role) ?? false;
+    final role = _sb.auth.currentUser?.appMetadata['role'] as String?;
+    // In all_access every ops operator may complete any stage; in original_role
+    // the stage's own role list decides (the pre-existing behaviour).
+    final mode = ref.read(opsViewModeProvider).valueOrNull ?? OpsViewMode.allAccess;
+    return opsRoleMayActOnStage(mode, role, _stage?.allowedRoles ?? const []);
   }
 
   // ── Pick from camera ───────────────────────────────────────────────────────
