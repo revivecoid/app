@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/utils/customer_contact.dart';
 import '../../../core/utils/session_health.dart';
+import '../../../core/widgets/customer_contact_line.dart';
 import '../ops_access.dart';
 
 final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -139,7 +139,7 @@ class OpsLogisticsScreen extends ConsumerWidget {
                               ],
                             ),
                             const SizedBox(height: 4),
-                            _ContactRow(
+                            CustomerContactLine(
                               jobContactPhone: job['contact_phone']?.toString(),
                               profilePhone: customer?['phone']?.toString(),
                               profileEmail: customer?['email']?.toString(),
@@ -171,63 +171,6 @@ class OpsLogisticsScreen extends ConsumerWidget {
           );
         },
       ),
-    );
-  }
-}
-
-// ─── Customer contact ─────────────────────────────────────────────────────────
-
-/// The customer's contact detail for the valet.
-///
-/// Precedence is job snapshot, then profile phone, then profile email — see
-/// [CustomerContact]. The job's number is the one confirmed for THIS booking, so
-/// it is more trustworthy than the profile, which may have changed since or may
-/// never have been set (it is unset on most accounts). Email is the last resort:
-/// a valet cannot ring it, but it beats showing nothing.
-class _ContactRow extends StatelessWidget {
-  final String? jobContactPhone;
-  final String? profilePhone;
-  final String? profileEmail;
-
-  const _ContactRow({
-    this.jobContactPhone,
-    this.profilePhone,
-    this.profileEmail,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final contact = CustomerContact.resolve(
-      jobContactPhone: jobContactPhone,
-      profilePhone: profilePhone,
-      profileEmail: profileEmail,
-    );
-
-    if (contact.isEmpty) {
-      return Row(
-        children: [
-          Icon(Icons.contact_phone_outlined, size: 16, color: Colors.orange.shade700),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'No phone or email on file',
-              style: TextStyle(fontSize: 13, color: Colors.orange.shade700),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Row(
-      children: [
-        Icon(
-          contact.isPhone ? Icons.phone_outlined : Icons.email_outlined,
-          size: 16,
-          color: Colors.grey,
-        ),
-        const SizedBox(width: 8),
-        Expanded(child: Text(contact.value)),
-      ],
     );
   }
 }

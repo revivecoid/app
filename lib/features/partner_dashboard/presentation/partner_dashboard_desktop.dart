@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/widgets/customer_contact_line.dart';
 import 'partner_dashboard_controller.dart';
 import 'partner_dashboard_mobile.dart';
 
@@ -754,6 +755,15 @@ class _JobCard extends StatelessWidget {
                   children: [
                     Text('• ${job.customerName}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
                   ],
+                ),
+                // The workshop needs the customer's number to arrange a pickup or
+                // chase a delivery, and it never appeared here before.
+                SizedBox(height: 4),
+                CustomerContactLine(
+                  jobContactPhone: job.contactPhone,
+                  profilePhone: job.profilePhone,
+                  profileEmail: job.profileEmail,
+                  dense: true,
                 ),
                 if (job.latestPhotoUrl != null) ...[
                   SizedBox(height: 12),

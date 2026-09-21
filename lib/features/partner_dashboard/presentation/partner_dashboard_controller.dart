@@ -20,6 +20,16 @@ class PartnerJobNode {
   final DateTime admittedAt;
   final String? latestPhotoUrl;
 
+  /// The number the customer booked with, snapshotted on the job. This is what
+  /// the workshop rings to arrange or chase a pickup — preferred over the
+  /// profile number, which may have changed since the booking was made.
+  final String? contactPhone;
+
+  /// Fallback when the job carries no number (bookings made before the snapshot
+  /// column existed) and the profile has one.
+  final String? profilePhone;
+  final String? profileEmail;
+
   PartnerJobNode({
     required this.id,
     required this.customerName,
@@ -29,6 +39,9 @@ class PartnerJobNode {
     required this.status,
     required this.admittedAt,
     this.latestPhotoUrl,
+    this.contactPhone,
+    this.profilePhone,
+    this.profileEmail,
   });
 
   PartnerJobNode copyWith({String? status, String? latestPhotoUrl}) {
@@ -41,6 +54,9 @@ class PartnerJobNode {
       status: status ?? this.status,
       admittedAt: admittedAt,
       latestPhotoUrl: latestPhotoUrl ?? this.latestPhotoUrl,
+      contactPhone: contactPhone,
+      profilePhone: profilePhone,
+      profileEmail: profileEmail,
     );
   }
 }
@@ -157,8 +173,8 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
     try {
       // Server-side strict RLS ensures we only pull the tenant's exact data array
       final response = await _supabase.from('repair_jobs').select('''
-        id, status, created_at,
-        profiles:customer_id (full_name),
+        id, status, created_at, contact_phone, customer_id,
+        profiles:customer_id (full_name, phone, email),
         vehicles:vehicle_id (make, model, license_plate),
         repair_photos (r2_file_key, uploaded_at)
       ''').eq('partner_id', state.partnerId).inFilter('status', [
@@ -188,6 +204,9 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
           status: job['status'].toString(),
           admittedAt: DateTime.parse(job['created_at'].toString()),
           latestPhotoUrl: latestPhotoUrl,
+          contactPhone: job['contact_phone']?.toString(),
+          profilePhone: profile['phone']?.toString(),
+          profileEmail: profile['email']?.toString(),
         );
       }).toList();
 
