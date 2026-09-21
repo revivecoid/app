@@ -7,6 +7,7 @@ import 'app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/l10n/app_localizations.dart';
 import 'core/providers/locale_provider.dart';
+import 'core/utils/session_health.dart';
 import 'features/shared/services/pricing_matrix.dart';
 
 void main() async {
@@ -34,7 +35,15 @@ void main() async {
   //    has no extra latency. Runs in the background — does not block launch.
   PricingMatrix.preload();
 
-  // 5. Run the App inside a ProviderScope (Required by Riverpod for State Management)
+  // 5. Heal a stored session whose access token is dated in the future.
+  //    PostgREST answers such a token with 401 / PGRST303 before any policy
+  //    runs, which surfaced as partner staff being unable to open a job's
+  //    stages. The token cannot expire its way out (iat and exp are both
+  //    shifted forward, so the client thinks it is still valid), so a refresh
+  //    on startup is what actually clears it. See core/utils/session_health.dart.
+  watchSessionHealth(Supabase.instance.client);
+
+  // 6. Run the App inside a ProviderScope (Required by Riverpod for State Management)
   runApp(
     const ProviderScope(
       child: ReVApp(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/utils/session_health.dart';
 import '../ops_access.dart';
 
 final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -14,12 +15,16 @@ final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynami
 
   final mode = await ref.watch(opsViewModeProvider.future);
 
-  final res = await Supabase.instance.client
-      .from('repair_jobs')
-      .select('id, status, delivery_type, customer_id, profiles!repair_jobs_customer_id_fkey(full_name, phone), vehicles(make, model, license_plate)')
-      .eq('partner_id', partnerId)
-      .inFilter('status', ['3_booked', '8_awaiting_delivery'])
-      .order('created_at', ascending: true);
+  // retryOnStaleToken: a future-dated token makes these reads fail with
+  // PGRST303; refreshing once recovers without the operator seeing an error.
+  final res = await retryOnStaleToken(Supabase.instance.client, () async {
+    return Supabase.instance.client
+        .from('repair_jobs')
+        .select('id, status, delivery_type, customer_id, profiles!repair_jobs_customer_id_fkey(full_name, phone), vehicles(make, model, license_plate)')
+        .eq('partner_id', partnerId)
+        .inFilter('status', ['3_booked', '8_awaiting_delivery'])
+        .order('created_at', ascending: true);
+  });
       
   final rawJobs = List<Map<String, dynamic>>.from(res);
   return rawJobs.where((job) {
