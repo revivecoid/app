@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:re_v/features/ops_mobile/ops_access.dart';
+import 'package:re_v/features/ops_mobile/presentation/ops_stage_photo_screen.dart';
 
 /// The workshop owner chooses between letting staff and drivers see everything
 /// (all_access, the database default) and restoring the original strict per-role
@@ -68,49 +69,109 @@ void main() {
     });
   });
 
-  group('opsRoleMayActOnStage — all_access lets either role do any stage', () {
-    const intakeStage = ['partner_staff', 'partner_driver', 'partner_mechanic', 'master_admin'];
-    const deliveryStage = ['partner_driver', 'partner_mechanic', 'master_admin'];
-    const floorStage = ['partner_staff', 'partner_mechanic', 'master_admin'];
-
-    test('a driver may complete the floor-only disassembly stage', () {
-      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, 'partner_driver', floorStage), isTrue);
+  // These groups read the REAL stage definitions rather than local copies. The
+  // copies that used to live here are what let the UI's allowedRoles and the
+  // server's role gate drift apart: the test kept passing while the RPC refused
+  // what the UI offered.
+  group('stage role lists — the UI and the server must agree', () {
+    test('the delivery stage admits staff, because staff hand the car back', () {
+      // ops_complete_delivery admits partner_staff too. If this list omits them
+      // the button is hidden for a role the server would accept; if the server
+      // omits them, the button is a dead end.
+      final delivery = stageByKey('delivery')!;
+      expect(delivery.allowedRoles, contains('partner_staff'));
+      expect(delivery.advancesStatus, '9_done');
     });
 
-    test('a staff member may complete the driver-only delivery stage', () {
-      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, 'partner_staff', deliveryStage), isTrue);
+    test('vehicle intake still admits both ops roles', () {
+      final intake = stageByKey('vehicle_intake')!;
+      expect(intake.allowedRoles, containsAll(['partner_staff', 'partner_driver']));
+      expect(intake.advancesStatus, '5_admitted');
+    });
+
+    test('every stage admits at least one ops role and an admin', () {
+      for (final s in kOpsStages) {
+        expect(s.allowedRoles, isNotEmpty, reason: '${s.stageKey} admits nobody');
+        expect(s.allowedRoles, contains('master_admin'), reason: s.stageKey);
+        expect(kOpsOperatorRoles.any(s.allowedRoles.contains), isTrue,
+            reason: '${s.stageKey} admits no operator role');
+      }
+    });
+
+    test('stage keys are unique, since they key the milestone upsert', () {
+      final keys = kOpsStages.map((s) => s.stageKey).toList();
+      expect(keys.toSet().length, keys.length);
+    });
+  });
+
+  group('opsRoleMayActOnStage — all_access lets either role do any stage', () {
+    test('a driver may complete the floor-only disassembly stage', () {
+      expect(
+        opsRoleMayActOnStage(
+            OpsViewMode.allAccess, 'partner_driver', stageByKey('disassembly')!.allowedRoles),
+        isTrue,
+      );
+    });
+
+    test('a staff member may complete the delivery stage', () {
+      expect(
+        opsRoleMayActOnStage(
+            OpsViewMode.allAccess, 'partner_staff', stageByKey('delivery')!.allowedRoles),
+        isTrue,
+      );
     });
 
     test('both roles may complete vehicle intake', () {
-      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, 'partner_staff', intakeStage), isTrue);
-      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, 'partner_driver', intakeStage), isTrue);
+      final intake = stageByKey('vehicle_intake')!.allowedRoles;
+      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, 'partner_staff', intake), isTrue);
+      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, 'partner_driver', intake), isTrue);
     });
 
     test('customers are still refused', () {
-      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, 'customer', floorStage), isFalse);
+      expect(
+        opsRoleMayActOnStage(
+            OpsViewMode.allAccess, 'customer', stageByKey('disassembly')!.allowedRoles),
+        isFalse,
+      );
     });
 
     test('a missing role is refused', () {
-      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, null, floorStage), isFalse);
-      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, '', floorStage), isFalse);
+      final floor = stageByKey('disassembly')!.allowedRoles;
+      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, null, floor), isFalse);
+      expect(opsRoleMayActOnStage(OpsViewMode.allAccess, '', floor), isFalse);
     });
   });
 
   group('opsRoleMayActOnStage — original_role keeps the stage role lists', () {
-    const deliveryStage = ['partner_driver', 'partner_mechanic', 'master_admin'];
-    const floorStage = ['partner_staff', 'partner_mechanic', 'master_admin'];
-
-    test('a staff member may NOT complete the delivery stage', () {
-      expect(opsRoleMayActOnStage(OpsViewMode.originalRole, 'partner_staff', deliveryStage), isFalse);
+    test('a staff member MAY complete delivery (changed deliberately)', () {
+      // Staff deliver cars to clients, so excluding them left a stage the UI
+      // offered under all_access and the RPC refused.
+      expect(
+        opsRoleMayActOnStage(
+            OpsViewMode.originalRole, 'partner_staff', stageByKey('delivery')!.allowedRoles),
+        isTrue,
+      );
     });
 
     test('a driver may NOT complete a floor-only stage', () {
-      expect(opsRoleMayActOnStage(OpsViewMode.originalRole, 'partner_driver', floorStage), isFalse);
+      expect(
+        opsRoleMayActOnStage(
+            OpsViewMode.originalRole, 'partner_driver', stageByKey('disassembly')!.allowedRoles),
+        isFalse,
+      );
     });
 
-    test('each role may still complete its own stage', () {
-      expect(opsRoleMayActOnStage(OpsViewMode.originalRole, 'partner_driver', deliveryStage), isTrue);
-      expect(opsRoleMayActOnStage(OpsViewMode.originalRole, 'partner_staff', floorStage), isTrue);
+    test('a driver may still complete intake and delivery', () {
+      expect(
+        opsRoleMayActOnStage(
+            OpsViewMode.originalRole, 'partner_driver', stageByKey('vehicle_intake')!.allowedRoles),
+        isTrue,
+      );
+      expect(
+        opsRoleMayActOnStage(
+            OpsViewMode.originalRole, 'partner_driver', stageByKey('delivery')!.allowedRoles),
+        isTrue,
+      );
     });
   });
 }

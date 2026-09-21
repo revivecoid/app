@@ -106,7 +106,12 @@ const kOpsStages = <OpsStageDefinition>[
         'Photograph the vehicle being handed to the customer. Include handover proof with customer present if possible.',
     minPhotos: 1,
     advancesStatus: '9_done',
-    allowedRoles: ['partner_driver', 'partner_mechanic', 'master_admin'],
+    // Staff are included deliberately: they are the ones who hand the car back to
+    // the customer, so excluding them produced a stage the UI offered under
+    // all_access and the RPC then refused. `ops_complete_delivery` admits
+    // partner_staff too — this list gates the UI, that RPC gates the server, and
+    // the two must agree or the button is a dead end.
+    allowedRoles: ['partner_staff', 'partner_driver', 'partner_mechanic', 'master_admin'],
   ),
 ];
 
