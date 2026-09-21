@@ -2,57 +2,67 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/utils/session_health.dart';
+import '../ops_access.dart';
 import 'ops_stage_photo_screen.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
 /// Loads all milestones + their photo counts for a given job.
 /// Returns a map of stage_key → milestone row (with photo_count).
+///
+/// Wrapped in retryOnStaleToken: these are the reads that failed with
+/// PGRST303 when the session carried a future-dated token, and this keeps a
+/// token that goes bad mid-session from locking an operator out of the list.
 final jobMilestonesProvider = FutureProvider.autoDispose
     .family<Map<String, Map<String, dynamic>>, String>((ref, jobId) async {
-  final res = await Supabase.instance.client
-      .from('job_milestones')
-      .select('id, stage_key, milestone_name, status, completed_by, completed_at, notes')
-      .eq('job_id', jobId);
+  return retryOnStaleToken(Supabase.instance.client, () async {
+    final res = await Supabase.instance.client
+        .from('job_milestones')
+        .select('id, stage_key, milestone_name, status, completed_by, completed_at, notes')
+        .eq('job_id', jobId);
 
-  final Map<String, Map<String, dynamic>> byKey = {};
-  for (final row in List<Map<String, dynamic>>.from(res)) {
-    final key = row['stage_key'] as String? ?? '';
-    if (key.isNotEmpty) byKey[key] = row;
-  }
-
-  // Attach photo counts per milestone
-  if (byKey.isNotEmpty) {
-    final milestoneIds = byKey.values.map((r) => r['id'] as String).toList();
-    final photos = await Supabase.instance.client
-        .from('job_milestone_photos')
-        .select('milestone_id')
-        .inFilter('milestone_id', milestoneIds);
-
-    final counts = <String, int>{};
-    for (final p in List<Map<String, dynamic>>.from(photos)) {
-      final mid = p['milestone_id'] as String;
-      counts[mid] = (counts[mid] ?? 0) + 1;
+    final Map<String, Map<String, dynamic>> byKey = {};
+    for (final row in List<Map<String, dynamic>>.from(res)) {
+      final key = row['stage_key'] as String? ?? '';
+      if (key.isNotEmpty) byKey[key] = row;
     }
 
-    for (final entry in byKey.entries) {
-      final mid = entry.value['id'] as String;
-      byKey[entry.key]!['photo_count'] = counts[mid] ?? 0;
-    }
-  }
+    // Attach photo counts per milestone
+    if (byKey.isNotEmpty) {
+      final milestoneIds = byKey.values.map((r) => r['id'] as String).toList();
+      final photos = await Supabase.instance.client
+          .from('job_milestone_photos')
+          .select('milestone_id')
+          .inFilter('milestone_id', milestoneIds);
 
-  return byKey;
+      final counts = <String, int>{};
+      for (final p in List<Map<String, dynamic>>.from(photos)) {
+        final mid = p['milestone_id'] as String;
+        counts[mid] = (counts[mid] ?? 0) + 1;
+      }
+
+      for (final entry in byKey.entries) {
+        final mid = entry.value['id'] as String;
+        byKey[entry.key]!['photo_count'] = counts[mid] ?? 0;
+      }
+    }
+
+    return byKey;
+  });
 });
 
 /// Loads the job's current status and customer_id.
 final jobStatusProvider =
     FutureProvider.autoDispose.family<Map<String, dynamic>?, String>((ref, jobId) async {
-  final res = await Supabase.instance.client
-      .from('repair_jobs')
-      .select('id, status, customer_id')
-      .eq('id', jobId)
-      .maybeSingle();
-  return res != null ? Map<String, dynamic>.from(res) : null;
+  return retryOnStaleToken(Supabase.instance.client, () async {
+    final res = await Supabase.instance.client
+        .from('repair_jobs')
+        .select('id, status, customer_id')
+        .eq('id', jobId)
+        .maybeSingle();
+    return res != null ? Map<String, dynamic>.from(res) : null;
+  });
 });
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -63,14 +73,20 @@ class OpsMilestonesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final role = Supabase.instance.client.auth.currentUser?.appMetadata['role'] as String? ?? '';
+    final role = Supabase.instance.client.auth.currentUser?.appMetadata['role'] as String?;
     final milestonesAsync = ref.watch(jobMilestonesProvider(jobId));
     final jobAsync = ref.watch(jobStatusProvider(jobId));
     final cs = Theme.of(context).colorScheme;
 
+    // The workshop owner decides whether staff and drivers are limited to their
+    // own stages or may complete any of them; the same rule the photo screen
+    // enforces on submit, so a stage is never offered here only to be refused
+    // there.
+    final mode = ref.watch(opsViewModeProvider).valueOrNull ?? OpsViewMode.allAccess;
+
     // Determine which stages are visible to this role
     final visibleStages = kOpsStages
-        .where((s) => s.allowedRoles.contains(role))
+        .where((s) => opsRoleMayActOnStage(mode, role, s.allowedRoles))
         .toList();
 
     return Scaffold(
@@ -137,6 +153,7 @@ class OpsMilestonesScreen extends ConsumerWidget {
                           stage: stage,
                           currentStatus: currentStatus,
                           isComplete: isComplete,
+                          mode: mode,
                           role: role,
                         );
 
@@ -172,16 +189,17 @@ class OpsMilestonesScreen extends ConsumerWidget {
 
   /// A stage is actionable when:
   ///   - It has not been completed yet
-  ///   - The caller's role is in allowedRoles
+  ///   - The caller may act on it for this workshop's access mode
   ///   - The job's current status is consistent with starting this stage
   bool _stageIsActionable({
     required OpsStageDefinition stage,
     required String currentStatus,
     required bool isComplete,
-    required String role,
+    required OpsViewMode mode,
+    required String? role,
   }) {
     if (isComplete) return false;
-    if (!stage.allowedRoles.contains(role)) return false;
+    if (!opsRoleMayActOnStage(mode, role, stage.allowedRoles)) return false;
 
     switch (stage.stageKey) {
       case 'vehicle_intake':

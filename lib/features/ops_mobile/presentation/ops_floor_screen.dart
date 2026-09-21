@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/utils/session_health.dart';
 import '../ops_access.dart';
 
 final floorJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -14,15 +15,16 @@ final floorJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>
 
   final mode = await ref.watch(opsViewModeProvider.future);
 
-  // Do NOT join profiles here — staff RLS now allows reading customer profiles
-  // via the "Partners can read customer profiles for their jobs" policy,
-  // but we keep the query minimal and join only vehicles to reduce RLS surface.
-  final res = await Supabase.instance.client
-      .from('repair_jobs')
-      .select('id, status, delivery_type, customer_id, vehicles(make, model, license_plate)')
-      .eq('partner_id', partnerId)
-      .inFilter('status', ['3_booked', '5_admitted', '6_in_progress', '7_finished'])
-      .order('created_at', ascending: true);
+  // retryOnStaleToken: a future-dated token makes these reads fail with
+  // PGRST303; refreshing once recovers without the operator seeing an error.
+  final res = await retryOnStaleToken(Supabase.instance.client, () async {
+    return Supabase.instance.client
+        .from('repair_jobs')
+        .select('id, status, delivery_type, customer_id, vehicles(make, model, license_plate)')
+        .eq('partner_id', partnerId)
+        .inFilter('status', ['3_booked', '5_admitted', '6_in_progress', '7_finished'])
+        .order('created_at', ascending: true);
+  });
 
   final rawJobs = List<Map<String, dynamic>>.from(res);
   return rawJobs.where((job) {
