@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
+import '../../../../core/utils/auth_url.dart';
 
 // ── CMS settings provider ──────────────────────────────────────────────────────
 final cmsSettingsProvider = FutureProvider.autoDispose<Map<String, String>>((ref) async {
@@ -58,7 +59,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
   }
 
   Future<void> _handleOAuthFallback() async {
-    final code = Uri.base.queryParameters['code'];
+    final code = readAuthCode(Uri.base);
     if (code != null && mounted) {
       try {
         await Supabase.instance.client.auth.exchangeCodeForSession(code);

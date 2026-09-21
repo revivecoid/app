@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/rev_app_bar.dart';
+import 'core/utils/auth_url.dart';
 
 // --- IMPORTING ESTABLISHED FEATURE MODULES ---
 import 'features/partner_dashboard/presentation/partner_profile_screen.dart';
@@ -89,6 +90,17 @@ String? _sanitizeReturnTo(String? raw) {
   if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return trimmed;
   return null; // Block absolute URLs
 }
+
+// Builds the OAuth / password-recovery redirect target.
+// The hash URL strategy keeps the router path in the fragment, so the callback
+// must be '/#/auth/callback'. A bare '/auth/callback' would ask GitHub Pages for
+// a file that does not exist and get a 404 instead of the app.
+String _authCallbackUrl(String? returnTo) {
+  final queryParam =
+      returnTo != null ? '?returnTo=${Uri.encodeComponent(returnTo)}' : '';
+  return '${Uri.base.origin}/#/auth/callback$queryParam';
+}
+
 // --- RIVERPOD ROUTER PROVIDER ---
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authNotifier = SupabaseAuthRefreshNotifier(ref);
@@ -515,7 +527,7 @@ class _AuthCallbackScreenState extends State<_AuthCallbackScreen> {
 
   Future<void> _handleCallback() async {
     final uri = Uri.base;
-    final code = uri.queryParameters['code'];
+    final code = readAuthCode(uri);
     if (code != null) {
       try {
         await Supabase.instance.client.auth.exchangeCodeForSession(code);
@@ -584,9 +596,8 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
     setState(() { _isLoading = true; _errorMessage = null; _resetSuccess = false; });
     try {
       final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
-      final queryParam = returnTo != null ? '?returnTo=${Uri.encodeComponent(returnTo)}' : '';
-      final redirectTo = Uri.base.origin + '/auth/callback' + queryParam;
-      
+      final redirectTo = _authCallbackUrl(returnTo);
+
       await Supabase.instance.client.auth.resetPasswordForEmail(
         _emailController.text.trim(),
         redirectTo: redirectTo,
@@ -607,8 +618,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
       if (_isRegistering) {
         // Pass redirectTo in sign up for email confirmation redirect
         final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
-        final queryParam = returnTo != null ? '?returnTo=${Uri.encodeComponent(returnTo)}' : '';
-        final emailRedirectTo = Uri.base.origin + '/auth/callback' + queryParam;
+        final emailRedirectTo = _authCallbackUrl(returnTo);
 
         await Supabase.instance.client.auth.signUp(
           email: _emailController.text.trim(),
@@ -636,9 +646,8 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
       final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
-      final queryParam = returnTo != null ? '?returnTo=${Uri.encodeComponent(returnTo)}' : '';
-      final redirectTo = Uri.base.origin + '/auth/callback' + queryParam;
-      
+      final redirectTo = _authCallbackUrl(returnTo);
+
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: redirectTo,
