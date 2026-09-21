@@ -42,6 +42,16 @@ final floorJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>
 class OpsFloorScreen extends ConsumerWidget {
   const OpsFloorScreen({super.key});
 
+  /// Opens a stage screen and refreshes this list when it returns.
+  ///
+  /// Same reason as the logistics list: this list stays alive underneath the
+  /// pushed route, so without awaiting the pop result its autoDispose provider
+  /// never refetches and a completed job stays on the floor as if untouched.
+  Future<void> _openStage(BuildContext context, WidgetRef ref, String jobId) async {
+    await context.push('/ops/floor/milestones/$jobId');
+    if (context.mounted) ref.invalidate(floorJobsProvider);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
@@ -113,7 +123,7 @@ class OpsFloorScreen extends ConsumerWidget {
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    context.push('/ops/floor/milestones/${job['id']}');
+                    _openStage(context, ref, job['id'].toString());
                   },
                 ),
               );

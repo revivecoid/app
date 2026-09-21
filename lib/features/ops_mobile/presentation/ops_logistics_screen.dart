@@ -20,7 +20,7 @@ final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynami
   final res = await retryOnStaleToken(Supabase.instance.client, () async {
     return Supabase.instance.client
         .from('repair_jobs')
-        .select('id, status, delivery_type, customer_id, profiles!repair_jobs_customer_id_fkey(full_name, phone), vehicles(make, model, license_plate)')
+        .select('id, status, delivery_type, customer_id, profiles!repair_jobs_customer_id_fkey(full_name, phone, email), vehicles(make, model, license_plate)')
         .eq('partner_id', partnerId)
         .inFilter('status', ['3_booked', '8_awaiting_delivery'])
         .order('created_at', ascending: true);
@@ -40,6 +40,22 @@ final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynami
 
 class OpsLogisticsScreen extends ConsumerWidget {
   const OpsLogisticsScreen({super.key});
+
+  /// Opens a stage screen and refreshes this list when it returns.
+  ///
+  /// The stage screen pops `true` after a successful submit, but this list stays
+  /// alive underneath the pushed route — so without awaiting that result its
+  /// autoDispose provider never refetches and the completed job stays on screen,
+  /// looking exactly like the work was never saved.
+  Future<void> _openStage(
+    BuildContext context,
+    WidgetRef ref,
+    String jobId,
+    String customerId,
+  ) async {
+    await context.push('/ops/logistics/intake/$jobId/$customerId');
+    if (context.mounted) ref.invalidate(logisticsJobsProvider);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -83,7 +99,7 @@ class OpsLogisticsScreen extends ConsumerWidget {
                 child: InkWell(
                   onTap: () {
                     final customerId = job['customer_id']?.toString() ?? '';
-                    context.push('/ops/logistics/intake/${job['id']}/$customerId');
+                    _openStage(context, ref, job['id'].toString(), customerId);
                   },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,12 +138,9 @@ class OpsLogisticsScreen extends ConsumerWidget {
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(Icons.phone_outlined, size: 16, color: Colors.grey),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text(customer?['phone'] ?? 'No phone provided')),
-                              ],
+                            _ContactRow(
+                              phone: customer?['phone']?.toString(),
+                              email: customer?['email']?.toString(),
                             ),
                             const SizedBox(height: 16),
                             SizedBox(
@@ -135,7 +148,7 @@ class OpsLogisticsScreen extends ConsumerWidget {
                               child: ElevatedButton.icon(
                                 onPressed: () {
                                   final customerId = job['customer_id']?.toString() ?? '';
-                                  context.push('/ops/logistics/intake/${job['id']}/$customerId');
+                                  _openStage(context, ref, job['id'].toString(), customerId);
                                 },
                                 icon: Icon(isPickup ? Icons.camera_alt : Icons.check_circle),
                                 label: Text(isPickup ? 'Start Pickup Intake' : 'Complete Delivery'),
@@ -156,6 +169,60 @@ class OpsLogisticsScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+// ─── Customer contact ─────────────────────────────────────────────────────────
+
+/// The customer's contact detail for the valet.
+///
+/// `profiles.phone` is optional and currently unset on most accounts, so falling
+/// back to email is what keeps this row actionable — otherwise the operator is
+/// shown "No phone provided" and has no way to reach anyone. When neither is on
+/// file it says so plainly instead of implying the customer has no contact
+/// details at all.
+///
+/// Takes plain strings rather than the embedded row so the card list never has to
+/// cast a `dynamic` payload, which would throw while building the list.
+class _ContactRow extends StatelessWidget {
+  final String? phone;
+  final String? email;
+
+  const _ContactRow({this.phone, this.email});
+
+  @override
+  Widget build(BuildContext context) {
+    final phoneValue = (phone ?? '').trim();
+    final emailValue = (email ?? '').trim();
+    final contact = phoneValue.isNotEmpty ? phoneValue : emailValue;
+    final isPhone = phoneValue.isNotEmpty;
+
+    if (contact.isEmpty) {
+      return Row(
+        children: [
+          Icon(Icons.contact_phone_outlined, size: 16, color: Colors.orange.shade700),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'No phone or email on file',
+              style: TextStyle(fontSize: 13, color: Colors.orange.shade700),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Icon(
+          isPhone ? Icons.phone_outlined : Icons.email_outlined,
+          size: 16,
+          color: Colors.grey,
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: Text(contact)),
+      ],
     );
   }
 }
