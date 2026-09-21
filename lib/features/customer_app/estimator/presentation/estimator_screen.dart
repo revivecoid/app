@@ -207,6 +207,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         setState(() => _currentStep += 1);
       }
     } else if (_currentStep < 3) {
+      // The contact step must be complete before review: the number is what the
+      // workshop uses to arrange pickup. The Form and _formKey existed from the
+      // start but validate() was never called, so these fields only looked
+      // mandatory. The validators paint their own inline errors, so returning
+      // without advancing is the whole gate.
+      if (_currentStep == 2 && !(_formKey.currentState?.validate() ?? false)) {
+        return;
+      }
       setState(() => _currentStep += 1);
     } else {
       final user = Supabase.instance.client.auth.currentUser;
@@ -224,7 +232,30 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
 
       try {
         final intake = ref.read(customerIntakeProvider);
-        
+        final contactPhone = intake.phone.trim();
+
+        // The contact step is the only place the app asks for a phone, and until
+        // now nothing wrote it anywhere: it lived in SharedPreferences (browser
+        // localStorage) and died there, leaving the workshop with no way to reach
+        // the customer and ops rendering "No phone provided". Persist it in both
+        // places it is needed — the person record, and the job the workshop sees.
+        final profileUpdate = <String, dynamic>{
+          'id': user.id,
+          'email': user.email ?? '',
+          'role': (user.appMetadata['role'] as String?) ?? 'customer',
+        };
+        if (intake.name.trim().isNotEmpty) profileUpdate['full_name'] = intake.name.trim();
+        // Only sent when present so an upsert can never blank an existing number.
+        if (contactPhone.isNotEmpty) profileUpdate['phone'] = contactPhone;
+
+        try {
+          await Supabase.instance.client.from('profiles').upsert(profileUpdate);
+        } catch (e) {
+          // Non-fatal: the per-job snapshot below is what the workshop reads, so
+          // a profile write failure must not block the booking.
+          debugPrint('[Estimator] profile contact save failed (non-fatal): $e');
+        }
+
         final vehicleRes = await Supabase.instance.client.from('vehicles').insert({
           'customer_id': user.id,
           'make': intake.brand,
@@ -240,6 +271,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           'estimation_result': _structuredData,   // Persist full AI breakdown for booking screen
           'status': '2_estimated',
           'service_area': intake.location.isEmpty ? null : intake.location,
+          // Snapshot of the number this booking was made with, so the job keeps a
+          // reachable contact even if the profile number changes later.
+          'contact_phone': contactPhone.isEmpty ? null : contactPhone,
         }).select('id').single();
         
         if (context.mounted) {
@@ -1000,6 +1034,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             controller: _nameController,
             decoration: InputDecoration(labelText: 'Full Name'),
             onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateName(val),
+            // Required: this is the name the workshop sees for the booking.
+            validator: (val) => (val ?? '').trim().isEmpty ? 'Please enter your full name.' : null,
           ),
           SizedBox(height: 12),
           TextFormField(
@@ -1007,6 +1043,10 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             decoration: InputDecoration(labelText: 'WhatsApp Number'),
             keyboardType: TextInputType.phone,
             onChanged: (val) => ref.read(customerIntakeProvider.notifier).updatePhone(val),
+            // Required: the workshop calls this number to arrange pickup, so a
+            // booking without it leaves ops unable to reach anyone.
+            validator: (val) =>
+                (val ?? '').trim().isEmpty ? 'Please enter a WhatsApp number we can reach you on.' : null,
           ),
           SizedBox(height: 12),
           DropdownButtonFormField<String>(

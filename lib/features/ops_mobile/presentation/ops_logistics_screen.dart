@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/utils/customer_contact.dart';
 import '../../../core/utils/session_health.dart';
 import '../ops_access.dart';
 
@@ -20,7 +21,7 @@ final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynami
   final res = await retryOnStaleToken(Supabase.instance.client, () async {
     return Supabase.instance.client
         .from('repair_jobs')
-        .select('id, status, delivery_type, customer_id, profiles!repair_jobs_customer_id_fkey(full_name, phone, email), vehicles(make, model, license_plate)')
+        .select('id, status, delivery_type, customer_id, contact_phone, profiles!repair_jobs_customer_id_fkey(full_name, phone, email), vehicles(make, model, license_plate)')
         .eq('partner_id', partnerId)
         .inFilter('status', ['3_booked', '8_awaiting_delivery'])
         .order('created_at', ascending: true);
@@ -139,8 +140,9 @@ class OpsLogisticsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             _ContactRow(
-                              phone: customer?['phone']?.toString(),
-                              email: customer?['email']?.toString(),
+                              jobContactPhone: job['contact_phone']?.toString(),
+                              profilePhone: customer?['phone']?.toString(),
+                              profileEmail: customer?['email']?.toString(),
                             ),
                             const SizedBox(height: 16),
                             SizedBox(
@@ -177,26 +179,29 @@ class OpsLogisticsScreen extends ConsumerWidget {
 
 /// The customer's contact detail for the valet.
 ///
-/// `profiles.phone` is optional and currently unset on most accounts, so falling
-/// back to email is what keeps this row actionable — otherwise the operator is
-/// shown "No phone provided" and has no way to reach anyone. When neither is on
-/// file it says so plainly instead of implying the customer has no contact
-/// details at all.
-///
-/// Takes plain strings rather than the embedded row so the card list never has to
-/// cast a `dynamic` payload, which would throw while building the list.
+/// Precedence is job snapshot, then profile phone, then profile email — see
+/// [CustomerContact]. The job's number is the one confirmed for THIS booking, so
+/// it is more trustworthy than the profile, which may have changed since or may
+/// never have been set (it is unset on most accounts). Email is the last resort:
+/// a valet cannot ring it, but it beats showing nothing.
 class _ContactRow extends StatelessWidget {
-  final String? phone;
-  final String? email;
+  final String? jobContactPhone;
+  final String? profilePhone;
+  final String? profileEmail;
 
-  const _ContactRow({this.phone, this.email});
+  const _ContactRow({
+    this.jobContactPhone,
+    this.profilePhone,
+    this.profileEmail,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final phoneValue = (phone ?? '').trim();
-    final emailValue = (email ?? '').trim();
-    final contact = phoneValue.isNotEmpty ? phoneValue : emailValue;
-    final isPhone = phoneValue.isNotEmpty;
+    final contact = CustomerContact.resolve(
+      jobContactPhone: jobContactPhone,
+      profilePhone: profilePhone,
+      profileEmail: profileEmail,
+    );
 
     if (contact.isEmpty) {
       return Row(
@@ -216,12 +221,12 @@ class _ContactRow extends StatelessWidget {
     return Row(
       children: [
         Icon(
-          isPhone ? Icons.phone_outlined : Icons.email_outlined,
+          contact.isPhone ? Icons.phone_outlined : Icons.email_outlined,
           size: 16,
           color: Colors.grey,
         ),
         const SizedBox(width: 8),
-        Expanded(child: Text(contact)),
+        Expanded(child: Text(contact.value)),
       ],
     );
   }
