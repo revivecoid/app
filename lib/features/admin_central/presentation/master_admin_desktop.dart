@@ -1389,8 +1389,8 @@ class _WorkshopSettingsContentState extends State<_WorkshopSettingsContent> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          mode == 'fill_first' ? 'Fills highest priority workshops to capacity before assigning to lower tiers.'
-                          : mode == 'strict_priority' ? 'Always tries to assign to the highest priority workshop with available capacity.'
+                          mode == 'fill_first' ? 'Fills highest priority to capacity, then lets it drain completely to 0 before assigning to it again.'
+                          : mode == 'strict_priority' ? 'Always assigns to the highest priority workshop that has ANY open slot.'
                           : 'Distributes jobs evenly (round robin) across workshops according to priority queue.',
                           style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)
                         ),
