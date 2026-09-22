@@ -119,6 +119,9 @@ class PartnerCrmNode {
   final int unreadMessageCount;
   final String? serviceArea;
   final int? bayCapacity;
+  final bool autoAssignActive;
+  final int autoAssignPriority;
+  final int autoAssignCapacity;
 
   PartnerCrmNode({
     required this.id,
@@ -131,6 +134,9 @@ class PartnerCrmNode {
     this.unreadMessageCount = 0,
     this.serviceArea,
     this.bayCapacity,
+    this.autoAssignActive = false,
+    this.autoAssignPriority = 999,
+    this.autoAssignCapacity = 10,
   });
 }
 
@@ -223,6 +229,8 @@ class AdminDashboardState {
   final DateTime? assignDateFrom;
   final DateTime? assignDateTo;
 
+  final Map<String, dynamic>? autoAssignSettings;
+
   AdminDashboardState({
     this.currentViewIndex = 0,
     this.activeJobs = const [],
@@ -248,6 +256,7 @@ class AdminDashboardState {
     this.assignPaymentFilter = PaymentStatusFilter.all,
     this.assignDateFrom,
     this.assignDateTo,
+    this.autoAssignSettings,
   });
 
   AdminDashboardState copyWith({
@@ -275,6 +284,7 @@ class AdminDashboardState {
     PaymentStatusFilter? assignPaymentFilter,
     DateTime? assignDateFrom,
     DateTime? assignDateTo,
+    Map<String, dynamic>? autoAssignSettings,
   }) {
     return AdminDashboardState(
       currentViewIndex: currentViewIndex ?? this.currentViewIndex,
@@ -301,6 +311,7 @@ class AdminDashboardState {
       assignPaymentFilter: assignPaymentFilter ?? this.assignPaymentFilter,
       assignDateFrom: assignDateFrom ?? this.assignDateFrom,
       assignDateTo: assignDateTo ?? this.assignDateTo,
+      autoAssignSettings: autoAssignSettings ?? this.autoAssignSettings,
     );
   }
 
@@ -424,6 +435,39 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
         isLoading: false,
         errorMessage: 'Failed to initialize master command center: $e',
       );
+    }
+  }
+
+  
+  // ── Auto Assign Settings ──────────────────────────────────────────────────
+  Future<void> _fetchAutoAssignSettings() async {
+    try {
+      final res = await _supabase.from('auto_assign_settings').select().eq('id', 1).maybeSingle();
+      if (res != null && mounted) {
+        state = state.copyWith(autoAssignSettings: res);
+      }
+    } catch (e) {
+      debugPrint('Error fetching auto assign settings: $e');
+    }
+  }
+
+  Future<void> updateAutoAssignSettings(Map<String, dynamic> updates) async {
+    try {
+      await _supabase.from('auto_assign_settings').update(updates).eq('id', 1);
+      await _fetchAutoAssignSettings();
+      state = state.copyWith(successMessage: 'Auto-assign settings updated');
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Failed to update auto-assign settings: $e');
+    }
+  }
+  
+  Future<void> updatePartnerAutoAssignSettings(String partnerId, Map<String, dynamic> updates) async {
+    try {
+      await _supabase.from('partners').update(updates).eq('id', partnerId);
+      await _fetchCrmData(); // Refresh partners
+      state = state.copyWith(successMessage: 'Partner quota updated');
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Failed to update partner quota: $e');
     }
   }
 
