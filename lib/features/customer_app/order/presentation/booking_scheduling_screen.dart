@@ -162,6 +162,14 @@ class _BookingSchedulingScreenState
         'p_new_status': '3_booked',
       });
 
+      // 4. Try Auto-Assign Engine
+      try {
+        final res = await _sb.rpc('execute_auto_assign', params: {'p_job_id': widget.jobId});
+        debugPrint('[AutoAssign] Result: $res');
+      } catch (e) {
+        debugPrint('[AutoAssign] Engine disabled or no eligible partner (non-fatal): $e');
+      }
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
