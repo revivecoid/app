@@ -131,20 +131,18 @@ class _MasterAdminDesktopState
           onVerify: (job) => setState(() => _verifyingJob = job),
         );
       case 1:
+        // Partner Assessment is route-driven (pushes /admin-central/partners);
+        // this slot is never selected, but keep it as a safe fallback.
         return _WorkshopSettingsContent(
             cs: cs, state: state, controller: controller);
       case 2:
-        return _AssignJobsContent(
+        return _WorkshopSettingsContent(
             cs: cs, state: state, controller: controller);
       case 3:
-        return _CustomerCrmContent(cs: cs, state: state);
+        return _AssignJobsContent(
+            cs: cs, state: state, controller: controller);
       case 4:
-        return _PlaceholderContent(
-          cs: cs,
-          label: 'System Settings',
-          subtitle: 'Sysadmin-only. Contact your system administrator.',
-          icon: Icons.settings_outlined,
-        );
+        return _CustomerCrmContent(cs: cs, state: state);
       default:
         return _PlaceholderContent(
           cs: cs,
@@ -1389,7 +1387,7 @@ class _WorkshopSettingsContentState extends State<_WorkshopSettingsContent> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          mode == 'fill_first' ? 'Fills highest priority to capacity, then lets it drain completely to 0 before assigning to it again.'
+                          mode == 'fill_first' ? 'Round-robin across the priority queue, but a higher priority workshop jumps in whenever it is completely empty.'
                           : mode == 'strict_priority' ? 'Always assigns to the highest priority workshop that has ANY open slot.'
                           : 'Distributes jobs evenly (round robin) across workshops according to priority queue.',
                           style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)
