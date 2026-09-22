@@ -425,6 +425,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
         _fetchCrmData(),
         _fetchAiConfigs(),
         _fetchDailySettlement(),
+        _fetchAutoAssignSettings(),
       ]);
       _subscribeToJobMutations();
       _startExceptionPolling();
@@ -882,13 +883,15 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
         tier: p['tier']?.toString() ?? 'standard',
         isActive: p['is_active'] as bool? ?? true,
         activeVolume: state.activeJobs
-            .where((j) =>
-                j.partnerName == p['shop_name'].toString())
+            .where((j) => j.partnerId == p['id'].toString())
             .length,
         avgVelocityDays: 4.2,
         disputeCount: 0,
         serviceArea: p['service_area']?.toString(),
         bayCapacity: p['bay_capacity'] as int?,
+        autoAssignActive: p['auto_assign_active'] as bool? ?? false,
+        autoAssignPriority: (p['auto_assign_priority'] as num?)?.toInt() ?? 999,
+        autoAssignCapacity: (p['auto_assign_capacity'] as num?)?.toInt() ?? 10,
       );
     }).toList();
 
