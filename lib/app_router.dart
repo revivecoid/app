@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/rev_app_bar.dart';
 import 'core/utils/auth_url.dart';
+import 'core/utils/guest_session.dart';
 import 'features/ops_mobile/ops_access.dart';
 
 // --- IMPORTING ESTABLISHED FEATURE MODULES ---
@@ -134,6 +135,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return '/login?returnTo=$returnTo';
         }
         return null;
+      }
+
+      // Guest Guard — an anonymous session IS a session as far as Supabase is
+      // concerned, so without this a visitor who estimated anonymously would be
+      // waved straight through to the authenticated screens. Guests keep the
+      // public path only; anything else sends them to sign in, which does not
+      // cost them the estimate (it rides in customer_intakeProvider, which is
+      // backed by SharedPreferences and survives the round trip).
+      if (GuestSession.isGuest(session.user)) {
+        final publicPaths = ['/', '/estimator', '/diagram-test', '/auth/callback', '/partner/register', '/faq', '/about', '/privacy'];
+        if (publicPaths.contains(path) || path.startsWith('/auth/') || isLoggingIn) {
+          return null;
+        }
+        final returnTo = Uri.encodeComponent(state.uri.toString());
+        _globalReturnToPath = state.uri.toString();
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('returnTo', _globalReturnToPath!);
+        } catch (e) { debugPrint('[Router] SharedPreferences error: $e'); }
+        return '/login?returnTo=$returnTo';
       }
 
       // Recovery Guard
