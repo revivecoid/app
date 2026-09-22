@@ -129524,8 +129524,8 @@ m=A.b([A.y(A.b([n,B.L,A.c("Auto-Assignment Engine",g,g,g,g,A.i(g,g,m.k3,g,g,g,g,
 if(b){o=A.c("Allocation Strategy",g,g,g,g,A.i(g,g,h.a.c.k3,g,g,g,g,g,g,g,g,g,g,g,B.j,g,g,!0,g,g,g,g,g,g,g,g),g,g,g)
 n=t.N
 n=A.MO(new A.bfI(h),B.agN,A.cs([a0],n),B.Vc,n)
-if(a0==="fill_first")k="Fills highest priority workshops to capacity before assigning to lower tiers."
-else k=a0==="strict_priority"?"Always tries to assign to the highest priority workshop with available capacity.":"Distributes jobs evenly (round robin) across workshops according to priority queue."
+if(a0==="fill_first")k="Fills highest priority to capacity, then lets it drain completely to 0 before assigning to it again."
+else k=a0==="strict_priority"?"Always assigns to the highest priority workshop that has ANY open slot.":"Distributes jobs evenly (round robin) across workshops according to priority queue."
 j=h.a.c
 i=j.rx
 o=A.T(A.E(A.b([o,B.W,n,B.W,A.c(k,g,g,g,g,A.i(g,g,i==null?j.k3:i,g,g,g,g,g,g,g,g,12,g,g,g,g,g,!0,g,g,g,g,g,g,g,g),g,g,g)],q),B.n,B.e,B.c),1)
