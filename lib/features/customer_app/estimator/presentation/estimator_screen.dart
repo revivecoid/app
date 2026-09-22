@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/utils/guest_session.dart';
 import '../../../../core/utils/image_compressor.dart';
 import '../providers/panel_selection_provider.dart';
 import '../providers/customer_intake_provider.dart';
@@ -112,9 +113,13 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
   Future<void> _submitToVisionAi() async {
     if (_selectedImages.isEmpty) return;
 
-    // SEC-03 FIX: Vision-estimation now requires auth — prompt login if needed
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) {
+    // The vision pipeline needs a session (SEC-03 kept that intact), but not an
+    // identified one. A visitor is signed in anonymously so the estimate itself
+    // stays public; the login prompt belongs to booking, where the workshop
+    // actually needs someone it can reach.
+    final guestId = await GuestSession.ensure();
+    if (guestId == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppL.of(context)!.estimatorLoginRequired)),
       );
@@ -135,8 +140,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       for (int i = 0; i < _selectedImages.length; i++) {
         final compressedBytes =
             await ImageCompressor.compressImage(_selectedImages[i]);
-        // SEC-04 FIX: User-scoped upload path — bucket policies enforce <user_id>/ prefix
-        final fileName = '${user.id}/${timestamp}_$i.jpg';
+        // SEC-04 path scope is kept: the bucket policy enforces <user_id>/, and
+        // for a guest that id is the anonymous account's.
+        final fileName = '$guestId/${timestamp}_$i.jpg';
         await Supabase.instance.client.storage
             .from('revive-photos')
             .uploadBinary(fileName, compressedBytes);
@@ -217,8 +223,12 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       }
       setState(() => _currentStep += 1);
     } else {
+      // Booking is where identity is genuinely required: this writes a job that
+      // a workshop must be able to follow up on. A guest — or an anonymous
+      // session — is sent to sign in and returned straight to the estimator,
+      // which keeps the photo, panel and panel data they already entered.
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) {
+      if (user == null || user.isAnonymous) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppL.of(context)!.estimatorLoginRequired)));
         context.push('/login?returnTo=/estimator');
         return;
