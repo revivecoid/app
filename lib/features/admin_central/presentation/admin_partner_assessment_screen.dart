@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/rev_app_bar.dart';
@@ -24,6 +25,33 @@ final _partnerListProvider = FutureProvider.autoDispose<List<Map<String, dynamic
       .order('created_at', ascending: false);
   return List<Map<String, dynamic>>.from(rows as List);
 });
+
+// FB-01: submitted workshop applications, with the submitted profile and the
+// uploaded evidence keys. Requires 20260922_partner_applications_full_fields.
+final _pendingApplicationsProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final rows = await Supabase.instance.client
+      .from('partner_applications')
+      .select('id, shop_name, entity_name, owner_name, email, phone, address, '
+          'tier, paint_brand, throughput_capacity, service_radius_km, '
+          'status, created_at, submitted_at, '
+          'nib_file_key, npwp_file_key, siup_file_key, ktp_file_key, '
+          'facility_photo_keys')
+      .inFilter('status', ['pending', 'pending_review'])
+      .order('submitted_at', ascending: false);
+  return List<Map<String, dynamic>>.from(rows as List);
+});
+
+/// Bucket every upload path in the product writes to. Private: the admin opens
+/// evidence through a short-lived signed URL, never a public one.
+const _bucket = 'revive-photos';
+
+const _docKeyColumns = <String, String>{
+  'NIB': 'nib_file_key',
+  'NPWP': 'npwp_file_key',
+  'SIUP': 'siup_file_key',
+  'KTP': 'ktp_file_key',
+};
 
 final _selectedPartnerIdProvider = StateProvider.autoDispose<String?>((ref) => null);
 
@@ -89,6 +117,8 @@ class _AdminPartnerAssessmentScreenState
             border: Border(right: BorderSide(color: cs.outlineVariant)),
           ),
           child: Column(children: [
+            _buildPendingApplications(cs),
+            Divider(height: 1, color: cs.outlineVariant),
             // Search
             Padding(
               padding: const EdgeInsets.all(12),
@@ -252,6 +282,260 @@ class _AdminPartnerAssessmentScreenState
         ]),
     );
   }
+
+  // ── FB-01: submitted workshop applications ────────────────────────────────
+  // Before this, /partner/register wrote to partner_applications but nothing in
+  // Admin Central ever read that table, so submissions were invisible.
+
+  Future<void> _approveApplication(String applicationId) async {
+    // approve-partner is the only path that may create a partners row: it runs as
+    // service_role, creates the partner, invites the owner and writes app_metadata.
+    // There is deliberately no INSERT policy on partners for the admin client.
+    String? failure;
+    try {
+      final res = await Supabase.instance.client.functions
+          .invoke('approve-partner', body: {'applicationId': applicationId});
+      if (res.status != 200) {
+        failure = (res.data is Map ? res.data['error']?.toString() : null) ??
+            'HTTP ${res.status}';
+      }
+    } catch (e) {
+      failure = e.toString();
+    }
+    if (!mounted) return;
+    if (failure != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Approval failed: $failure'),
+        backgroundColor: _red,
+        duration: const Duration(seconds: 6),
+      ));
+      return;
+    }
+    ref.invalidate(_pendingApplicationsProvider);
+    ref.invalidate(_partnerListProvider);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Application approved — partner invited.'),
+      backgroundColor: _green,
+    ));
+  }
+
+  Future<void> _declineApplication(String applicationId) async {
+    String? failure;
+    try {
+      await Supabase.instance.client
+          .from('partner_applications')
+          .update({'status': 'rejected'}).eq('id', applicationId);
+    } catch (e) {
+      failure = e.toString();
+    }
+    if (!mounted) return;
+    ref.invalidate(_pendingApplicationsProvider);
+    if (failure != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Decline failed: $failure'), backgroundColor: _red));
+      return;
+    }
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Application declined.')));
+  }
+
+  /// Opens one uploaded file. The bucket is private, so a signed URL is minted
+  /// on demand and handed to the OS browser/viewer.
+  Future<void> _openEvidence(String fileKey, String label) async {
+    try {
+      final url = await Supabase.instance.client.storage
+          .from(_bucket)
+          .createSignedUrl(fileKey, 3600);
+      final ok = await launchUrl(Uri.parse(url),
+          mode: LaunchMode.externalApplication);
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not open $label')));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not open $label: $e')));
+    }
+  }
+
+  Widget _buildPendingApplications(ColorScheme cs) {
+    final appsAsync = ref.watch(_pendingApplicationsProvider);
+    return appsAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.all(12),
+        child: SizedBox(
+            height: 18,
+            width: 18,
+            child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (e, _) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+        child: Text('Applications unavailable: $e',
+            style: TextStyle(fontSize: 11, color: cs.error)),
+      ),
+      data: (apps) {
+        if (apps.isEmpty) return const SizedBox.shrink();
+        return Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            child: Row(children: [
+              const Icon(Icons.inbox_outlined, size: 16, color: _amber),
+              const SizedBox(width: 6),
+              Text('Pending Applications',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: cs.onSurface)),
+              const Spacer(),
+              _Badge('${apps.length}',
+                  _amber.withValues(alpha: 0.15), _amber),
+            ]),
+          ),
+          for (final a in apps) _buildApplicationRow(cs, a),
+          const SizedBox(height: 4),
+        ]);
+      },
+    );
+  }
+
+  Widget _buildApplicationRow(ColorScheme cs, Map<String, dynamic> a) {
+    final id = a['id']?.toString() ?? '';
+    final shop = a['shop_name']?.toString() ?? 'Unnamed Workshop';
+    final entity = a['entity_name']?.toString() ?? '';
+    final owner = a['owner_name']?.toString() ?? '';
+    final email = a['email']?.toString() ?? '';
+    final tier = (a['tier'] as num?)?.toInt() ?? 0;
+    final brand = a['paint_brand']?.toString() ?? '';
+    final capacity = (a['throughput_capacity'] as num?)?.toInt();
+    final radius = (a['service_radius_km'] as num?)?.toInt();
+    final docs = _docKeyColumns.entries
+        .where((e) => a[e.value] != null)
+        .map((e) => MapEntry(e.key, a[e.value] as String))
+        .toList();
+    final photos = (a['facility_photo_keys'] as List?)
+            ?.whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m))
+            .where((m) => m['file_key'] != null)
+            .toList() ??
+        const <Map<String, dynamic>>[];
+    final submitted = DateTime.tryParse(
+        (a['submitted_at'] ?? a['created_at'])?.toString() ?? '');
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: _amber.withValues(alpha: 0.06),
+        border: Border.all(color: _amber.withValues(alpha: 0.35)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(
+            child: Text(shop,
+                style: TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurface),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+          ),
+          if (tier > 0) _Badge('T$tier', cs.surfaceContainerHigh, cs.onSurface),
+        ]),
+        if (entity.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(entity,
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
+        ],
+        const SizedBox(height: 2),
+        Text('$owner · $email',
+            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
+        if (brand.isNotEmpty || capacity != null || radius != null) ...[
+          const SizedBox(height: 4),
+          Text([
+            if (brand.isNotEmpty) brand.toUpperCase(),
+            if (capacity != null) '$capacity panels/mo',
+            if (radius != null) '$radius km radius',
+          ].join(' · '),
+              style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+        ],
+        if (submitted != null) ...[
+          const SizedBox(height: 2),
+          Text('Submitted ${DateFormat('d MMM yyyy, HH:mm').format(submitted.toLocal())}',
+              style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+        ],
+
+        // ── Evidence the applicant uploaded ────────────────────────────────
+        const SizedBox(height: 8),
+        Row(children: [
+          _Badge('${docs.length}/4 docs',
+              docs.length == 4
+                  ? _green.withValues(alpha: 0.15)
+                  : _amber.withValues(alpha: 0.15),
+              docs.length == 4 ? _green : _amber),
+          const SizedBox(width: 4),
+          _Badge('${photos.length}/4 photos',
+              photos.length == 4
+                  ? _green.withValues(alpha: 0.15)
+                  : _amber.withValues(alpha: 0.15),
+              photos.length == 4 ? _green : _amber),
+        ]),
+        if (docs.isNotEmpty || photos.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Wrap(spacing: 6, runSpacing: 4, children: [
+            for (final d in docs)
+              _EvidenceChip(
+                label: d.key,
+                onTap: () => _openEvidence(d.value, d.key),
+              ),
+            for (final p in photos)
+              _EvidenceChip(
+                label: (p['label']?.toString().isNotEmpty ?? false)
+                    ? p['label'].toString()
+                    : 'Photo ${(p['slot'] as num?)?.toInt() ?? 0}',
+                onTap: () => _openEvidence(
+                    p['file_key'].toString(), p['label']?.toString() ?? 'photo'),
+              ),
+          ]),
+        ],
+
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => _declineApplication(id),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _red,
+                side: const BorderSide(color: _red),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6)),
+              ),
+              child: const Text('Decline', style: TextStyle(fontSize: 11)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _approveApplication(id),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6)),
+              ),
+              child: const Text('Approve', style: TextStyle(fontSize: 11)),
+            ),
+          ),
+        ]),
+      ]),
+    );
+  }
+
 
   Color _statusColor(String status) {
     switch (status) {
@@ -1161,6 +1445,34 @@ class _Badge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
       child: Text(label, style: TextStyle(fontSize: 10, color: fg, fontWeight: FontWeight.bold)),
+    );
+  }
+}
+
+class _EvidenceChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _EvidenceChip({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.attach_file, size: 10, color: cs.onSurfaceVariant),
+          const SizedBox(width: 3),
+          Text(label,
+              style: TextStyle(fontSize: 10, color: cs.onSurface)),
+        ]),
+      ),
     );
   }
 }

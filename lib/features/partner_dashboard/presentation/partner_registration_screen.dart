@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/document_picker.dart';
+import '../../../core/utils/guest_session.dart';
 import '../../../core/widgets/rev_app_bar.dart';
 
 class PartnerRegistrationScreen extends StatefulWidget {
@@ -47,6 +49,14 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
 
   bool _isSubmitting = false;
   bool _isSuccess = false;
+  String? _submitError;
+
+  /// Upload stage shown on the submit button while files are in flight.
+  String? _submitStage;
+
+  /// Private bucket every other upload path in the product already uses
+  /// (customer checkout, ops stage photos, partner dashboard documents).
+  static const _bucket = 'revive-photos';
 
   late AnimationController _animController;
 
@@ -79,11 +89,9 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
     setState(() => _facilityPhotos[index] = bytes);
   }
 
+  // PDF or image — see DocumentPicker for why ImagePicker cannot do this.
   Future<void> _pickDoc(String key) async {
-    final XFile? file = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-    );
+    final XFile? file = await DocumentPicker.pick();
     if (file == null) return;
     final bytes = await file.readAsBytes();
     final name = file.name;
@@ -93,35 +101,181 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
     });
   }
 
+  /// FB-03 FIX: the picked facility photos and legal documents lived in state and
+  /// were then discarded — [_submit] only ever wrote text columns, so every
+  /// application arrived with no evidence at all (the admin doc counter read 0/4
+  /// forever and the reviewer had nothing to inspect). Files are uploaded first;
+  /// if any upload fails the submission is refused instead of silently losing it.
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSubmitting = true);
 
-    try {
-      await Supabase.instance.client.from('partner_applications').insert({
-        'entity_name': _entityNameController.text.trim(),
-        'shop_name': _brandNameController.text.trim(),
-        'owner_name': _picController.text.trim(),
-        'email': _emailController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'address': _addressController.text.trim(),
-        'tier': _selectedTier,
-        'paint_brand': _selectedPaint,
-        'throughput_capacity': _throughput.round(),
-        'service_radius_km': _radius.round(),
-        'status': 'pending_review',
-        'submitted_at': DateTime.now().toIso8601String(),
-      });
-    } catch (e) {
-      debugPrint('partner_application insert: $e');
-      // Still show success UI — application is saved locally
+    final hasAnyUpload = _facilityPhotos.any((p) => p != null) ||
+        _docFiles.values.any((f) => f != null);
+    if (!hasAnyUpload) {
+      setState(() =>
+          _submitError = 'Add at least one facility photo or legal document.');
+      return;
     }
 
-    if (mounted) {
+    void stage(String label) {
+      if (mounted) setState(() => _submitStage = label);
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _submitError = null;
+      _submitStage = 'Preparing secure session…';
+    });
+
+    try {
+      // /partner/register is a public route: there is no session until signup, and
+      // the bucket is private with an <auth.uid()>/... INSERT policy, so a guest
+      // JWT is required before a single byte can be stored (see GuestSession).
+      final uid = await GuestSession.ensure();
+      if (uid == null) {
+        throw Exception('Could not start a secure upload session. Please retry.');
+      }
+
+      final storage = Supabase.instance.client.storage;
+      final stamp = DateTime.now().millisecondsSinceEpoch;
+      final prefix = '$uid/partner-applications/$stamp';
+      final failed = <String>[];
+
+      // ── Facility photos — 4 fixed slots ──────────────────────────────────
+      final photoKeys = <Map<String, dynamic>>[];
+      for (var i = 0; i < _facilityPhotos.length; i++) {
+        final bytes = _facilityPhotos[i];
+        if (bytes == null) continue;
+        stage('Uploading ${_facilityPhotoLabels[i]}…');
+        final key = '$prefix/facility/slot$i.jpg';
+        try {
+          await storage.from(_bucket).uploadBinary(
+            key,
+            bytes,
+            fileOptions: const FileOptions(
+                contentType: 'image/jpeg',
+                cacheControl: '3600',
+                upsert: false),
+          );
+          photoKeys.add({
+            'slot': i,
+            'label': _facilityPhotoLabels[i],
+            'file_key': key,
+          });
+        } catch (e) {
+          debugPrint('facility slot$i upload: $e');
+          failed.add(_facilityPhotoLabels[i]);
+        }
+      }
+
+      // ── Legal documents ──────────────────────────────────────────────────
+      final docKeys = <String, String>{};
+      for (final docType in _docFiles.keys) {
+        final bytes = _docFiles[docType];
+        if (bytes == null) continue;
+        stage('Uploading ${docType.toUpperCase()}…');
+        final name = _docFileNames[docType] ?? '$docType.pdf';
+        final dot = name.lastIndexOf('.');
+        final ext = dot >= 0 && dot < name.length - 1
+            ? name.substring(dot + 1).toLowerCase()
+            : 'pdf';
+        final key = '$prefix/docs/${docType}_$stamp.$ext';
+        try {
+          await storage.from(_bucket).uploadBinary(
+            key,
+            bytes,
+            fileOptions: FileOptions(
+                contentType:
+                    ext == 'pdf' ? 'application/pdf' : 'image/jpeg',
+                cacheControl: '3600',
+                upsert: false),
+          );
+          docKeys[docType] = key;
+        } catch (e) {
+          debugPrint('$docType upload: $e');
+          failed.add(docType.toUpperCase());
+        }
+      }
+
+      if (failed.isNotEmpty) {
+        throw Exception(
+            'Could not upload ${failed.join(', ')}. Please retry — nothing was submitted.');
+      }
+
+      stage('Submitting application…');
+
+      // SEC-06 FIX: partner_applications no longer accepts client-side inserts.
+      // Its INSERT policy was `true` for the public role, and GuestSession mints
+      // anonymous sessions on demand, so anyone holding the anon key could script
+      // rows straight into the admin review queue — unvalidated and unattributed.
+      // Submission now goes through submit-partner-application, which validates the
+      // payload, confirms every uploaded key sits under this session's own
+      // '<uid>/partner-applications/' prefix, rate limits per session and rejects a
+      // duplicate pending application for the same email.
+      //
+      // 'pending' is the only status the admin Partner Assessment queue and the
+      // approve-partner edge function recognise; the function sets it server-side.
+      final FunctionResponse res;
+      try {
+        res = await Supabase.instance.client.functions.invoke(
+          'submit-partner-application',
+          body: {
+            'entity_name': _entityNameController.text.trim(),
+            'shop_name': _brandNameController.text.trim(),
+            'owner_name': _picController.text.trim(),
+            'email': _emailController.text.trim(),
+            'phone': _phoneController.text.trim(),
+            'address': _addressController.text.trim(),
+            'tier': _selectedTier,
+            'paint_brand': _selectedPaint,
+            'throughput_capacity': _throughput.round(),
+            'service_radius_km': _radius.round(),
+            // Absent docs stay null; present ones carry their storage path.
+            'nib_file_key': docKeys['nib'],
+            'npwp_file_key': docKeys['npwp'],
+            'siup_file_key': docKeys['siup'],
+            'ktp_file_key': docKeys['ktp'],
+            'facility_photo_keys': photoKeys,
+          },
+        );
+      } on FunctionException catch (e) {
+        // A rejected submission carries a {error} the applicant can act on —
+        // duplicate pending application, rate limit, evidence not theirs.
+        final details = e.details;
+        final message = details is Map && details['error'] != null
+            ? details['error'].toString()
+            : 'Submission failed (${e.status}). Please try again.';
+        throw Exception(message);
+      }
+
+      final data = res.data;
+      if (data is Map && data['error'] != null) {
+        throw Exception(data['error'].toString());
+      }
+
+      if (!mounted) return;
       setState(() {
         _isSubmitting = false;
+        _submitStage = null;
         _isSuccess = true;
       });
+    } catch (e) {
+      // FB-01 FIX: a rejected insert (unknown column, RLS, offline) or a failed
+      // upload must never be reported as a saved application. The old catch
+      // swallowed the error and the screen still claimed success.
+      debugPrint('partner_application submit: $e');
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _submitStage = null;
+        _submitError = e.toString();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text(
+            'Application could not be submitted. Check your connection and retry.'),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        duration: const Duration(seconds: 6),
+      ));
     }
   }
 
@@ -357,6 +511,10 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
                 _buildPayoutCard(theme),
                 const SizedBox(height: 24),
                 _buildBenefitsCard(theme),
+                if (_submitError != null) ...[
+                  const SizedBox(height: 16),
+                  _buildSubmitError(theme),
+                ],
                 const SizedBox(height: 48),
                 _buildStickyFooter(theme),
               ],
@@ -1055,7 +1213,7 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
                   ElevatedButton.icon(
                     onPressed: _isSubmitting ? null : _submit,
                     icon: _isSubmitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.assignment_turned_in, size: 20),
-                    label: Text(_isSubmitting ? 'DISPATCHING VERIFICATION...' : 'SUBMIT PARTNER APPLICATION', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    label: Text(_isSubmitting ? (_submitStage ?? 'DISPATCHING VERIFICATION...') : 'SUBMIT PARTNER APPLICATION', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryContainer,
                       foregroundColor: Colors.white,
@@ -1072,6 +1230,42 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
     );
   }
 
+  Widget _buildSubmitError(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline, size: 20, color: theme.colorScheme.onErrorContainer),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Submission failed',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onErrorContainer)),
+                const SizedBox(height: 4),
+                Text('Your application was not saved. Please retry — if this keeps failing, contact partner-support@revive.co.id.',
+                    style: TextStyle(fontSize: 12, color: theme.colorScheme.onErrorContainer)),
+                const SizedBox(height: 4),
+                Text(_submitError ?? '',
+                    style: TextStyle(fontSize: 11, color: theme.colorScheme.onErrorContainer)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSuccessState(ThemeData theme) {
     return Container(
       width: double.infinity,
@@ -1081,9 +1275,15 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
         children: [
           const Icon(Icons.check_circle, size: 80, color: Colors.green),
           const SizedBox(height: 24),
-          Text('APPLICATION REGISTERED #RV-8821', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+          Text('APPLICATION SUBMITTED', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
           const SizedBox(height: 16),
           Text('Your telematics workshop application has been dispatched to the Revive Verification Matrix.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 12),
+          Text(
+            'Evidence received: ${_facilityPhotos.where((p) => p != null).length}/4 facility photos, '
+            '${_docFiles.values.where((f) => f != null).length}/4 legal documents.',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+          ),
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () => context.go('/'),
