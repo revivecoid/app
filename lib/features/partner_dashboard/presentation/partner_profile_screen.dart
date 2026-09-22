@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/document_picker.dart';
 import 'partner_profile_controller.dart';
 import 'partner_shell_screen.dart';
 
@@ -75,14 +76,19 @@ class _PartnerProfileScreenState
   }
 
   // ── Pick & upload doc ─────────────────────────────────────────────────────
+  // PDFs are allowed here, so this goes through DocumentPicker rather than
+  // ImagePicker — the latter's web file input is pinned to `accept="image/*"`,
+  // which is why the browser never offered a PDF to choose.
   Future<void> _pickDoc(String docType) async {
-    final file = await _picker.pickImage(
-        source: ImageSource.gallery, imageQuality: 85);
+    final file = await DocumentPicker.pick();
     if (file == null) return;
     final bytes = await file.readAsBytes();
-    await ref
-        .read(partnerProfileProvider.notifier)
-        .uploadDocument(docType, bytes, file.name);
+    await ref.read(partnerProfileProvider.notifier).uploadDocument(
+          docType,
+          bytes,
+          file.name,
+          mimeType: file.mimeType,
+        );
   }
 
   // ── Pick & upload facility photo ──────────────────────────────────────────

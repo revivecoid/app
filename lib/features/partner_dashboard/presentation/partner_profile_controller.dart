@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/utils/document_picker.dart';
+
 // ─── Version models ───────────────────────────────────────────────────────────
 
 class PartnerDocVersion {
@@ -365,8 +367,9 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
   Future<void> uploadDocument(
     String docType,
     Uint8List bytes,
-    String fileName,
-  ) async {
+    String fileName, {
+    String? mimeType,
+  }) async {
     final user = _sb.auth.currentUser;
     if (user == null) return;
 
@@ -379,16 +382,27 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
     final uploadKey = 'doc_$docType';
     state = state.copyWith(uploading: {...state.uploading, uploadKey});
     try {
+      if (bytes.length > DocumentPicker.maxBytes) {
+        throw Exception(
+            'File is ${(bytes.length / 1024 / 1024).toStringAsFixed(1)}MB — '
+            'the limit is ${DocumentPicker.maxBytes ~/ (1024 * 1024)}MB.');
+      }
+
       // Timestamped path — never collides with prior versions
       final ts = DateTime.now().millisecondsSinceEpoch;
-      final ext = fileName.contains('.') ? fileName.split('.').last : 'pdf';
+      final ext = _docExtension(fileName, mimeType);
       final storageKey =
           'partners/$_partnerId/docs/${docType}_${ts}.$ext';
 
       await _sb.storage.from(_bucket).uploadBinary(
         storageKey,
         bytes,
-        fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+        fileOptions: FileOptions(
+          // Explicitly typed: a document may be a PDF, not just an image.
+          contentType: _docContentType(ext, mimeType),
+          cacheControl: '3600',
+          upsert: false,
+        ),
       );
 
       // Demote prior current versions
@@ -495,6 +509,28 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
 
   String getPublicUrl(String fileKey) =>
       _sb.storage.from(_bucket).getPublicUrl(fileKey);
+
+  // ── Document format helpers ───────────────────────────────────────────────
+
+  /// Extension to store the object under. The picked file's own name wins; the
+  /// MIME type is the fallback for names without one, and 'pdf' remains the
+  /// last resort (partner docs are PDFs by default).
+  static String _docExtension(String fileName, String? mimeType) {
+    final dot = fileName.lastIndexOf('.');
+    if (dot >= 0 && dot < fileName.length - 1) {
+      final ext = fileName.substring(dot + 1).toLowerCase();
+      if (RegExp(r'^[a-z0-9]{1,5}$').hasMatch(ext)) return ext;
+    }
+    return mimeType == 'application/pdf' ? 'pdf' : 'jpg';
+  }
+
+  /// Content type recorded on the stored object.
+  static String _docContentType(String ext, String? mimeType) {
+    if (mimeType != null && mimeType.isNotEmpty) return mimeType;
+    if (ext == 'pdf') return 'application/pdf';
+    if (ext == 'png') return 'image/png';
+    return 'image/jpeg';
+  }
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
