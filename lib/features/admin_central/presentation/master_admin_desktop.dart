@@ -106,7 +106,7 @@ class _MasterAdminDesktopState
                   setState(() => _verifyingJob = null),
               onApprove: () async {
                 await controller.overrideJobStatus(
-                    _verifyingJob!.id, 'completed');
+                    _verifyingJob!.id, '4_paid');
                 setState(() => _verifyingJob = null);
               },
               onReject: () async {
@@ -703,7 +703,7 @@ class _OpsMatrixContent extends StatelessWidget {
     final pendingJobs = state.activeJobs
         .where((j) =>
             j.status == '3_booked' ||
-            j.status == 'manual_verification_pending')
+            j.status == '3_inspected')
         .toList();
 
     final settlementLabel = state.settlementLoading
@@ -933,7 +933,7 @@ class _JobRow extends StatelessWidget {
 
   bool get _pending =>
       job.status == '3_booked' ||
-      job.status == 'manual_verification_pending';
+      job.status == '3_inspected';
 
   @override
   Widget build(BuildContext context) {
@@ -1159,14 +1159,14 @@ class _JobRow extends StatelessWidget {
     final statuses = [
       ('2_estimated', 'Estimated'),
       ('3_booked', 'Booked'),
+      ('5_admitted', 'Admitted'),
       ('3_inspected', 'Inspected (Invoice Issued)'),
       ('4_paid', 'Paid'),
-      ('5_admitted', 'Admitted'),
       ('6_in_progress', 'In Progress'),
       ('7_finished', 'Finished'),
       ('8_awaiting_delivery', 'Awaiting Delivery'),
       ('9_done', 'Done'),
-      ('completed', 'Completed'),
+      ('0_cancelled', 'Cancelled'),
     ];
     showDialog(
       context: context,
@@ -1226,17 +1226,16 @@ class _StatusBadge extends StatelessWidget {
     late String label;
     late IconData icon;
     switch (status) {
-      case 'manual_verification_pending':
       case '3_booked':
         bg = cs.primary.withValues(alpha: 0.1);
         fg = cs.primary;
         label = 'Pending Verification';
         icon = Icons.circle;
-      case 'completed':
-        bg = const Color(0xFF10b981).withValues(alpha: 0.15);
-        fg = const Color(0xFF059669);
-        label = 'PAID & VERIFIED';
-        icon = Icons.check_circle_outline;
+      case '3_inspected':
+        bg = const Color(0xFFf59e0b).withValues(alpha: 0.15);
+        fg = const Color(0xFFb45309);
+        label = 'AWAITING PAYMENT';
+        icon = Icons.receipt_long_outlined;
       case 'overdue':
         bg = cs.secondaryContainer.withValues(alpha: 0.3);
         fg = cs.onSecondaryContainer;

@@ -178,7 +178,10 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
         vehicles:vehicle_id (make, model, license_plate),
         repair_photos (r2_file_key, uploaded_at)
       ''').eq('partner_id', state.partnerId).inFilter('status', [
-        '3_booked', '4_paid', '5_admitted', '6_in_progress',
+        // 3_inspected must be listed: it is where a job waits while the customer
+        // owes payment. Leaving it out dropped the row from client state, so an
+        // invoiced job vanished from every column of the board.
+        '3_booked', '5_admitted', '3_inspected', '4_paid', '6_in_progress',
         '7_finished', '8_awaiting_delivery'
       ]);
 
@@ -248,16 +251,19 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
   }
 
   /// Advances the vehicle to the next pipeline stage safely.
-  /// NOTE: 3_inspected and 4_paid are NOT in this path — invoice issuance
-  /// is done via partner_issue_invoice RPC, and payment is customer-initiated.
+  /// Follows the redesigned order: 3_booked -> 5_admitted -> 3_inspected ->
+  /// 4_paid -> 6_in_progress. 3_inspected is reached through
+  /// partner_issue_invoice (never a workshop button) and 4_paid is the customer
+  /// paying that invoice. 4_paid IS a workshop action, though: it is the gate
+  /// that starts the repair.
   Future<void> advanceJobStage(String jobId, String currentStage) async {
-    // Partner cannot advance to 3_inspected (done via Issue Invoice dialog)
-    // or to 4_paid (customer-only after invoice review).
-    // Handled stages: 3_booked/4_paid → 5_admitted, 5_admitted → 6_in_progress,
-    //                 6_in_progress → 7_finished, 7_finished → 8_awaiting_delivery
+    // 4_paid -> 6_in_progress is the only route into repair. The old
+    // 5_admitted -> 6_in_progress shortcut is deliberately absent because the
+    // database now refuses it (20260922_gate_repair_on_payment.sql) — work may
+    // not start before the customer has paid.
     final partnerAdvanceMap = <String, String>{
       '3_booked': '5_admitted',
-      '5_admitted': '6_in_progress',
+      '4_paid': '6_in_progress',
       '6_in_progress': '7_finished',
       '7_finished': '8_awaiting_delivery',
     };

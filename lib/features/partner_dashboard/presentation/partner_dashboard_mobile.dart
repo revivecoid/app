@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import 'partner_dashboard_controller.dart';
+import 'widgets/partner_job_action.dart';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const _primary = Color(0xFFa40016);
@@ -63,9 +64,15 @@ class _PartnerDashboardMobileState extends ConsumerState<PartnerDashboardMobile>
             !j.licensePlate.toLowerCase().contains(q) &&
             !j.customerName.toLowerCase().contains(q)) return false;
       }
+      // A job only counts as incoming while nobody has taken the car in. Once it
+      // is admitted it is in the bay for the rest of the money steps too, so
+      // 3_inspected (awaiting payment) and 4_paid (paid, repair next) sit here
+      // rather than under Incoming, which is what put a paid, already-admitted car
+      // back in the "new work" column.
       switch (_filterStatus) {
-        case 'Incoming': return j.status == '3_booked' || j.status == '4_paid';
-        case 'In Bay': return j.status == '5_admitted' || j.status == '6_in_progress';
+        case 'Incoming': return j.status == '3_booked';
+        case 'In Bay': return j.status == '5_admitted' || j.status == '3_inspected' ||
+            j.status == '4_paid' || j.status == '6_in_progress';
         case 'Paint': return j.status == '7_finished';
         case 'QC': return j.status == '8_awaiting_delivery';
         default: return true;
@@ -243,8 +250,14 @@ class _FilterChips extends StatelessWidget {
 
   int _count(String filter) {
     switch (filter) {
-      case 'Incoming': return jobs.where((j) => j.status == '3_booked' || j.status == '4_paid').length;
-      case 'In Bay': return jobs.where((j) => j.status == '5_admitted' || j.status == '6_in_progress').length;
+      case 'Incoming': return jobs.where((j) => j.status == '3_booked').length;
+      case 'In Bay': return jobs
+          .where((j) =>
+              j.status == '5_admitted' ||
+              j.status == '3_inspected' ||
+              j.status == '4_paid' ||
+              j.status == '6_in_progress')
+          .length;
       case 'Paint': return jobs.where((j) => j.status == '7_finished').length;
       case 'QC': return jobs.where((j) => j.status == '8_awaiting_delivery').length;
       default: return jobs.length;
@@ -297,8 +310,11 @@ class _JobList extends StatelessWidget {
   const _JobList({required this.jobs, required this.controller});
 
   Color _statusColor(String status) {
-    if (status == '3_booked' || status == '4_paid') return _blue500;
-    if (status == '5_admitted' || status == '6_in_progress') return _primary;
+    if (status == '3_booked') return _blue500;
+    if (status == '5_admitted' || status == '3_inspected' || status == '4_paid') {
+      return _amber500;
+    }
+    if (status == '6_in_progress') return _primary;
     if (status == '7_finished') return _amber500;
     return _emerald500;
   }
@@ -390,22 +406,17 @@ class _JobList extends StatelessWidget {
                     ),
                   )),
                   SizedBox(width: 8),
+                  // The shared control, so this card offers exactly what the desktop
+                  // card does. It previously offered a bare "Advance" for an admitted
+                  // job, which was the only way to reach Issue Invoice on a phone-less
+                  // path and let a car start repair before it was paid for.
                   if (job.status != '9_done') Expanded(child: SizedBox(
                     height: 34,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: color,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        elevation: 0,
-                      ),
-                      icon: Icon(Icons.arrow_forward, size: 14),
-                      label: Text(
-                        (job.status == '3_booked' || job.status == '4_paid') ? 'Admit' : 'Advance',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      onPressed: () => controller.advanceJobStage(job.id, job.status),
+                    child: PartnerJobActionControl(
+                      job: job,
+                      controller: controller,
+                      color: color,
+                      compact: true,
                     ),
                   )),
                 ]),
