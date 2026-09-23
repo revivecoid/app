@@ -110,17 +110,22 @@ class Supabase:
     def config(self) -> dict:
         rows = self._call(
             "GET",
-            "/notification_config?select=whatsapp_provider,whatsapp_bridge_url,enabled&id=eq.1",
+            "/notification_config?select=whatsapp_provider,whatsapp_bridge_url,"
+            "whatsapp_chatbot_provider,whatsapp_chatbot_bridge_url,enabled&id=eq.1",
         )
         return rows[0] if rows else {}
 
-    def pending_whatsapp(self, limit: int) -> list[dict]:
-        # provider=eq.bridge: rows the edge function deferred. status=eq.pending:
-        # still queued. attempts<5 mirrors the SQL cap so a poison row cannot spin.
+    def pending_bridge(self, limit: int) -> list[dict]:
+        # provider=eq.bridge rather than a purpose filter: the row already records
+        # which transport was chosen, and both WhatsApp numbers are served by a
+        # bridge, so the ROW is the authority on whether this worker owns it.
+        #
+        # status=eq.pending: still queued (the edge function defers these).
+        # attempts<5: mirrors the SQL cap so a poison row cannot spin forever.
         return self._call(
             "GET",
             "/notification_outbox"
-            "?select=id,user_id,job_id,kind,to_address,title,body,attempts"
+            "?select=id,user_id,job_id,kind,to_address,title,body,attempts,provider,purpose"
             "&channel=eq.whatsapp&status=eq.pending&provider=eq.bridge"
             f"&attempts=lt.5&order=created_at.asc&limit={limit}",
         )
@@ -224,66 +229,94 @@ def health(bridge_url: str) -> tuple[bool, str]:
 
 # ─── main ────────────────────────────────────────────────────────────────────
 
-def one_pass(sb: Supabase, bridge_url: str, limit: int, dry_run: bool) -> int:
+def one_pass(sb: Supabase, bridges: dict[str, str], limit: int, dry_run: bool) -> int:
+    """bridges maps purpose -> bridge base URL ('chatbot', 'notif')."""
     cfg = sb.config()
     if not cfg.get("enabled", True):
         print("notification_config.enabled = false — nothing to do")
         return 0
-    if cfg.get("whatsapp_provider") != "bridge":
-        print(f"whatsapp_provider is {cfg.get('whatsapp_provider')!r}, not 'bridge' — "
-              "this worker only handles bridge rows")
-        return 0
-    if cfg.get("whatsapp_bridge_url"):
-        print(f"whatsapp_bridge_url is set ({cfg['whatsapp_bridge_url']}) — the edge "
-              "function handles these rows; clear it to use this worker")
+
+    # Either slot being a bridge means there may be rows for this worker. Do not
+    # require a single global provider: the chatbot number and the notification
+    # number are independent settings, and one can be a bridge while the other is
+    # Meta (which is exactly the intended split).
+    notif_is_bridge = cfg.get("whatsapp_provider") == "bridge"
+    chatbot_is_bridge = cfg.get("whatsapp_chatbot_provider") == "bridge"
+    if not notif_is_bridge and not chatbot_is_bridge:
+        print(f"neither whatsapp_provider ({cfg.get('whatsapp_provider')!r}) nor "
+              f"whatsapp_chatbot_provider ({cfg.get('whatsapp_chatbot_provider')!r}) "
+              "is 'bridge' — this worker only handles bridge rows")
         return 0
 
-    ok, detail = health(bridge_url)
-    if not ok:
-        # Report once and leave every row queued; there is nothing to lose by
-        # waiting, and dropping them would lose real customer messages.
-        print(f"bridge not ready: {detail}")
-        rows = sb.pending_whatsapp(limit)
-        if rows:
-            print(f"  {len(rows)} whatsapp row(s) waiting; all left pending")
-        return 2
-    print(f"bridge: {detail}")
+    # A URL configured in the DB wins over the CLI default: the DB is the
+    # deployment's record, and setting it also hands these rows to the edge
+    # function instead.
+    if cfg.get("whatsapp_bridge_url") or cfg.get("whatsapp_chatbot_bridge_url"):
+        print("a bridge url is set in notification_config — the edge function handles "
+              "those rows; clear it to use this worker")
+        if not any(bridges.values()):
+            return 0
 
-    rows = sb.pending_whatsapp(limit)
+    rows = sb.pending_bridge(limit)
     if not rows:
-        print("no pending whatsapp rows")
+        print("no pending bridge rows")
         return 0
 
-    sent = failed = 0
+    # Health-check only the bridges we are about to use, so a wrong port for an
+    # unused number does not block the working one.
+    needed = {"chatbot" if r.get("purpose") == "chatbot" else "notif" for r in rows}
+    usable: set[str] = set()
+    for purpose in sorted(needed):
+        url = bridges.get(purpose)
+        if not url:
+            print(f"[{purpose}] no bridge URL given — rows left pending "
+                  f"(pass --bridge-chatbot / --bridge as appropriate)")
+            continue
+        ok, detail = health(url)
+        print(f"[{purpose}] {url} -> {detail}")
+        if ok:
+            usable.add(purpose)
+
+    sent = failed = waited = 0
     for row in rows:
+        purpose = "chatbot" if row.get("purpose") == "chatbot" else "notif"
         jid = to_jid(row.get("to_address") or "")
+
+        if purpose not in usable:
+            waited += 1
+            continue
         if dry_run:
-            print(f"  [dry-run] would send kind={row['kind']} to {jid} — {row['title'][:50]}")
+            print(f"  [dry-run] {purpose}: would send kind={row['kind']} to {jid}")
             continue
 
-        ok, detail, retryable = send_via_bridge(bridge_url, row)
+        ok, detail, retryable = send_via_bridge(bridges[purpose], row)
         if ok:
             sb.mark(row["id"], "sent", None, "bridge")
             sent += 1
-            print(f"  sent  {row['kind']} -> {jid}")
+            print(f"  sent  [{purpose}] {row['kind']} -> {jid}")
         elif retryable:
             # Leave pending so the next run retries; only count the attempt.
             sb.bump_attempts(row["id"], row.get("attempts", 0))
-            print(f"  wait  {row['kind']} -> {jid}: {detail}")
+            waited += 1
+            print(f"  wait  [{purpose}] {row['kind']} -> {jid}: {detail}")
         else:
             sb.mark(row["id"], "failed", detail[:1000], "bridge")
             failed += 1
-            print(f"  fail  {row['kind']} -> {jid}: {detail}")
+            print(f"  fail  [{purpose}] {row['kind']} -> {jid}: {detail}")
 
-    print(f"pass complete: {sent} sent, {failed} failed, "
-          f"{len(rows) - sent - failed} left pending")
+    print(f"pass complete: {sent} sent, {failed} failed, {waited} left pending")
     return 0
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--bridge", default=os.environ.get("WHATSAPP_BRIDGE_URL", BRIDGE_DEFAULT),
-                    help=f"bridge base URL (default {BRIDGE_DEFAULT})")
+    ap.add_argument("--bridge",
+                    default=os.environ.get("WHATSAPP_BRIDGE_URL", BRIDGE_DEFAULT),
+                    help=f"NOTIFICATION-number bridge (default {BRIDGE_DEFAULT})")
+    ap.add_argument("--bridge-chatbot",
+                    default=os.environ.get("WHATSAPP_CHATBOT_BRIDGE_URL"),
+                    help="CHATBOT-number bridge; a separate Baileys session/port. "
+                         "Defaults to --bridge when not given.")
     ap.add_argument("--limit", type=int, default=50)
     ap.add_argument("--watch", action="store_true", help="loop forever, 60s apart")
     ap.add_argument("--interval", type=int, default=60)
@@ -296,10 +329,18 @@ def main() -> int:
         print("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set", file=sys.stderr)
         return 1
 
+    bridges = {
+        "notif": args.bridge or "",
+        "chatbot": args.bridge_chatbot or args.bridge or "",
+    }
+    if bridges["chatbot"] and not args.bridge_chatbot:
+        print("note: --bridge-chatbot not set; chatbot rows will use the notification "
+              "bridge. Two numbers need two bridge processes on two ports.")
+
     sb = Supabase(url, key)
     while True:
         try:
-            code = one_pass(sb, args.bridge, args.limit, args.dry_run)
+            code = one_pass(sb, bridges, args.limit, args.dry_run)
         except RuntimeError as e:
             print(f"error: {e}", file=sys.stderr)
             code = 1

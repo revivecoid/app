@@ -135,9 +135,12 @@ BEGIN
     RETURN 0;
   END IF;
 
-  IF p_job_id IS NOT NULL THEN
-    SELECT * INTO v_job FROM public.repair_jobs WHERE id = p_job_id;
-  END IF;
+  -- Unconditional: SELECT ... INTO assigns the record even with 0 rows, so
+  -- v_job.customer_id below is readable. Guarding this with IF p_job_id IS NOT
+  -- NULL left v_job unassigned for job-less calls, and reading a field of an
+  -- unassigned record raises 55000. Superseded by
+  -- 20260923_notify_v2_dual_whatsapp.sql, which drops this 7-arg version.
+  SELECT * INTO v_job FROM public.repair_jobs WHERE id = p_job_id;
 
   FOR v_recipient IN
     SELECT DISTINCT r.uid

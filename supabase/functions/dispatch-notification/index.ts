@@ -53,6 +53,10 @@ interface OutboxRow {
   body: string;
   payload: Record<string, unknown>;
   attempts: number;
+  /** Transport resolved by notify() at enqueue time: 'meta' | 'bridge' | 'resend' | … */
+  provider: string | null;
+  /** Why it was sent: 'transactional' | 'marketing' | 'chatbot'. */
+  purpose: string;
 }
 
 interface Outcome {
@@ -295,7 +299,17 @@ Deno.serve(async (req) => {
 
     const outbox = row as OutboxRow;
     let outcome: Outcome;
-    let provider = outbox.channel === "email" ? cfg?.email_provider : cfg?.whatsapp_provider;
+
+    // Trust the provider RECORDED ON THE ROW, not the config's current value.
+    // notify() already resolved the transport from the row's purpose at enqueue
+    // time — a chatbot row carries provider='bridge' while a transactional one
+    // carries 'meta'. Reading cfg.whatsapp_provider here would send a chatbot
+    // message through Meta, or a customer notification through the consumer
+    // bridge, depending on which slot the config happened to hold. The row's
+    // value is the decision that was actually made, so it wins.
+    let provider: string | null =
+      outbox.provider ??
+      (outbox.channel === "email" ? cfg?.email_provider : cfg?.whatsapp_provider);
 
     if (outbox.channel === "email") {
       if (provider === "resend") {
@@ -309,16 +323,23 @@ Deno.serve(async (req) => {
       if (provider === "meta") {
         outcome = await sendWhatsAppMeta(outbox);
       } else if (provider === "bridge") {
-        if (!cfg?.whatsapp_bridge_url) {
+        // Which bridge URL applies depends on the row's purpose: the chatbot
+        // number and the notification number are two separate Baileys sessions.
+        const bridgeUrl = outbox.purpose === "chatbot"
+          ? cfg?.whatsapp_chatbot_bridge_url
+          : cfg?.whatsapp_bridge_url;
+
+        if (!bridgeUrl) {
           // No URL configured means the LOCAL drain worker is expected to handle
           // these rows. Defer, so the row stays pending and stays visible to it.
           outcome = {
             ok: false,
-            detail: "no whatsapp_bridge_url configured — leaving for the local drain worker",
+            detail: `no bridge url configured for purpose '${outbox.purpose}' — `
+              + "leaving for the local drain worker",
             deferred: true,
           };
         } else {
-          outcome = await sendWhatsAppBridge(outbox, cfg.whatsapp_bridge_url);
+          outcome = await sendWhatsAppBridge(outbox, bridgeUrl);
         }
       } else {
         outcome = { ok: false, detail: `whatsapp provider not configured (${provider})`, skipped: true };
