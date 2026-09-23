@@ -315,7 +315,12 @@ Deno.serve(async (req) => {
       if (provider === "resend") {
         outcome = await sendEmailResend(outbox, cfg?.email_from ?? "Revive <no-reply@revive.co.id>");
       } else if (provider === "smtp") {
-        outcome = await sendEmailSmtp(outbox);
+        // `from` must be passed. sendEmailSmtp(row, from) takes two arguments, and
+        // calling it with only `row` left `from` undefined — so the From header
+        // silently fell back to "Revive <SMTP_USER>" and notification_config.
+        // email_from was ignored on this path entirely (while the resend path did
+        // honour it, so the two disagreed).
+        outcome = await sendEmailSmtp(outbox, cfg?.email_from ?? "");
       } else {
         outcome = { ok: false, detail: `email provider not configured (${provider})`, skipped: true };
       }
