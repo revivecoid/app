@@ -30,6 +30,16 @@ class PartnerJobNode {
   final String? profilePhone;
   final String? profileEmail;
 
+  /// What the customer was quoted, before the car was seen. The final-estimation
+  /// form shows this beside the workshop's own figure so the delta is visible at
+  /// the moment the price is set — the whole point of collecting a final cost.
+  final double? initialEstimationCost;
+
+  /// The vision assessment (`estimation_result`). `assessment.damaged_panels_detail[]`
+  /// carries each panel's `panel_name` and `calculated_cost`, which is what the
+  /// form pre-fills as the initial per-panel figure.
+  final Map<String, dynamic>? estimationResult;
+
   PartnerJobNode({
     required this.id,
     required this.customerName,
@@ -42,7 +52,25 @@ class PartnerJobNode {
     this.contactPhone,
     this.profilePhone,
     this.profileEmail,
+    this.initialEstimationCost,
+    this.estimationResult,
   });
+
+  /// Initial per-panel figures, in the order the vision assessment reported
+  /// them. Empty when the job predates the assessment or it failed, which the
+  /// form treats as "no pre-fill" rather than an error.
+  List<({String panel, double initialCost})> get initialPanels {
+    final detail = (estimationResult?['assessment']
+        as Map<String, dynamic>?)?['damaged_panels_detail'];
+    if (detail is! List) return const [];
+    return detail
+        .whereType<Map>()
+        .map((d) => (
+              panel: d['panel_name']?.toString() ?? 'Panel',
+              initialCost: (d['calculated_cost'] as num?)?.toDouble() ?? 0,
+            ))
+        .toList();
+  }
 
   PartnerJobNode copyWith({String? status, String? latestPhotoUrl}) {
     return PartnerJobNode(
@@ -57,6 +85,8 @@ class PartnerJobNode {
       contactPhone: contactPhone,
       profilePhone: profilePhone,
       profileEmail: profileEmail,
+      initialEstimationCost: initialEstimationCost,
+      estimationResult: estimationResult,
     );
   }
 }
@@ -174,6 +204,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
       // Server-side strict RLS ensures we only pull the tenant's exact data array
       final response = await _supabase.from('repair_jobs').select('''
         id, status, created_at, contact_phone, customer_id,
+        initial_estimation_cost, estimation_result,
         profiles:customer_id (full_name, phone, email),
         vehicles:vehicle_id (make, model, license_plate),
         repair_photos (r2_file_key, uploaded_at)
@@ -210,6 +241,15 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
           contactPhone: job['contact_phone']?.toString(),
           profilePhone: profile['phone']?.toString(),
           profileEmail: profile['email']?.toString(),
+          initialEstimationCost:
+              (job['initial_estimation_cost'] as num?)?.toDouble(),
+          // PostgREST returns jsonb already decoded when the column is a scalar
+          // projection; guard the cast so an unexpected shape degrades to
+          // "no pre-fill" rather than throwing inside the map and losing the
+          // whole job list.
+          estimationResult: job['estimation_result'] is Map
+              ? Map<String, dynamic>.from(job['estimation_result'] as Map)
+              : null,
         );
       }).toList();
 

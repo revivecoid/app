@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../partner_dashboard_controller.dart';
+import 'partner_final_estimation_dialog.dart';
 
 /// The single place a workshop job's next action is decided and drawn.
 ///
@@ -45,7 +45,9 @@ class PartnerJobActionControl extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    // In the bay: price the repair. Re-V turns this into the customer's invoice.
+    // In the bay: price the repair. This submits the final estimation, which the
+    // database turns into a draft invoice for Re-V to check and release — the
+    // workshop no longer issues the invoice itself.
     if (job.status == '5_admitted') {
       return ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
@@ -55,10 +57,10 @@ class PartnerJobActionControl extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: _radius),
           elevation: 0,
         ),
-        icon: Icon(Icons.receipt_long_outlined, size: _iconSize),
-        label: Text('Issue Invoice',
+        icon: Icon(Icons.fact_check_outlined, size: _iconSize),
+        label: Text('Final Estimate',
             style: TextStyle(fontSize: _fontSize, fontWeight: FontWeight.bold)),
-        onPressed: () => showIssueInvoiceDialog(context, job),
+        onPressed: () => showFinalEstimationDialog(context, job),
       );
     }
 
@@ -166,137 +168,4 @@ class _Gate extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Shows a dialog for the partner to report the final inspection cost.
-/// Re-V then issues the formal invoice to the customer.
-///
-/// Shared by both dashboards: a workshop on a phone previously had no way to
-/// reach this at all, so an admitted job could only be pushed forward.
-void showIssueInvoiceDialog(BuildContext context, PartnerJobNode job) {
-  final cs = Theme.of(context).colorScheme;
-  final ctrl = TextEditingController();
-  bool loading = false;
-
-  showDialog(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setS) => AlertDialog(
-        backgroundColor: cs.surfaceContainerLowest,
-        title: Row(children: [
-          const Icon(Icons.receipt_long_outlined, color: Color(0xFF059669), size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-              child: Text('Issue Invoice \u2014 ${job.carMake} ${job.carModel}',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: cs.onSurface))),
-        ]),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Enter the final repair cost based on your physical inspection. '
-              'Re-V will issue a formal invoice to the customer for payment approval.',
-              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, height: 1.5),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: ctrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: 'Final Repair Cost (IDR)',
-                hintText: 'e.g. 2500000',
-                prefixText: 'Rp ',
-                border: const OutlineInputBorder(),
-                labelStyle: TextStyle(color: cs.onSurfaceVariant),
-              ),
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: loading ? null : () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: cs.onSurfaceVariant)),
-          ),
-          ElevatedButton(
-            onPressed: loading
-                ? null
-                : () async {
-                    final raw = ctrl.text.trim().replaceAll(',', '').replaceAll('.', '');
-                    final amount = double.tryParse(raw);
-                    if (amount == null || amount <= 0) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                        content: Text('Please enter a valid repair cost.'),
-                        backgroundColor: Colors.red,
-                      ));
-                      return;
-                    }
-                    setS(() => loading = true);
-                    try {
-                      final result = await Supabase.instance.client.rpc(
-                        'partner_issue_invoice',
-                        params: {'p_job_id': job.id, 'p_final_cost': amount},
-                      );
-                      final response =
-                          result is Map<String, dynamic> ? result : <String, dynamic>{};
-                      if (!ctx.mounted) return;
-                      Navigator.pop(ctx);
-                      if (response['success'] == true) {
-                        // Dispatch notification to customer
-                        await Supabase.instance.client.functions.invoke(
-                          'send-notification',
-                          body: {
-                            'job_id': job.id,
-                            'customer_id': response['customer_id'],
-                            'new_status': '3_inspected',
-                          },
-                        );
-                        if (ctx.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(
-                                'Invoice issued: Rp ${amount.toStringAsFixed(0)}. Customer notified via email & WhatsApp.'),
-                            backgroundColor: const Color(0xFF059669),
-                            duration: const Duration(seconds: 4),
-                          ));
-                        }
-                      } else {
-                        if (ctx.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(response['error']?.toString() ??
-                                'Failed to issue invoice.'),
-                            backgroundColor: Colors.red,
-                          ));
-                        }
-                      }
-                    } catch (e) {
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      debugPrint('[IssueInvoice] Error: $e');
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                              'Error: ${e.toString().replaceAll('PostgrestException', '').trim()}'),
-                          backgroundColor: Colors.red,
-                        ));
-                      }
-                    }
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF059669),
-              foregroundColor: Colors.white,
-            ),
-            child: loading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Issue Invoice', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    ),
-  );
 }

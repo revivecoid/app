@@ -56,6 +56,8 @@ import 'features/customer_app/faq/presentation/faq_screen.dart';
 import 'features/customer_app/about/presentation/about_us_screen.dart';
 import 'features/customer_app/legal/presentation/privacy_policy_screen.dart';
 import 'features/admin_central/presentation/admin_user_accounts_screen.dart';
+import 'features/admin_central/presentation/admin_invoice_review_screen.dart';
+import 'features/customer_app/order/presentation/customer_invoice_screen.dart';
 
 // --- RECOVERY STATE PROVIDER ---
 final passwordRecoveryProvider = StateProvider<bool>((ref) => false);
@@ -339,6 +341,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        // The customer reviews and approves/declines the final invoice here.
+        // Separate from /checkout because payment follows approval rather than
+        // starting it — the amount is only known once the workshop has priced
+        // the real damage.
+        path: '/invoice/:jobId',
+        builder: (context, state) {
+          final jobId = state.pathParameters['jobId']!;
+          return CustomerInvoiceScreen(jobId: jobId);
+        },
+      ),
+      GoRoute(
         path: '/profile',
         builder: (context, state) => const CustomerProfileScreen(),
       ),
@@ -385,6 +398,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin-central/users',
         builder: (context, state) => const AdminUserAccountsScreen(),
+      ),
+      GoRoute(
+        // Invoice check/release and Case-1 vehicle admission. Both are the same
+        // admin's queue at the same point in the flow, so they share one screen.
+        path: '/admin-central/invoices',
+        builder: (context, state) => const AdminInvoiceReviewScreen(),
       ),
       GoRoute(
         path: '/admin-central/frontend-settings',
