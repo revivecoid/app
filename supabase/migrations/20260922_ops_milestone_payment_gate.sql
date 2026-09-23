@@ -84,4 +84,4 @@ BEGIN
      WHERE sr.stage_key = p_stage_key AND sr.role = v_role
   );
 END;
-$function$
+$function$;

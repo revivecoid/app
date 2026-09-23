@@ -129,4 +129,4 @@ BEGIN
    WHERE id = p_job_id;
 
 END;
-$function$
+$function$;
