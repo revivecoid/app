@@ -194,8 +194,8 @@ LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
-  INSERT INTO public.notification_outbox (job_id, recipient_user_id, event, payload)
-  VALUES (p_job_id, p_recipient, p_event, p_payload)
+  INSERT INTO public.notification_outbox (job_id, user_id, kind, status, payload, created_at)
+  VALUES (p_job_id, p_recipient, p_event, 'pending', p_payload, now())
   ON CONFLICT DO NOTHING;
 $$;
 REVOKE EXECUTE ON FUNCTION public.enqueue_job_notification(uuid, uuid, text, jsonb) FROM PUBLIC, anon;
