@@ -14,7 +14,7 @@
 | 4 | F04-state-machine | **SELESAI** | 2026-09-28 |
 | 5 | F05-payment-mock | **SELESAI** | 2026-09-28 |
 | 6 | F06-status-clients | **SELESAI** | 2026-09-28 |
-| 7 | F07-booking-capacity | Belum dimulai | — |
+| 7 | F07-booking-capacity | **SELESAI** | 2026-09-28 |
 | 8 | F08-partner-app | Belum dimulai | — |
 | 9 | F09-estimation | Belum dimulai | — |
 | 10 | F10-tracking | Belum dimulai | — |
