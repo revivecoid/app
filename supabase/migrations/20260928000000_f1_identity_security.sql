@@ -611,7 +611,8 @@ ALTER TABLE public.ai_config
 ALTER TABLE public.ai_config
   ADD CONSTRAINT ai_config_api_base_url_safe
     CHECK (
-      api_base_url ~ '^https://(generativelanguage\.googleapis\.com|api\.groq\.com|openrouter\.ai|api\.openai\.com|localhost(:[0-9]+)?|127\.0\.0\.1(:[0-9]+)?|.*\.supabase\.co/functions|[a-zA-Z0-9-]+\.reyhanzz\.xyz|[a-zA-Z0-9-]+\.bansosai\.app|localhost:20128)'
+      api_base_url ~ '^https://(generativelanguage\.googleapis\.com|api\.groq\.com|openrouter\.ai|api\.openai\.com|[a-zA-Z0-9-]+\.onrender\.com|[a-zA-Z0-9-]+\.reyhanzz\.xyz|[a-zA-Z0-9-]+\.bansosai\.app|localhost(:[0-9]+)?|127\.0\.0\.1(:[0-9]+)?)'
+    );
     );
 
 -- Policy ai_config: hapus yang pakai profiles/user_metadata, ganti ke is_master_admin()
