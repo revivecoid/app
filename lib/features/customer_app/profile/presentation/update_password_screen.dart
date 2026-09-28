@@ -15,11 +15,15 @@ class UpdatePasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
+  final _currentPasswordController = TextEditingController(); // SEC-10
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
   String? _successMessage;
+
+  // SEC-10: check if this is a password-recovery flow (no current password needed)
+  bool get _isRecoveryFlow => ref.read(passwordRecoveryProvider);
 
   Future<void> _updatePassword() async {
     final l = AppL.of(context)!;
@@ -28,14 +32,35 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
       return;
     }
 
-    if (_passwordController.text.length < 6) {
-      setState(() => _errorMessage = l.passwordTooShort);
+    // SEC-11 fix: minimum 10 characters
+    if (_passwordController.text.length < 10) {
+      setState(() => _errorMessage = 'Password minimal 10 karakter');
+      return;
+    }
+
+    // SEC-11 fix: reject trivially common passwords
+    const common = ['password123', '1234567890', 'qwerty12345', 'admin12345'];
+    if (common.contains(_passwordController.text.toLowerCase())) {
+      setState(() => _errorMessage = 'Password terlalu umum, pilih yang lebih unik');
       return;
     }
 
     setState(() { _isLoading = true; _errorMessage = null; _successMessage = null; });
-    
+
     try {
+      // SEC-10 fix: reauthenticate first unless this is a password recovery flow
+      if (!_isRecoveryFlow) {
+        final email = Supabase.instance.client.auth.currentUser?.email;
+        if (email == null || _currentPasswordController.text.isEmpty) {
+          setState(() { _isLoading = false; _errorMessage = 'Masukkan password saat ini terlebih dahulu'; });
+          return;
+        }
+        await Supabase.instance.client.auth.signInWithPassword(
+          email: email,
+          password: _currentPasswordController.text,
+        );
+      }
+
       await Supabase.instance.client.auth.updateUser(
         UserAttributes(password: _passwordController.text),
       );
@@ -51,12 +76,31 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
       });
       
     } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message);
+      // SEC-13 fix: map auth errors to friendly messages
+      final msg = _mapAuthError(e.message);
+      setState(() => _errorMessage = msg);
     } catch (e) {
-      setState(() => _errorMessage = '${AppL.of(context)!.somethingWentWrong} $e');
+      setState(() => _errorMessage = AppL.of(context)!.somethingWentWrong);
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  String _mapAuthError(String raw) {
+    if (raw.contains('Invalid login credentials') || raw.contains('invalid_credentials')) {
+      return 'Password saat ini salah';
+    }
+    if (raw.contains('Password should be')) return 'Password minimal 10 karakter';
+    if (raw.contains('rate limit')) return 'Terlalu banyak percobaan, coba lagi nanti';
+    return 'Terjadi kesalahan, coba lagi';
+  }
+
+  @override
+  void dispose() {
+    _currentPasswordController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -96,7 +140,21 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                   ]);
                 }),
                 SizedBox(height: 32),
-                
+
+                // SEC-10 fix: current password field (not shown during recovery flow)
+                if (!_isRecoveryFlow) ...[
+                  TextField(
+                    controller: _currentPasswordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Password saat ini',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
                 if (_errorMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),

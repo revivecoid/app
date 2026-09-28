@@ -658,12 +658,26 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
       }
       // GoRouter redirect interceptor handles login transition automatically
     } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message);
+      // SEC-13 fix: friendly error messages, no internal details
+      setState(() => _errorMessage = _mapAuthError(e.message));
     } catch (e) {
-      setState(() => _errorMessage = 'Critical Authentication Failure: $e');
+      // SEC-13 fix: never expose raw exception to user
+      debugPrint('[Auth] Login error: $e');
+      setState(() => _errorMessage = 'Login gagal. Periksa koneksi dan coba lagi.');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  String _mapAuthError(String raw) {
+    if (raw.contains('Invalid login credentials') || raw.contains('invalid_credentials')) {
+      return 'Email atau password salah';
+    }
+    if (raw.contains('Email not confirmed')) return 'Konfirmasi email Anda terlebih dahulu';
+    if (raw.contains('User already registered')) return 'Akun dengan email ini sudah terdaftar';
+    if (raw.contains('rate limit') || raw.contains('too many')) return 'Terlalu banyak percobaan, coba lagi nanti';
+    if (raw.contains('network') || raw.contains('connection')) return 'Periksa koneksi internet Anda';
+    return 'Login gagal. Coba lagi.';
   }
 
   Future<void> _executeGoogleLogin() async {
@@ -677,9 +691,10 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
         redirectTo: redirectTo,
       );
     } on AuthException catch (e) {
-      setState(() { _errorMessage = e.message; _isLoading = false; });
+      if (mounted) setState(() { _errorMessage = _mapAuthError(e.message); _isLoading = false; });
     } catch (e) {
-      setState(() { _errorMessage = 'Google Auth Error: $e'; _isLoading = false; });
+      debugPrint('[Auth] Google auth error: $e');
+      if (mounted) setState(() { _errorMessage = 'Login Google gagal. Coba lagi.'; _isLoading = false; });
     }
   }
 

@@ -56,6 +56,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
   final List<XFile> _selectedImages = [];
   static const int _maxImages = 5;
   bool _isAnalyzing = false;
+  bool _consentGiven = false; // PRIV-06: explicit consent required before booking
   String? _aiResult;
   Map<String, dynamic>? _structuredData;
 
@@ -244,6 +245,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         return;
       }
       
+      // PRIV-06 fix: require explicit consent before booking
+      if (!_consentGiven) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Centang persetujuan Syarat & Kebijakan Privasi untuk melanjutkan')),
+        );
+        return;
+      }
+
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -318,6 +327,12 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           jobId = jobRes['id'].toString();
         }
         
+        // PRIV-06: record explicit consent in consents table (record_consent RPC)
+        await Supabase.instance.client.rpc('record_consent', params: {
+          'p_doc': 'estimation',
+          'p_version': '1.0',
+        });
+
         if (context.mounted) {
           Navigator.of(context).pop();
           context.push('/booking/$jobId');
@@ -1335,7 +1350,44 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         ),
         SizedBox(height: 16),
 
-        // Consent line
+        // PRIV-06/UX-17 fix: explicit consent checkbox with links
+        StatefulBuilder(
+          builder: (ctx, setStateLocal) {
+            // consent state lives in the parent widget state
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CheckboxListTile(
+                  value: _consentGiven,
+                  onChanged: (v) => setState(() => _consentGiven = v ?? false),
+                  title: RichText(
+                    text: TextSpan(
+                      style: TextStyle(fontSize: 12, color: Theme.of(ctx).colorScheme.onSurfaceVariant),
+                      children: [
+                        const TextSpan(text: 'Saya menyetujui '),
+                        WidgetSpan(child: GestureDetector(
+                          onTap: () => context.push('/terms'),
+                          child: const Text('Syarat & Ketentuan', style: TextStyle(fontSize: 12, color: Colors.blue, decoration: TextDecoration.underline)),
+                        )),
+                        const TextSpan(text: ' dan '),
+                        WidgetSpan(child: GestureDetector(
+                          onTap: () => context.push('/privacy'),
+                          child: const Text('Kebijakan Privasi', style: TextStyle(fontSize: 12, color: Colors.blue, decoration: TextDecoration.underline)),
+                        )),
+                        const TextSpan(text: ' Revive, termasuk pemrosesan foto oleh AI.'),
+                      ],
+                    ),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
+            );
+          },
+        ),
+
+        // Consent note (old passive text replaced)
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
