@@ -225,10 +225,11 @@ class CustomerProfileScreen extends ConsumerWidget {
                                       .whenOrNull(data: (j) => j) ??
                                   [];
                               final activeStatuses = {
-                                '1_intake', '2_estimated', '3_booked',
-                                '4_paid', '5_admitted', '6_in_progress',
+                                '2_estimated', '3_booked',
+                                '5_admitted', '3_inspected',
+                                '4_paid', '6_in_progress',
                                 '7_finished', '8_awaiting_delivery',
-                              };
+                              }; // C-36: removed dead '1_intake', aligned with canonical statuses
                               return vehicles.map((v) {
                                 final activeJob = activeJobs.firstWhere(
                                   (job) =>
@@ -280,7 +281,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                                 return Padding(
                                   padding:
                                       const EdgeInsets.only(bottom: 12),
-                                  child: status == '8_completed'
+                                  child: status == '9_done'
                                       ? _buildJobCompleted(context, job)
                                       : _buildJobActive(context, job),
                                 );
@@ -1273,7 +1274,7 @@ class CustomerProfileScreen extends ConsumerWidget {
     final model = vehicleData?['model']?.toString() ?? '';
     final jobTitle =
         [make, model].where((s) => s.isNotEmpty).join(' ');
-    final cost = _formatCurrency(job['total_cost']);
+    final cost = _formatCurrency(job['final_cost']);
     final partnerName = job['partner_name']?.toString() ?? '';
     final payMethod = job['payment_method']?.toString() ?? '';
     final estimatedServices = job['services_requested']?.toString() ?? '';
@@ -1425,7 +1426,7 @@ class CustomerProfileScreen extends ConsumerWidget {
     final dateStr = completedAt.length >= 10
         ? completedAt.substring(0, 10)
         : '';
-    final cost = _formatCurrency(job['total_cost']);
+    final cost = _formatCurrency(job['final_cost']);
     final payMethod =
         job['payment_method']?.toString() ?? 'Personal Pay';
 

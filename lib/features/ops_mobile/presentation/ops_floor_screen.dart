@@ -22,7 +22,7 @@ final floorJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>
         .from('repair_jobs')
         .select('id, status, delivery_type, customer_id, vehicles(make, model, license_plate)')
         .eq('partner_id', partnerId)
-        .inFilter('status', ['3_booked', '5_admitted', '6_in_progress', '7_finished'])
+        .inFilter('status', ['3_booked', '5_admitted', '3_inspected', '4_paid', '6_in_progress', '7_finished'])  // C-12: added 4_paid
         .order('created_at', ascending: true);
   });
 

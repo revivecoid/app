@@ -98,6 +98,7 @@ class PartnerDashboardState {
   final String? errorMessage;
   final bool isOfflineSyncing;
   final int unreadMessageCount;
+  final Set<String> inFlightJobIds; // C-48: prevent double-tap
 
   PartnerDashboardState({
     required this.partnerId,
@@ -106,6 +107,7 @@ class PartnerDashboardState {
     this.errorMessage,
     this.isOfflineSyncing = false,
     this.unreadMessageCount = 0,
+    this.inFlightJobIds = const {},
   });
 
   PartnerDashboardState copyWith({
@@ -114,6 +116,7 @@ class PartnerDashboardState {
     String? errorMessage,
     bool? isOfflineSyncing,
     int? unreadMessageCount,
+    Set<String>? inFlightJobIds,
   }) {
     return PartnerDashboardState(
       partnerId: partnerId,
@@ -122,6 +125,7 @@ class PartnerDashboardState {
       errorMessage: errorMessage,
       isOfflineSyncing: isOfflineSyncing ?? this.isOfflineSyncing,
       unreadMessageCount: unreadMessageCount ?? this.unreadMessageCount,
+      inFlightJobIds: inFlightJobIds ?? this.inFlightJobIds,
     );
   }
 }
@@ -277,7 +281,8 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
 
             final index = state.activeJobs.indexWhere((j) => j.id == jobId);
             if (index != -1) {
-              if (newStatus == '9_done') {
+              // C-52: cancelled + done → remove from board immediately
+              if (newStatus == '9_done' || newStatus == '0_cancelled') {
                 final updated = List<PartnerJobNode>.from(state.activeJobs)..removeAt(index);
                 state = state.copyWith(activeJobs: updated);
               } else {
@@ -299,10 +304,6 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
   /// paying that invoice. 4_paid IS a workshop action, though: it is the gate
   /// that starts the repair.
   Future<void> advanceJobStage(String jobId, String currentStage) async {
-    // 4_paid -> 6_in_progress is the only route into repair. The old
-    // 5_admitted -> 6_in_progress shortcut is deliberately absent because the
-    // database now refuses it (20260922_gate_repair_on_payment.sql) — work may
-    // not start before the customer has paid.
     final partnerAdvanceMap = <String, String>{
       '3_booked': '5_admitted',
       '4_paid': '6_in_progress',
@@ -311,40 +312,46 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
     };
 
     final nextStage = partnerAdvanceMap[currentStage];
-    if (nextStage == null) return; // No valid advance for this status
+    if (nextStage == null) return;
+
+    // C-48 fix: track in-flight per job to prevent double-tap
+    if (state.inFlightJobIds.contains(jobId)) return;
+    state = state.copyWith(
+      inFlightJobIds: {...state.inFlightJobIds, jobId},
+      errorMessage: null,
+    );
 
     try {
-      // Optimistic local update — move card immediately in the UI
-      final jobIndex = state.activeJobs.indexWhere((j) => j.id == jobId);
-      if (jobIndex != -1) {
-        final updated = List<PartnerJobNode>.from(state.activeJobs);
-        if (nextStage == '9_done') {
-          updated.removeAt(jobIndex);
-        } else {
-          updated[jobIndex] = updated[jobIndex].copyWith(status: nextStage);
-        }
-        state = state.copyWith(activeJobs: updated, errorMessage: null);
-      }
-
-      // Server-side RPC with validated transition
-      await _supabase.rpc('advance_job_status', params: {
-        'p_job_id': jobId,
-        'p_new_status': nextStage,
+      // C-48 fix: send p_expected_from for optimistic lock — STALE_STATUS → refetch + message
+      await _supabase.rpc('transition_job', params: {
+        'p_job_id':        jobId,
+        'p_to':            nextStage,
+        'p_expected_from': currentStage,
       });
 
-      // Refresh to ensure consistency (Realtime may not catch own updates)
+      // Refresh after confirmed server write (not optimistic)
       await _fetchIsolatedData();
 
     } catch (e) {
-      // Roll back optimistic update on failure
       await _fetchIsolatedData();
       final errText = e.toString()
           .replaceAll('PostgrestException', '')
           .replaceAll('Exception:', '')
           .trim();
+      // C-48: STALE_STATUS = someone else changed it — show refresh message
+      final msg = errText.contains('STALE_STATUS')
+          ? 'Status sudah berubah — data diperbarui.'
+          : 'Could not advance stage: $errText';
       state = state.copyWith(
-        errorMessage: 'Could not advance stage: $errText',
+        errorMessage: msg,
+        inFlightJobIds: state.inFlightJobIds.difference({jobId}),
       );
+    } finally {
+      if (state.inFlightJobIds.contains(jobId)) {
+        state = state.copyWith(
+          inFlightJobIds: state.inFlightJobIds.difference({jobId}),
+        );
+      }
     }
   }
 

@@ -62,7 +62,8 @@ class AdminJobNode {
     return '${diff.inMinutes}m';
   }
 
-  bool get isPaid => status == 'completed' || status == '4_paid' || status == '5_scheduled';
+  // C-29 fix: isPaid true for 4_paid and all downstream statuses
+  bool get isPaid => const {'4_paid', '6_in_progress', '7_finished', '8_awaiting_delivery', '9_done'}.contains(status);
   bool get isUnassigned => partnerId == null || partnerId!.isEmpty;
 }
 

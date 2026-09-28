@@ -221,7 +221,9 @@ class OpsMilestonesScreen extends ConsumerWidget {
       case 'vehicle_intake':
         return currentStatus == '3_booked' || currentStatus == '4_paid';
       case 'disassembly':
-        return currentStatus == '5_admitted' || currentStatus == '6_in_progress';
+        // C-12 fix: disassembly actionable at 4_paid (first entry to repair)
+        // and 6_in_progress (already started). NOT at 5_admitted (pre-payment).
+        return currentStatus == '4_paid' || currentStatus == '6_in_progress';
       case 'welding':
       case 'body_filler':
       case 'painting':

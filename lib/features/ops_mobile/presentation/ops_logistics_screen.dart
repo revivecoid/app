@@ -43,19 +43,21 @@ final logisticsJobsProvider = FutureProvider.autoDispose<List<Map<String, dynami
 class OpsLogisticsScreen extends ConsumerWidget {
   const OpsLogisticsScreen({super.key});
 
-  /// Opens a stage screen and refreshes this list when it returns.
-  ///
-  /// The stage screen pops `true` after a successful submit, but this list stays
-  /// alive underneath the pushed route — so without awaiting that result its
-  /// autoDispose provider never refetches and the completed job stays on screen,
-  /// looking exactly like the work was never saved.
+  /// Opens the correct stage screen based on job status and refreshes on return.
   Future<void> _openStage(
     BuildContext context,
     WidgetRef ref,
     String jobId,
     String customerId,
+    String status,
   ) async {
-    await context.push('/ops/logistics/intake/$jobId/$customerId');
+    // C-11 fix: route by status, not hardcoded to intake
+    if (status == '8_awaiting_delivery') {
+      await context.push('/ops/floor/milestones/$jobId');
+    } else {
+      // 3_booked → pickup intake
+      await context.push('/ops/logistics/intake/$jobId/$customerId');
+    }
     if (context.mounted) ref.invalidate(logisticsJobsProvider);
   }
 
@@ -91,7 +93,9 @@ class OpsLogisticsScreen extends ConsumerWidget {
             itemCount: jobs.length,
             itemBuilder: (context, index) {
               final job = jobs[index];
-              final isPickup = job['status'] == '4_paid';
+              // C-11 fix: isPickup = 3_booked (needs intake), not 4_paid
+              final isPickup = job['status'] == '3_booked';
+              final isDelivery = job['status'] == '8_awaiting_delivery';
               final customer = job['profiles'];
               final vehicle = job['vehicles'];
 
@@ -101,7 +105,7 @@ class OpsLogisticsScreen extends ConsumerWidget {
                 child: InkWell(
                   onTap: () {
                     final customerId = job['customer_id']?.toString() ?? '';
-                    _openStage(context, ref, job['id'].toString(), customerId);
+                    _openStage(context, ref, job['id'].toString(), customerId, job['status']?.toString() ?? '');
                   },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,10 +155,10 @@ class OpsLogisticsScreen extends ConsumerWidget {
                               child: ElevatedButton.icon(
                                 onPressed: () {
                                   final customerId = job['customer_id']?.toString() ?? '';
-                                  _openStage(context, ref, job['id'].toString(), customerId);
+                                  _openStage(context, ref, job['id'].toString(), customerId, job['status']?.toString() ?? '');
                                 },
                                 icon: Icon(isPickup ? Icons.camera_alt : Icons.check_circle),
-                                label: Text(isPickup ? 'Start Pickup Intake' : 'Complete Delivery'),
+                                label: Text(isPickup ? 'Start Pickup Intake' : isDelivery ? 'Complete Delivery' : 'Open'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFd10721),
                                   foregroundColor: Colors.white,
