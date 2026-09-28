@@ -351,12 +351,10 @@ class CheckoutController extends StateNotifier<CheckoutState> {
           });
         }
 
-        // INT-06 FIX: Use book_slot RPC for atomic capacity check (BIZ-05)
-        await _supabase.rpc('book_slot', params: {
-          'p_job_id': state.jobId,
-          'p_delivery_type': deliveryTypeDbEnum,
-          'p_scheduled_date': state.scheduledDate!.toIso8601String(),
-        });
+        // C-14 fix: book_slot call removed from checkout flow.
+        // Booking (partner + date assignment) happens in booking_scheduling_screen via execute_auto_assign.
+        // By the time checkout runs, the job is already 3_booked with a partner assigned.
+        // If this branch is reached with no partner, admin must assign before payment.
       }
 
       if (state.paymentMethod == PaymentMethod.manualTransfer) {
