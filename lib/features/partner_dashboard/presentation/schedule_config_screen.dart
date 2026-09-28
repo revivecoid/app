@@ -14,10 +14,11 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   List<int> _standardWorkingDays = [1, 2, 3, 4, 5, 6];
-  int _simultaneousPanelCapacity = 18;
-  int _guaranteedSlotsPerDay = 6;
-  bool _fastTrackEnabled = false;
+  int _guaranteedSlotsPerDay = 5;
+  // fast_track_enabled removed — column does not exist (C-10)
   List<DateTime> _blacklistedDates = [];
+
+  String? _partnerId; // C-10: loaded from get_my_partner_id(), not auth.uid()
 
   final Map<int, String> _weekdays = {
     1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 7: 'Sun'
@@ -33,21 +34,26 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
 
   Future<void> _loadScheduleConfig() async {
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return;
+      // C-10 fix: get real partner_id from server, not auth.uid()
+      final partnerIdResult = await Supabase.instance.client
+          .rpc('get_my_partner_id');
+      _partnerId = partnerIdResult?.toString();
+      if (_partnerId == null && mounted) {
+        setState(() => _isLoading = false);
+        return;
+      }
 
       final response = await Supabase.instance.client
           .from('partner_schedules')
           .select()
-          .eq('partner_id', user.id)
+          .eq('partner_id', _partnerId!)
           .maybeSingle();
 
       if (response != null && mounted) {
         setState(() {
           _standardWorkingDays = List<int>.from(response['standard_working_days'] ?? [1,2,3,4,5,6]);
-          _simultaneousPanelCapacity = response['simultaneous_panel_capacity'] ?? 18;
-          _guaranteedSlotsPerDay = response['guaranteed_slots_per_day'] ?? 6;
-          _fastTrackEnabled = response['fast_track_enabled'] ?? false;
+          _guaranteedSlotsPerDay = response['guaranteed_slots_per_day'] ?? 5;
+          // fast_track_enabled not loaded — column removed (C-10)
           if (response['blacklisted_dates'] != null) {
             _blacklistedDates = (response['blacklisted_dates'] as List)
                 .map((d) => DateTime.parse(d.toString()))
@@ -69,21 +75,16 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
   Future<void> _saveConfig() async {
     setState(() => _isSaving = true);
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) throw Exception('Not authenticated');
+      if (_partnerId == null) throw Exception('Partner ID not loaded');
 
-      await Supabase.instance.client
-          .from('partner_schedules')
-          .upsert({
-            'partner_id': user.id,
-            'standard_working_days': _standardWorkingDays,
-            'simultaneous_panel_capacity': _simultaneousPanelCapacity,
-            'guaranteed_slots_per_day': _guaranteedSlotsPerDay,
-            'fast_track_enabled': _fastTrackEnabled,
-            'blacklisted_dates': _blacklistedDates
-                .map((d) => d.toIso8601String().split('T')[0])
-                .toList(),
-          }, onConflict: 'partner_id');
+      // C-10 fix: use partner_update_capacity RPC — checks owner role server-side
+      await Supabase.instance.client.rpc('partner_update_capacity', params: {
+        'p_working_days':      _standardWorkingDays,
+        'p_slots_per_day':     _guaranteedSlotsPerDay,
+        'p_blacklisted_dates': _blacklistedDates
+            .map((d) => d.toIso8601String().split('T')[0])
+            .toList(),
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
