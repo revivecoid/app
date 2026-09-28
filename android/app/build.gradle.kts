@@ -27,9 +27,23 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // PLAT-02 fix: read release keystore from environment variables set in CI
+            // Set KEYSTORE_PATH, KEY_ALIAS, KEY_PASSWORD, STORE_PASSWORD in CI secrets
+            // See docs/remediation/MANUAL.md for keystore generation instructions
+            val keystorePath = System.getenv("KEYSTORE_PATH")
+            if (keystorePath != null && java.io.File(keystorePath).exists()) {
+                signingConfigs.create("release") {
+                    storeFile = java.io.File(keystorePath)
+                    storePassword = System.getenv("STORE_PASSWORD") ?: ""
+                    keyAlias = System.getenv("KEY_ALIAS") ?: ""
+                    keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+                }
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                // Local development fallback — debug signing only
+                // DO NOT use this for Play Store uploads
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 }

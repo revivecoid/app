@@ -9,17 +9,17 @@
 |---|---|---|---|
 | 0 | F00-setup | **SELESAI** | 2026-09-28 |
 | 1 | F01-identity | **SELESAI** | 2026-09-28 |
-| 2 | F02-write-paths | Belum dimulai | — |
-| 3 | F03-migrations-ci | **SEBAGIAN** | 2026-09-28 |
-| 4 | F04-state-machine | Belum dimulai | — |
-| 5 | F05-payment-mock | Belum dimulai | — |
-| 6 | F06-status-clients | Belum dimulai | — |
+| 2 | F02-write-paths | **SELESAI** | 2026-09-28 |
+| 3 | F03-migrations-ci | **SELESAI** | 2026-09-28 |
+| 4 | F04-state-machine | **SELESAI** | 2026-09-28 |
+| 5 | F05-payment-mock | **SELESAI** | 2026-09-28 |
+| 6 | F06-status-clients | **SELESAI** | 2026-09-28 |
 | 7 | F07-booking-capacity | Belum dimulai | — |
 | 8 | F08-partner-app | Belum dimulai | — |
 | 9 | F09-estimation | Belum dimulai | — |
 | 10 | F10-tracking | Belum dimulai | — |
 | 11 | F11-admin-cms | Belum dimulai | — |
-| 12 | F12-privacy-platform | Belum dimulai | — |
+| 12 | F12-privacy-platform | **SELESAI** | 2026-09-28 |
 | 13 | F13-backlog | Belum dimulai | — |
 
 ---
