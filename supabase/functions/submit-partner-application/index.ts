@@ -141,12 +141,12 @@ serve(async (req) => {
       )
     }
 
-    // ── 4. One pending application per email ───────────────────────────────────
+    // ── 4. One pending application per email (C-92 fix: .eq not .ilike) ────────
     const { data: existing, error: existingError } = await supabaseAdmin
       .from('partner_applications')
       .select('id')
       .eq('status', 'pending')
-      .ilike('email', email)
+      .eq('email', email)   // email already lowercased above; eq avoids _ and % wildcard exploit
       .limit(1)
 
     if (existingError) throw existingError
@@ -154,7 +154,26 @@ serve(async (req) => {
       return bad('An application for this email is already awaiting review.', 409)
     }
 
-    // ── 5. Insert ──────────────────────────────────────────────────────────────
+    // ── 5. Validate inputs server-side (C-77) ───────────────────────────────
+    const tier = Number(payload.tier ?? 2)
+    if (![1, 2, 3].includes(tier)) return bad('tier must be 1, 2, or 3', 400)
+
+    const throughput = Number(payload.throughput_capacity ?? 12)
+    if (throughput < 1 || throughput > 50) return bad('throughput_capacity must be 1-50', 400)
+
+    const radius = payload.service_radius_km != null ? Number(payload.service_radius_km) : null
+    if (radius !== null && (radius < 1 || radius > 100)) return bad('service_radius_km must be 1-100', 400)
+
+    // Validate photo slots 0-3, unique
+    const usedSlots = new Set<number>()
+    for (const p of photoKeys) {
+      const slot = Number((p as any).slot ?? 0)
+      if (slot < 0 || slot > 3) return bad(`Photo slot must be 0-3, got ${slot}`, 400)
+      if (usedSlots.has(slot)) return bad(`Duplicate photo slot ${slot}`, 400)
+      usedSlots.add(slot)
+    }
+
+    // ── 6. Insert ──────────────────────────────────────────────────────────────
     const { data: inserted, error: insertError } = await supabaseAdmin
       .from('partner_applications')
       .insert({
@@ -164,10 +183,10 @@ serve(async (req) => {
         email,
         phone: String(payload.phone).trim(),
         address: String(payload.address).trim(),
-        tier: payload.tier ?? 2,
+        tier,
         paint_brand: payload.paint_brand ?? 'glasurit',
-        throughput_capacity: payload.throughput_capacity ?? 12,
-        service_radius_km: payload.service_radius_km ?? null,
+        throughput_capacity: throughput,
+        service_radius_km: radius,
         status: 'pending',
         submitted_at: new Date().toISOString(),
         submitted_by: uid,

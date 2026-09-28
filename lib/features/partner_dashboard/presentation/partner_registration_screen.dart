@@ -676,18 +676,11 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(theme, Icons.precision_manufacturing, '2. Capacity & Refinish Equipment', 'Throughput calibration for automated claim allocation', 
+          _buildSectionHeader(theme, Icons.precision_manufacturing, '2. Kapasitas Bengkel', 'Kapasitas harian untuk penugasan otomatis',
             Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)), child: const Text('High Capacity', style: TextStyle(fontSize: 10, color: Colors.green)))),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(child: _buildNumberField(theme, 'Active Working Bays', '12', 'Bays')),
-              const SizedBox(width: 16),
-              Expanded(child: _buildNumberField(theme, 'Spray Oven Booths', '2', 'Down-draft')),
-              const SizedBox(width: 16),
-              Expanded(child: _buildNumberField(theme, 'Dry Sanding Stations', '4', 'Vacuum Units')),
-            ],
-          ),
+          // C-47 fix: removed bays/booth/stations — not sent to server, misleading UI
+          // throughput_capacity (jobs/day) is the single capacity field that matters
           const SizedBox(height: 24),
           const Text('CERTIFIED PAINT REFINISH BRAND SYSTEM', style: TextStyle(fontSize: 10, color: Colors.grey)),
           const SizedBox(height: 8),
@@ -974,9 +967,15 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
                 const SizedBox(width: 12),
                 Expanded(
                   child: TextFormField(
-                    initialValue: 'Jl. Panjang No. 88, Kebon Jeruk, Jakarta Barat',
+                    // C-06 fix: bind to _addressController — was initialValue (dummy, never sent)
+                    controller: _addressController,
                     style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
-                    decoration: const InputDecoration(border: InputBorder.none, isDense: true),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      isDense: true,
+                      hintText: 'Masukkan alamat lengkap bengkel',
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Alamat wajib diisi' : null,
                   ),
                 ),
               ],
@@ -1095,26 +1094,9 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
   }
 
   Widget _buildPayoutCard(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerLow, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)]),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader(theme, Icons.account_balance, 'Payout Escrow Account', 'Automated BCA Corporate Gateway for claim settlements', const Icon(Icons.lock, color: Colors.green, size: 20)),
-          const SizedBox(height: 24),
-          _buildTextField(theme, 'Designated Indonesian Bank', TextEditingController(text: 'PT Bank Central Asia Tbk (BCA Corporate)')),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: _buildTextField(theme, 'Account Number', TextEditingController(text: '883-091-2489'))),
-              const SizedBox(width: 16),
-              Expanded(child: _buildTextField(theme, 'Beneficiary Name', TextEditingController(text: 'PT SINAR MAJU AUTO BODY'))),
-            ],
-          )
-        ],
-      ),
-    );
+    // C-47 fix: payout/bank fields removed — never sent to server, showed fake data
+    // Bank account collection deferred until payout infrastructure is built
+    return const SizedBox.shrink();
   }
 
   Widget _buildBenefitsCard(ThemeData theme) {

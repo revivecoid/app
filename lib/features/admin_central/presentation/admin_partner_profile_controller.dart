@@ -162,24 +162,23 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
         avgRepairDays: avgDays,
       );
 
-      // 6. Subscribe to new messages
+      // 6. Subscribe to new messages (C-26 fix: no mark-read in stream — use explicit RPC)
       _messageSubscription = _supabase
           .from('partner_messages')
           .stream(primaryKey: ['id'])
           .eq('partner_id', partnerId)
-          .order('created_at', ascending: true)
+          .order('created_at', ascending: false)
+          .limit(50)
           .listen((data) {
-            final msgs = (data as List).map((e) => _parseMessage(e as Map<String, dynamic>)).toList();
+            // Show newest-first from server, reverse for display
+            final msgs = (data as List)
+                .map((e) => _parseMessage(e as Map<String, dynamic>))
+                .toList()
+                .reversed
+                .toList();
             state = state.copyWith(messages: msgs);
-            final unread = data.where((e) => e['is_read'] == false && e['sender_id'] != currentUserId).toList();
-            if (unread.isNotEmpty) {
-              _supabase.from('partner_messages')
-                  .update({'is_read': true})
-                  .eq('partner_id', partnerId)
-                  .neq('sender_id', currentUserId)
-                  .eq('is_read', false)
-                  .then((_) {});
-            }
+            // REL-07 fix: do NOT mark read inside stream listener
+            // Call markMessagesRead() explicitly when chat screen is visible
           });
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
@@ -187,24 +186,41 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
   }
 
   PartnerMessageNode _parseMessage(Map<String, dynamic> data) {
+    // C-81 fix: toLocal() for correct timezone display
+    final raw = data['created_at']?.toString() ?? '';
+    final dt = DateTime.tryParse(raw)?.toLocal() ?? DateTime.now();
     return PartnerMessageNode(
       id: data['id'],
       senderId: data['sender_id'],
       content: data['content'],
-      createdAt: DateTime.parse(data['created_at']),
-      isAdmin: data['sender_id'] == currentUserId,
+      createdAt: dt,
+      // C-25 fix: use from_admin field set by DB trigger, not sender comparison
+      isAdmin: data['from_admin'] == true,
     );
   }
 
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
     try {
+      // C-25 fix: from_admin set by DB trigger — do NOT send it from client
       await _supabase.from('partner_messages').insert({
         'partner_id': partnerId,
         'sender_id': currentUserId,
         'content': text.trim(),
+        // from_admin intentionally omitted — set by set_partner_message_from_admin trigger
       });
-    } catch (e) { debugPrint('[AdminPartner] sendMessage error: $e'); }
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Send failed: $e');
+    }
+  }
+
+  /// C-26, REL-07 fix: call this when admin chat screen becomes visible.
+  Future<void> markMessagesRead() async {
+    try {
+      await _supabase.rpc('mark_messages_read', params: {
+        'p_partner_id': partnerId,
+      });
+    } catch (_) {}
   }
 
   Future<void> suspendPartner() async {
@@ -247,6 +263,6 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
 }
 
 final adminPartnerProfileProvider =
-    StateNotifierProvider.family<AdminPartnerProfileController, AdminPartnerProfileState, String>(
+    StateNotifierProvider.autoDispose.family<AdminPartnerProfileController, AdminPartnerProfileState, String>(
   (ref, id) => AdminPartnerProfileController(id),
 );

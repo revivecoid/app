@@ -54,6 +54,34 @@ class PartnerShellScreen extends ConsumerWidget {
     return LayoutBuilder(builder: (context, constraints) {
       final isDesktop = constraints.maxWidth > 900;
 
+      // C-80 fix: mobile gets bottom nav + drawer back button, not just blank shell
+      if (!isDesktop) {
+        return Scaffold(
+          backgroundColor: cs.surface,
+          appBar: AppBar(
+            leading: Navigator.canPop(context)
+                ? IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => context.pop(),
+                  )
+                : null,
+            title: Flexible(
+              child: Text(
+                pageTitle,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+            actions: trailingActions,
+          ),
+          body: child,
+          bottomNavigationBar: _PartnerBottomNav(
+            activeRoute: activeRoute,
+            unreadCount: unreadCount,
+          ),
+        );
+      }
+
       return Scaffold(
         backgroundColor: cs.surface,
         body: Row(
@@ -343,6 +371,42 @@ class _PartnerShellTopBar extends ConsumerWidget {
           child: const Icon(Icons.person, color: _shellOnPrimary, size: 18),
         ),
       ]),
+    );
+  }
+}
+
+// ── Mobile bottom navigation (C-80) ──────────────────────────────────────────
+class _PartnerBottomNav extends ConsumerWidget {
+  final String activeRoute;
+  final int unreadCount;
+
+  const _PartnerBottomNav({required this.activeRoute, required this.unreadCount});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = [
+      (route: '/partner-dashboard',          icon: Icons.dashboard,  label: 'Dashboard'),
+      (route: '/partner-dashboard/schedule', icon: Icons.calendar_today, label: 'Jadwal'),
+      (route: '/partner-dashboard/commlink', icon: Icons.chat,       label: 'Pesan'),
+      (route: '/partner-dashboard/settings', icon: Icons.settings,   label: 'Pengaturan'),
+    ];
+
+    final currentIdx = items.indexWhere((i) => activeRoute.startsWith(i.route));
+
+    return BottomNavigationBar(
+      currentIndex: currentIdx < 0 ? 0 : currentIdx,
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: _shellPrimary,
+      onTap: (idx) => context.go(items[idx].route),
+      items: items.map((i) {
+        final isMsg = i.route.contains('commlink');
+        return BottomNavigationBarItem(
+          icon: isMsg && unreadCount > 0
+              ? Badge(label: Text('$unreadCount'), child: Icon(i.icon))
+              : Icon(i.icon),
+          label: i.label,
+        );
+      }).toList(),
     );
   }
 }

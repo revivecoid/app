@@ -99,22 +99,21 @@ class PartnerSettingsController extends StateNotifier<PartnerSettingsState> {
         state = state.copyWith(scheduleData: newRes);
       }
 
-      // Stream Messages
+      // C-53 fix: newest 50, reversed for display. No mark-read in stream (REL-07).
       _messageSubscription = _supabase
           .from('partner_messages')
           .stream(primaryKey: ['id'])
           .eq('partner_id', partnerId)
-          .order('created_at', ascending: true)
+          .order('created_at', ascending: false)
+          .limit(50)
           .listen((data) {
-        final msgs = (data as List).map((e) => _parseMessage(e as Map<String, dynamic>)).toList();
+        final msgs = (data as List)
+            .map((e) => _parseMessage(e as Map<String, dynamic>))
+            .toList()
+            .reversed
+            .toList();
         state = state.copyWith(messages: msgs, isLoading: false);
-        
-        // Mark unread messages as read
-        final unread = data.where((e) => e['is_read'] == false && e['sender_id'] != currentUserId).toList();
-        if (unread.isNotEmpty) {
-          _supabase.from('partner_messages').update({'is_read': true})
-              .eq('partner_id', partnerId).neq('sender_id', currentUserId).eq('is_read', false).then((_) {});
-        }
+        // REL-07 fix: mark-read via explicit RPC call, not here
       }, onError: (err) {
         state = state.copyWith(errorMessage: 'Message sync error: $err', isLoading: false);
       });
@@ -126,13 +125,26 @@ class PartnerSettingsController extends StateNotifier<PartnerSettingsState> {
   }
 
   PartnerMessageNode _parseMessage(Map<String, dynamic> row) {
+    // C-81 fix: toLocal() for correct timezone display
+    final raw = row['created_at']?.toString() ?? '';
+    final dt = DateTime.tryParse(raw)?.toLocal() ?? DateTime.now();
     return PartnerMessageNode(
       id: row['id'],
       senderId: row['sender_id'],
       content: row['content'],
-      createdAt: DateTime.parse(row['created_at']),
-      isAdmin: row['sender_id'] != currentUserId, // If not sent by me, it's from admin
+      createdAt: dt,
+      // CODE-03 fix: use from_admin from DB, not sender comparison
+      isAdmin: row['from_admin'] == true,
     );
+  }
+
+  /// REL-07 fix: call explicitly when chat screen is visible.
+  Future<void> markMessagesRead() async {
+    try {
+      await _supabase.rpc('mark_messages_read', params: {
+        'p_partner_id': partnerId,
+      });
+    } catch (_) {}
   }
 
   Future<void> sendMessage(String content) async {

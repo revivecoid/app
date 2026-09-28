@@ -81,8 +81,14 @@ async function sendWhatsApp(toNumber: string, customerName: string, title: strin
         ]}] },
     }),
   });
-  if (!res.ok) console.error("[WhatsApp] Failed:", await res.text());
-  else console.log("[WhatsApp] Sent to", withCC);
+  if (!res.ok) {
+    console.error("[WhatsApp] Failed — job_id:", jobId);
+    return false;
+  }
+  // C-90 fix: mask phone number in logs
+  const masked = withCC.slice(0, 4) + "****" + withCC.slice(-3);
+  console.log("[WhatsApp] Sent to", masked, "job:", jobId);
+  return true;
 }
 
 async function sendEmail(toEmail: string, title: string, body: string, jobId: string): Promise<void> {
@@ -94,11 +100,26 @@ async function sendEmail(toEmail: string, title: string, body: string, jobId: st
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
     body: JSON.stringify({ from: fromAddress, to: [toEmail], subject: title, html: buildEmailHtml(title, body, jobId) }),
   });
-  if (!res.ok) console.error("[Email] Failed:", await res.text());
-  else console.log("[Email] Sent to", toEmail);
+  if (!res.ok) {
+    console.error("[Email] Failed — job_id:", jobId);
+    return false;
+  }
+  // C-90 fix: mask email in logs
+  const parts = toEmail.split('@');
+  const masked = parts[0].slice(0, 2) + '***@' + (parts[1] ?? '');
+  console.log("[Email] Sent to", masked, "job:", jobId);
+  return true;
 }
 
 serve(async (req) => {
+  // C-63 fix: handle CORS preflight so Flutter Web requests don't fail at OPTIONS
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "authorization, content-type",
+    }});
+  }
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
   // SEC-05 FIX: Verify caller has service role key or shared secret

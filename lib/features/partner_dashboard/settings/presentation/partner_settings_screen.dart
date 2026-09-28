@@ -195,6 +195,11 @@ class PartnerSettingsScreen extends ConsumerWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       onPressed: () async {
+                        // C-50 fix: invalidate partner providers before signOut
+                        // so next login gets fresh state
+                        ref.invalidate(partnerDashboardProvider);
+                        ref.invalidate(partnerProfileProvider);
+                        ref.invalidate(partnerSettingsProvider);
                         await Supabase.instance.client.auth.signOut();
                         if (context.mounted) context.go('/');
                       },

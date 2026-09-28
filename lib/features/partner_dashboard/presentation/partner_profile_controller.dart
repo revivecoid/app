@@ -296,45 +296,28 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
     int? workingBays,
     int? sprayBooths,
   }) async {
+    // C-46 fix: clear messages at start of each action
     state = state.copyWith(isSaving: true, clearError: true, clearSuccess: true);
     try {
-      final user = _sb.auth.currentUser;
-      if (user == null) throw Exception('Not authenticated');
+      if (_partnerId == null) throw Exception('Partner ID not loaded');
 
-      final updates = <String, dynamic>{
-        'id': user.id,        // ensures upsert key
-        if (entityName != null) 'entity_name': entityName,
-        if (shopName != null) 'shop_name': shopName,
-        if (ownerName != null) 'owner_name': ownerName,
-        if (phone != null) 'phone': phone,
-        if (email != null) 'email': email,
-        if (address != null) 'address': address,
-        if (tier != null) 'tier': tier,
-        if (paintBrand != null) 'paint_brand': paintBrand,
-        if (throughputCapacity != null) 'throughput_capacity': throughputCapacity,
-        if (serviceRadiusKm != null) 'service_radius_km': serviceRadiusKm,
-        if (workingBays != null) 'working_bays': workingBays,
-        if (sprayBooths != null) 'spray_booths': sprayBooths,
-      };
+      // C-07 fix: use partner_update_profile RPC — never upsert with user.id
+      await _sb.rpc('partner_update_profile', params: {
+        if (shopName != null)         'p_shop_name': shopName,
+        if (phone != null)            'p_phone': phone,
+        if (address != null)          'p_address': address,
+        if (throughputCapacity != null) 'p_throughput_capacity': throughputCapacity,
+      });
 
-      final result = await _sb
-          .from('partners')
-          .upsert(updates, onConflict: 'id')
-          .select()
-          .single();
+      // Reload to get fresh data
+      await _loadPartnerData();
 
-      _partnerId = result['id']?.toString() ?? user.id;
-
-      // Also resolve new ownerName for shell display
-      final resolved = entityName?.trim().isNotEmpty == true
-          ? entityName!
-          : shopName?.trim().isNotEmpty == true
-              ? shopName!
-              : state.ownerName;
+      final resolved = shopName?.trim().isNotEmpty == true
+          ? shopName!
+          : state.ownerName;
 
       state = state.copyWith(
         isSaving: false,
-        partnerData: result,
         ownerName: resolved,
         successMessage: 'Details saved successfully.',
       );
