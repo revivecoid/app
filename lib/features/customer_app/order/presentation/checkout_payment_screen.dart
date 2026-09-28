@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/format/rupiah.dart';
 import '../../../../core/widgets/responsive_layout_guard.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -368,7 +369,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'IDR ${state.estimatedCost.toStringAsFixed(2)}', 
+            formatRupiah(state.estimatedCost.round()),  // UX-06 fix: use shared formatRupiah 
             // UX-01 FIX: Use theme-aware color instead of hardcoded white (invisible on light theme)
             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)
           ),

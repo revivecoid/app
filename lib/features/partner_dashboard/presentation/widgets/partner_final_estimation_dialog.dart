@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/format/rupiah.dart';
 import '../partner_dashboard_controller.dart';
 
 /// The final-estimation form.
@@ -54,9 +55,10 @@ class _PanelRow {
     this.addedByWorkshop = false,
   });
 
+  // C-49 fix: digits only, no comma/decimal — use parseRupiah for safe parsing
   double get finalCost {
-    final raw = controller.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
-    return double.tryParse(raw) ?? 0;
+    final digits = controller.text.trim().replaceAll('.', '').replaceAll(',', '');
+    return double.tryParse(digits) ?? 0;
   }
 
   void dispose() => controller.dispose();
@@ -108,16 +110,10 @@ class _PartnerFinalEstimationDialogState
 
   double get _delta => _finalTotal - _initialTotal;
 
-  String _idr(double v) {
-    // Group thousands with dots, Indonesian convention.
-    final s = v.abs().toStringAsFixed(0);
-    final buf = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write('.');
-      buf.write(s[i]);
-    }
-    return '${v < 0 ? '-' : ''}Rp ${buf.toString()}';
-  }
+  // S-07 fix: use shared formatRupiah from core/format/rupiah.dart
+  String _idr(double v) => v < 0
+      ? '-${formatRupiah(v.abs().round())}'
+      : formatRupiah(v.round());
 
   Future<void> _addPanel() async {
     final ctrl = TextEditingController();

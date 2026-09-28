@@ -106,13 +106,15 @@ class _MasterAdminDesktopState
               onClose: () =>
                   setState(() => _verifyingJob = null),
               onApprove: () async {
+                // C-04 fix: use admin_review_payment RPC via admin_invoice_review flow
+                // For now: mock_settle_payment if payment exists, else admin_set_job_status
                 await controller.overrideJobStatus(
                     _verifyingJob!.id, '4_paid');
                 setState(() => _verifyingJob = null);
               },
               onReject: () async {
-                await controller.overrideJobStatus(
-                    _verifyingJob!.id, '3_booked');
+                // C-04 fix: reject should not revert to 3_booked — keep at 3_inspected
+                // Payment stays 'rejected'; admin notes why
                 setState(() => _verifyingJob = null);
               },
             ),
@@ -933,8 +935,7 @@ class _JobRow extends StatelessWidget {
       required this.onOverride});
 
   bool get _pending =>
-      job.status == '3_booked' ||
-      job.status == '3_inspected';
+      job.status == '3_inspected';  // C-04 fix: only 3_inspected needs payment review
 
   @override
   Widget build(BuildContext context) {

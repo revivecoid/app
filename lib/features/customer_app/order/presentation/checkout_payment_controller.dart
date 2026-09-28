@@ -287,17 +287,33 @@ class CheckoutController extends StateNotifier<CheckoutState> {
         return;
       }
 
-      // Online/simulated: advance job to 4_paid via RPC
-      await _supabase.rpc('advance_job_status', params: {
+      // B-01 fix: pelanggan tidak boleh langsung set 4_paid.
+      // Mock mode: create_payment → mock_settle_payment (admin harus approve di prod).
+      // C-38 fix: baca hasil RPC langsung, tidak mengandalkan realtime webhook.
+
+      // 1. Buat payment record
+      final idempotencyKey = state.jobId + '_' + DateTime.now().millisecondsSinceEpoch.toString();
+      final paymentResult = await _supabase.rpc('create_payment', params: {
         'p_job_id': state.jobId,
-        'p_new_status': '4_paid',
+        'p_method': 'mock',
+        'p_idempotency_key': idempotencyKey,
       });
 
+      if (paymentResult == null) {
+        throw Exception('Gagal membuat tagihan — coba lagi.');
+      }
+
+      final paymentId = paymentResult['id'] as String?;
+      if (paymentId == null) throw Exception('Payment ID tidak ditemukan.');
+
+      // 2. Mock settle (SIMULASI — tidak ada dana yang ditagih)
+      await _supabase.rpc('mock_settle_payment', params: {'p_payment_id': paymentId});
+
+      // C-38 fix: status langsung dari RPC result, tidak tunggu realtime
       state = state.copyWith(
-        paymentStatus: PaymentStatus.awaitingWebhook,
+        paymentStatus: PaymentStatus.paid,
         isLoading: false,
       );
-      _listenForPaymentWebhook();
     } catch (e, stackTrace) {
       debugPrint('PAYMENT_ONLY_ERROR: $e');
       debugPrint('STACKTRACE: $stackTrace');

@@ -141,7 +141,7 @@ function calculateDeterministicCost(
       multiplier = rule?.severity_max ?? 2.0;
     }
 
-    const panelCost = basePrice * multiplier;
+    const panelCost = Math.round(basePrice * multiplier);  // C-72: round to whole rupiah
     panel.calculated_cost = panelCost; // inject per-panel cost for frontend display
     panel.applied_multiplier = multiplier;
     totalCost += panelCost;
