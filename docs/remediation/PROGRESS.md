@@ -17,7 +17,7 @@
 | 7 | F07-booking-capacity | **SELESAI** | 2026-09-28 |
 | 8 | F08-partner-app | **SELESAI** | 2026-09-28 |
 | 9 | F09-estimation | **SELESAI** | 2026-09-28 |
-| 10 | F10-tracking | Belum dimulai | — |
+| 10 | F10-tracking | **SELESAI** | 2026-09-28 |
 | 11 | F11-admin-cms | Belum dimulai | — |
 | 12 | F12-privacy-platform | **SELESAI** | 2026-09-28 |
 | 13 | F13-backlog | Belum dimulai | — |
