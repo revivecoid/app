@@ -156,13 +156,9 @@ class _BookingSchedulingScreenState
         }
       }
 
-      // 3. Advance status 2_estimated → 3_booked via RPC (validates transition)
-      await _sb.rpc('advance_job_status', params: {
-        'p_job_id': widget.jobId,
-        'p_new_status': '3_booked',
-      });
-
-      // 4. Try Auto-Assign Engine
+      // 3. Auto-assign picks partner AND transitions to 3_booked atomically.
+      // L-04 fix: advance_job_status 2→3_booked removed; only book_slot/auto-assign
+      // may create a 3_booked job. execute_auto_assign now calls transition_job internally.
       try {
         final res = await _sb.rpc('execute_auto_assign', params: {'p_job_id': widget.jobId});
         debugPrint('[AutoAssign] Result: $res');

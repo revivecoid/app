@@ -658,10 +658,12 @@ class _PartnerDetailPanelState extends ConsumerState<_PartnerDetailPanel>
   Future<void> _updateStatus(String status) async {
     setState(() => _isSaving = true);
     try {
-      await Supabase.instance.client
-          .from('partners')
-          .update({'status': status})
-          .eq('id', widget.partnerId);
+      // C-24 fix: use admin_review_partner RPC — has real effects (deactivate, audit, membership)
+      await Supabase.instance.client.rpc('admin_review_partner', params: {
+        'p_partner_id': widget.partnerId,
+        'p_decision':   status == 'approved' ? 'approve' : 'reject',
+        'p_reason':     null,
+      });
       widget.onStatusChanged();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
