@@ -20,9 +20,14 @@
 | 10 | F10-tracking | **SELESAI** | 2026-09-28 |
 | 11 | F11-admin-cms | **SELESAI** | 2026-09-28 |
 | 12 | F12-privacy-platform | **SELESAI** | 2026-09-28 |
-| 13 | F13-backlog | Belum dimulai | — |
+| 13 | F13-backlog | **SEBAGIAN** | 2026-09-29 |
 
 ---
+
+### Fase 13: Backlog
+- Menyelesaikan kelompok 13a Kualitas Kode (CODE-01 memecah `master_admin_desktop.dart` menjadi 10 part, CODE-02 menghapus AppColors ganda, CODE-05 menghapus kode mati, CODE-07 menghapus unwrap lokalisasi, CODE-08 migrasi MaterialState ke WidgetState, CODE-10 merapikan komentar, REL-09, REL-12, REL-15, G-04).
+- Menyelesaikan beberapa perbaikan 13d UX (UX-12 teks penjelasan foto, UX-18 menghapus `customer_support_screen.dart` yang sudah tidak dipakai).
+- Kelompok 13b (Bahasa), 13c (Aksesibilitas), 13e (Performa), dan 13f (SEO) ditunda untuk sesi berikutnya agar tidak terlalu besar dalam satu PR.
 
 ## Fase 0 — Persiapan, pagar darurat, dan lingkungan uji
 
