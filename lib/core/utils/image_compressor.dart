@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:image_picker/image_picker.dart';
 
 class ImageCompressor {
   /// Compresses a local image file down to web-optimized constraints (<300KB Target).
@@ -35,7 +34,7 @@ class ImageCompressor {
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       final String targetPath = p.join(
         tempDir.path, 
-        'reV_compressed_${timestamp}.jpg' // Enforcing .jpg target format for compression subsystem recognition
+        'reV_compressed_$timestamp.jpg' // Enforcing .jpg target format for compression subsystem recognition
       );
 
       debugPrint('⚡ Initiating native compression pipeline for: ${p.basename(fileToCompress.path)}');
@@ -71,7 +70,7 @@ class ImageCompressor {
         // Secondary ultra-compression fallback loop targeting complex geometry arrays (Tier 2 Constraint)
         final XFile? heavyCompressedXFile = await FlutterImageCompress.compressAndGetFile(
           fileToCompress.absolute.path, // Compressing from the absolute origin preserves structural integrity over double-compressing artifacts
-          p.join(tempDir.path, 'reV_fallback_${timestamp}.jpg'),
+          p.join(tempDir.path, 'reV_fallback_$timestamp.jpg'),
           quality: 50,
           minWidth: 1280,
           minHeight: 720,

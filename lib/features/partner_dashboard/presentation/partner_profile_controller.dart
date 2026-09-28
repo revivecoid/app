@@ -168,13 +168,11 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
       }
 
       // Fallback: try legacy lookup by user_id column
-      if (partnerData == null) {
-        partnerData = await _sb
+      partnerData ??= await _sb
             .from('partners')
             .select()
             .eq('user_id', user.id)
             .maybeSingle();
-      }
 
       _partnerId = partnerData?['id']?.toString();
       if (_partnerId == null || _partnerId!.isEmpty) {
@@ -233,7 +231,7 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
       };
       for (final row in rows as List) {
         final v = PartnerDocVersion.fromMap(row as Map<String, dynamic>);
-        final type = (row as Map<String, dynamic>)['doc_type']?.toString() ?? '';
+        final type = (row)['doc_type']?.toString() ?? '';
         if (byType.containsKey(type)) byType[type]!.add(v);
       }
       state = state.copyWith(documents: byType);
@@ -375,7 +373,7 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
       final ts = DateTime.now().millisecondsSinceEpoch;
       final ext = _docExtension(fileName, mimeType);
       final storageKey =
-          'partners/$_partnerId/docs/${docType}_${ts}.$ext';
+          'partners/$_partnerId/docs/${docType}_$ts.$ext';
 
       await _sb.storage.from(_bucket).uploadBinary(
         storageKey,

@@ -14,9 +14,10 @@ import 'widgets/interactive_car_diagram.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/l10n/app_localizations_extension.dart';
 
 class EstimatorScreen extends ConsumerStatefulWidget {
-  EstimatorScreen({super.key});
+  const EstimatorScreen({super.key});
 
   @override
   ConsumerState<EstimatorScreen> createState() => _EstimatorScreenState();
@@ -124,7 +125,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     if (guestId == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppL.of(context)!.estimatorLoginRequired)),
+        SnackBar(content: Text(context.l10n.estimatorLoginRequired)),
       );
       context.push('/login?returnTo=/estimator');
       return;
@@ -208,7 +209,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           await _submitToVisionAi(); // UX-08 fix: await so result is ready before any further action
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppL.of(context)!.estimatorSelectPanels)),
+            SnackBar(content: Text(context.l10n.estimatorSelectPanels)),
           );
         }
       } else {
@@ -240,7 +241,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       // which keeps the photo, panel and panel data they already entered.
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null || user.isAnonymous) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppL.of(context)!.estimatorLoginRequired)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.estimatorLoginRequired)));
         context.push('/login?returnTo=/estimator');
         return;
       }
@@ -256,7 +257,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (ctx) => Center(child: CircularProgressIndicator(color: AppColors.fireRed)),
+        builder: (ctx) => const Center(child: CircularProgressIndicator(color: AppColors.fireRed)),
       );
 
       try {
@@ -340,7 +341,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       } catch (e) {
         if (context.mounted) {
           Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppL.of(context)!.estimatorBookingError}: $e'), backgroundColor: Theme.of(context).colorScheme.error));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${context.l10n.estimatorBookingError}: $e'), backgroundColor: Theme.of(context).colorScheme.error));
         }
       }
     }
@@ -353,7 +354,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       decoration: BoxDecoration(
         color: (isDark ? AppColors.surfaceContainerLowest : Theme.of(context).colorScheme.surface),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: const Offset(0, 1))],
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -363,11 +364,11 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.lens, color: AppColors.fireRed, size: 15),
-                  SizedBox(width: 4),
+                  const Icon(Icons.lens, color: AppColors.fireRed, size: 15),
+                  const SizedBox(width: 4),
                   Text(
                     'STEP ${_currentStep + 1} OF 4: ${_getStepTitle()}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.fireRed,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -378,7 +379,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               ),
               Text(
                 '${((_currentStep + 1) * 25).toInt()}%',
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.fireRed,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -386,7 +387,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               ),
             ],
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Row(
             children: List.generate(4, (index) {
               return Expanded(
@@ -401,7 +402,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               );
             }),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Row(
             children: [
               _buildStepLabel('Damage', 'Active', 0),
@@ -475,9 +476,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               color: AppColors.fireRed.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.info, color: AppColors.fireRed, size: 18),
+            child: const Icon(Icons.info, color: AppColors.fireRed, size: 18),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -486,7 +487,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                   'Vehicle Scan & Damage Triage',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface)),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   'Provide a photo of the damage and select affected panels on the digital twin.\nNote: Make sure to clearly capture any scratches (gores) or dents (penyok).',
                   style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant), height: 1.3),
@@ -519,7 +520,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(AppL.of(context)!.estimatorIntakeImagery,
+              Text(context.l10n.estimatorIntakeImagery,
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.0, color: cs.onSurfaceVariant)),
               Row(
                 children: [
@@ -528,7 +529,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                       margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(color: cs.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                      child: Text(AppL.of(context)!.estimatorAiVerified, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cs.error)),
+                      child: Text(context.l10n.estimatorAiVerified, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cs.error)),
                     ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -614,7 +615,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               ElevatedButton.icon(
                 onPressed: () => _addImage(ImageSource.camera),
                 icon: const Icon(Icons.photo_camera, size: 20),
-                label: Text(AppL.of(context)!.estimatorCaptureDamage, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                label: Text(context.l10n.estimatorCaptureDamage, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.error,
                   foregroundColor: cs.onError,
@@ -630,7 +631,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => _addImage(ImageSource.camera),
                       icon: Icon(Icons.add_a_photo_outlined, size: 16, color: cs.error),
-                      label: Text(AppL.of(context)!.estimatorAddPhoto, style: TextStyle(fontSize: 13, color: cs.onSurface)),
+                      label: Text(context.l10n.estimatorAddPhoto, style: TextStyle(fontSize: 13, color: cs.onSurface)),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: cs.outline),
                         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -643,7 +644,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => _addImage(ImageSource.gallery),
                       icon: Icon(Icons.photo_library_outlined, size: 16, color: cs.onSurfaceVariant),
-                      label: Text(AppL.of(context)!.estimatorFromGallery, style: TextStyle(fontSize: 13, color: cs.onSurface)),
+                      label: Text(context.l10n.estimatorFromGallery, style: TextStyle(fontSize: 13, color: cs.onSurface)),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: cs.outline),
                         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -659,7 +660,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               children: [
                 Icon(Icons.check_circle_outline, size: 16, color: cs.error),
                 const SizedBox(width: 6),
-                Text(AppL.of(context)!.estimatorMaxReached, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                Text(context.l10n.estimatorMaxReached, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
               ],
             ),
 
@@ -689,7 +690,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       decoration: BoxDecoration(
         color: (isDark ? AppColors.surfaceContainerLowest : Theme.of(context).colorScheme.surface),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: const Offset(0, 1))],
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -701,8 +702,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(AppL.of(context)!.estimatorDigitalTwin, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
-                  Text(AppL.of(context)!.estimatorTapPanels, style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                  Text(context.l10n.estimatorDigitalTwin, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
+                  Text(context.l10n.estimatorTapPanels, style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
                 ],
               ),
               Container(
@@ -713,15 +714,15 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 ),
                 child: Row(
                   children: [
-                    Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.fireRed, shape: BoxShape.circle)),
-                    SizedBox(width: 4),
-                    Text(AppL.of(context)!.estimatorLiveTwin, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
+                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.fireRed, shape: BoxShape.circle)),
+                    const SizedBox(width: 4),
+                    Text(context.l10n.estimatorLiveTwin, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
                   ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
               color: (isDark ? AppColors.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow),
@@ -738,7 +739,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               ),
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -748,14 +749,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 decoration: BoxDecoration(
                   color: (isDark ? AppColors.surfaceContainer : Theme.of(context).colorScheme.surfaceContainer),
                   borderRadius: BorderRadius.circular(8),
-                  boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 2, offset: Offset(0, 1))],
+                  boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 2, offset: const Offset(0, 1))],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check, color: AppColors.fireRed, size: 16),
-                    SizedBox(width: 4),
-                    Text(panel.label, style: TextStyle(color: AppColors.fireRed, fontWeight: FontWeight.bold, fontSize: 12)),
+                    const Icon(Icons.check, color: AppColors.fireRed, size: 16),
+                    const SizedBox(width: 4),
+                    Text(panel.label, style: const TextStyle(color: AppColors.fireRed, fontWeight: FontWeight.bold, fontSize: 12)),
                   ],
                 ),
               );
@@ -847,7 +848,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.info_outline, size: 15, color: AppColors.fireRed),
+            const Icon(Icons.info_outline, size: 15, color: AppColors.fireRed),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -875,7 +876,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       decoration: BoxDecoration(
         color: (isDark ? AppColors.surfaceContainerLowest : Theme.of(context).colorScheme.surface),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: const Offset(0, 1))],
       ),
       child: Column(
         children: [
@@ -883,7 +884,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: (isDark ? AppColors.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -899,12 +900,12 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                       ),
                       child: Icon(Icons.assignment_turned_in, color: Theme.of(context).colorScheme.surface, size: 20),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(AppL.of(context)!.estimatorAssessmentReport, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
-                        Text(AppL.of(context)!.estimatorTriageMatrix, style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                        Text(context.l10n.estimatorAssessmentReport, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
+                        Text(context.l10n.estimatorTriageMatrix, style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
                       ],
                     ),
                   ],
@@ -915,7 +916,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                     color: (isDark ? AppColors.surfaceContainer : Theme.of(context).colorScheme.surfaceContainer),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text('${panels.length} Items', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
+                  child: Text('${panels.length} Items', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
                 ),
               ],
             ),
@@ -925,7 +926,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             child: Column(
               children: [
                 if (panels.isEmpty)
-                  Text('${AppL.of(context)!.estimatorAssessmentLabel}\n$_aiResult', style: TextStyle(color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
+                  Text('${context.l10n.estimatorAssessmentLabel}\n$_aiResult', style: TextStyle(color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
                 ...panels.map((panel) {
                   final severity = (panel['panel_severity']?.toString() ?? 'ringan').toUpperCase();
                   return Container(
@@ -945,11 +946,11 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                             Text('Rp ${_formatCurrency(panel['calculated_cost'] ?? 0)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
                           ],
                         ),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(AppL.of(context)!.estimatorObservation, style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                            Text(context.l10n.estimatorObservation, style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
                             Expanded(
                               child: Wrap(
                                 spacing: 4,
@@ -966,27 +967,27 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                 ],
                               ),
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: AppColors.fireRed.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Text('Severity: $severity', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
+                              child: Text('Severity: $severity', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
                             ),
                           ],
                         ),
                       ],
                     ),
                   );
-                }).toList(),
+                }),
 
                 // Flagged panels the AI could not see or assess, plus the note
                 // explaining why they are excluded from the total below
                 ..._buildOmittedPanelWidgets(omittedPanels, isDark),
 
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -999,11 +1000,11 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(AppL.of(context)!.estimatorTotalEstimation, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
-                          Text(AppL.of(context)!.estimatorIncludesCoat, style: TextStyle(fontSize: 11, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                          Text(context.l10n.estimatorTotalEstimation, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                          Text(context.l10n.estimatorIncludesCoat, style: TextStyle(fontSize: 11, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
                         ],
                       ),
-                      Text('Rp ${_formatCurrency(totalCost)}', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
+                      Text('Rp ${_formatCurrency(totalCost)}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
                     ],
                   ),
                 ),
@@ -1020,8 +1021,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     return Column(
       children: [
         DropdownButtonFormField<String>(
-          value: _selectedMake,
-          decoration: InputDecoration(labelText: 'Car Brand'),
+          initialValue: _selectedMake,
+          decoration: const InputDecoration(labelText: 'Car Brand'),
           items: _carDatabase.keys.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
           onChanged: (val) {
             setState(() {
@@ -1044,15 +1045,15 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             padding: const EdgeInsets.only(top: 12.0),
             child: TextFormField(
               controller: _customMakeController,
-              decoration: InputDecoration(labelText: 'Enter Car Brand'),
+              decoration: const InputDecoration(labelText: 'Enter Car Brand'),
               onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateBrand(val),
             ),
           ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         if (_selectedMake != null && _selectedMake != 'Other')
           DropdownButtonFormField<String>(
-            value: _selectedModel,
-            decoration: InputDecoration(labelText: 'Car Model'),
+            initialValue: _selectedModel,
+            decoration: const InputDecoration(labelText: 'Car Model'),
             items: [..._carDatabase[_selectedMake]!, 'Other'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
             onChanged: (val) {
               setState(() {
@@ -1069,21 +1070,21 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             padding: const EdgeInsets.only(top: 12.0),
             child: TextFormField(
               controller: _customModelController,
-              decoration: InputDecoration(labelText: 'Enter Car Model'),
+              decoration: const InputDecoration(labelText: 'Enter Car Model'),
               onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateModel(val),
             ),
           ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         TextFormField(
           controller: _yearController,
-          decoration: InputDecoration(labelText: 'Year of Production'),
+          decoration: const InputDecoration(labelText: 'Year of Production'),
           keyboardType: TextInputType.number,
           onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateYear(val),
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         TextFormField(
           controller: _licensePlateController,
-          decoration: InputDecoration(labelText: 'License Plate (e.g. B 1234 XYZ)'),
+          decoration: const InputDecoration(labelText: 'License Plate (e.g. B 1234 XYZ)'),
           textCapitalization: TextCapitalization.characters,
           onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateLicensePlate(val),
         ),
@@ -1099,15 +1100,15 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         children: [
           TextFormField(
             controller: _nameController,
-            decoration: InputDecoration(labelText: 'Full Name'),
+            decoration: const InputDecoration(labelText: 'Full Name'),
             onChanged: (val) => ref.read(customerIntakeProvider.notifier).updateName(val),
             // Required: this is the name the workshop sees for the booking.
             validator: (val) => (val ?? '').trim().isEmpty ? 'Please enter your full name.' : null,
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           TextFormField(
             controller: _phoneController,
-            decoration: InputDecoration(labelText: 'WhatsApp Number'),
+            decoration: const InputDecoration(labelText: 'WhatsApp Number'),
             keyboardType: TextInputType.phone,
             onChanged: (val) => ref.read(customerIntakeProvider.notifier).updatePhone(val),
             // Required: the workshop calls this number to arrange pickup, so a
@@ -1115,10 +1116,10 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             validator: (val) =>
                 (val ?? '').trim().isEmpty ? 'Please enter a WhatsApp number we can reach you on.' : null,
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            decoration: InputDecoration(labelText: 'Select Service Area'),
-            value: ref.watch(customerIntakeProvider).location.isEmpty ? null : ref.watch(customerIntakeProvider).location,
+            decoration: const InputDecoration(labelText: 'Select Service Area'),
+            initialValue: ref.watch(customerIntakeProvider).location.isEmpty ? null : ref.watch(customerIntakeProvider).location,
             items: [
               'Bandung', 'Cimahi', 'Soreang', 
               'Jakarta Pusat', 'Jakarta Utara', 'Jakarta Timur', 'Jakarta Selatan', 'Jakarta Barat', 
@@ -1169,8 +1170,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           ),
           child: Row(
             children: [
-              Icon(Icons.verified_outlined, color: AppColors.fireRed, size: 20),
-              SizedBox(width: 10),
+              const Icon(Icons.verified_outlined, color: AppColors.fireRed, size: 20),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'Review your details before confirming. Go back to edit anything.',
@@ -1180,7 +1181,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             ],
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
 
         // ── Section 1: Contact ──────────────────────────────────────
         _buildReviewSection(
@@ -1192,7 +1193,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             _ReviewRow('Service Area', intake.location.isEmpty ? '—' : intake.location),
           ],
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
 
         // ── Section 2: Vehicle ──────────────────────────────────────
         _buildReviewSection(
@@ -1205,14 +1206,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             _ReviewRow('License Plate', intake.licensePlate.isEmpty ? '—' : intake.licensePlate),
           ],
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
 
         // ── Section 3: Damage Assessment ────────────────────────────
         Container(
           decoration: BoxDecoration(
             color: (isDark ? AppColors.surfaceContainerLowest : Theme.of(context).colorScheme.surface),
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: Offset(0, 1))],
+            boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: const Offset(0, 1))],
           ),
           child: Column(
             children: [
@@ -1221,12 +1222,12 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: (isDark ? AppColors.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.assignment_turned_in_outlined, size: 18, color: AppColors.fireRed),
-                    SizedBox(width: 8),
+                    const Icon(Icons.assignment_turned_in_outlined, size: 18, color: AppColors.fireRed),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Damage Assessment',
@@ -1242,7 +1243,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                         ),
                         child: Text(
                           'Overall: ${overallSeverity.toString().toUpperCase()}',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.fireRed),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.fireRed),
                         ),
                       ),
                   ],
@@ -1255,8 +1256,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                   children: [
                     if (panels.isEmpty)
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Text(AppL.of(context)!.estimatorNoAiData, style: TextStyle(color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(context.l10n.estimatorNoAiData, style: TextStyle(color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
                       ),
                     ...panels.map((panel) {
                       final severity = (panel['panel_severity']?.toString() ?? 'ringan').toUpperCase();
@@ -1280,7 +1281,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                     panel['panel_name']?.toString() ?? '-',
                                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface)),
                                   ),
-                                  SizedBox(height: 3),
+                                  const SizedBox(height: 3),
                                   Text(
                                     [
                                       if (hasGores) '⚡ Gores',
@@ -1299,7 +1300,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                   'Rp ${_formatCurrency(cost)}',
                                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface)),
                                 ),
-                                SizedBox(height: 2),
+                                const SizedBox(height: 2),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                                   decoration: BoxDecoration(
@@ -1308,7 +1309,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                   ),
                                   child: Text(
                                     severity,
-                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.fireRed),
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.fireRed),
                                   ),
                                 ),
                               ],
@@ -1316,7 +1317,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                           ],
                         ),
                       );
-                    }).toList(),
+                    }),
                     
                     // Flagged panels the AI could not see or assess, plus the note
                     // explaining why they are excluded from the total below
@@ -1324,20 +1325,20 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
 
                     // Total cost row
                     if (panels.isNotEmpty) ...[
-                      Divider(height: 20),
+                      const Divider(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(AppL.of(context)!.estimatorEstimatedTotal, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant), letterSpacing: 0.8)),
+                              Text(context.l10n.estimatorEstimatedTotal, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant), letterSpacing: 0.8)),
                               Text('Incl. color matching & clear coat', style: TextStyle(fontSize: 10, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
                             ],
                           ),
                           Text(
                             'Rp ${_formatCurrency(totalCost)}',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.fireRed),
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.fireRed),
                           ),
                         ],
                       ),
@@ -1348,7 +1349,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             ],
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
 
         // PRIV-06/UX-17 fix: explicit consent checkbox with links
         StatefulBuilder(
@@ -1398,7 +1399,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.info_outline, size: 16, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'By confirming, you agree to drop off your vehicle based on the estimated structural damage above. Final price may vary after physical inspection.',
@@ -1422,7 +1423,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       decoration: BoxDecoration(
         color: (isDark ? AppColors.surfaceContainerLowest : Theme.of(context).colorScheme.surface),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: const Offset(0, 1))],
       ),
       child: Column(
         children: [
@@ -1430,12 +1431,12 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: (isDark ? AppColors.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: [
                 Icon(icon, size: 18, color: AppColors.fireRed),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
               ],
             ),
@@ -1466,14 +1467,14 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildProgressSteps(),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         if (_currentStep == 0) ...[
           _buildInstructionBanner(),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           _buildPhotoUpload(),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           _buildDigitalTwin(),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           _buildDamageAssessmentReport(),
         ] else if (_currentStep == 1) ...[
           _buildStep2(),
@@ -1514,8 +1515,8 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       final isDesktop = constraints.maxWidth > 900;
       Widget inner = Scaffold(
       backgroundColor: (isDark ? AppColors.surface : Theme.of(context).colorScheme.surface),
-      appBar: ReVAppBar(
-              title: const Text('AI Body Repair Estimator'),
+      appBar: const ReVAppBar(
+              title: Text('AI Body Repair Estimator'),
               showBackButton: true,
             ),
       body: Stack(
@@ -1533,7 +1534,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               decoration: BoxDecoration(
                 color: (isDark ? AppColors.surface : Theme.of(context).colorScheme.surface),
                 boxShadow: [
-                  BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 10, offset: Offset(0, -5))
+                  BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))
                 ],
               ),
               child: Row(
@@ -1547,7 +1548,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: IconButton(
-                          icon: Icon(Icons.arrow_back),
+                          icon: const Icon(Icons.arrow_back),
                           onPressed: () {
                             setState(() => _currentStep -= 1);
                           },
@@ -1571,7 +1572,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(ctaTitle.toUpperCase(), style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.70), fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               _isAnalyzing 
                                   ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.surface, strokeWidth: 2))
                                   : Text(ctaSubtitle, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold)),
@@ -1597,7 +1598,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         ],
       ),
     );
-      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+      return isDesktop ? Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: inner)) : inner;
     });
   }
 }

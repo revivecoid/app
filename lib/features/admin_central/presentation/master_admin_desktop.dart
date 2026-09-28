@@ -712,7 +712,7 @@ class _OpsMatrixContent extends StatelessWidget {
             j.id.toLowerCase().contains(query) ||
             (j.customerName.toLowerCase().contains(query)) ||
             (j.licensePlate?.toLowerCase().contains(query) ?? false) ||
-            (j.partnerName?.toLowerCase().contains(query) ?? false)
+            (j.partnerName.toLowerCase().contains(query) ?? false)
           ).toList();
 
     final pendingJobs = filteredJobs
@@ -1027,7 +1027,7 @@ class _JobRow extends StatelessWidget {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: cs.onSurface)),
-              Text(job.timeElapsedCurrentStage + ' elapsed',
+              Text('${job.timeElapsedCurrentStage} elapsed',
                   style: TextStyle(
                       fontSize: 11,
                       color: cs.onSurfaceVariant)),
@@ -1366,7 +1366,7 @@ class _WorkshopSettingsContentState extends State<_WorkshopSettingsContent> {
                 const Spacer(),
                 Switch(
                   value: isEngineActive,
-                  activeColor: cs.primary,
+                  activeThumbColor: cs.primary,
                   onChanged: (val) {
                     controller.updateAutoAssignSettings({'is_active': val});
                   },
@@ -1522,7 +1522,7 @@ class _WorkshopSettingsContentState extends State<_WorkshopSettingsContent> {
                         flex: 2,
                         child: Switch(
                           value: aaActive,
-                          activeColor: cs.primary,
+                          activeThumbColor: cs.primary,
                           onChanged: (val) {
                             controller.updatePartnerAutoAssignSettings(p.id, {'auto_assign_active': val});
                           },
@@ -1547,7 +1547,7 @@ class _WorkshopSettingsContentState extends State<_WorkshopSettingsContent> {
                         flex: 2,
                         child: Row(
                           children: [
-                            Text(activeJobs.toString() + ' / ' + capacity.toString(), style: TextStyle(color: activeJobs >= capacity ? cs.error : cs.onSurface)),
+                            Text('$activeJobs / $capacity', style: TextStyle(color: activeJobs >= capacity ? cs.error : cs.onSurface)),
                             const SizedBox(width: 4),
                             IconButton(
                               icon: const Icon(Icons.edit, size: 14),
@@ -1580,7 +1580,7 @@ class _WorkshopSettingsContentState extends State<_WorkshopSettingsContent> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Edit ' + title),
+        title: Text('Edit $title'),
         content: TextField(
           controller: ctrl,
           keyboardType: TextInputType.number,
@@ -2162,7 +2162,7 @@ class _AssignRowState extends State<_AssignRow> {
                       ),
                       style: TextStyle(
                           fontSize: 11, color: cs.onSurface),
-                      value: _pendingPartnerId ?? job.partnerId,
+                      initialValue: _pendingPartnerId ?? job.partnerId,
                       items: partners
                           .map((p) => DropdownMenuItem(
                                 value: p.id,
@@ -2807,7 +2807,7 @@ class _PlaceholderContent extends StatelessWidget {
   final String? subtitle;
   final IconData? icon;
   const _PlaceholderContent(
-      {required this.cs, required this.label, this.subtitle, this.icon});
+      {required this.cs, required this.label}) : subtitle = null : icon;
 
   @override
   Widget build(BuildContext context) {
@@ -3157,10 +3157,10 @@ class _BcaSlip extends StatelessWidget {
                           fontSize: 14,
                           letterSpacing: -0.5))),
               const SizedBox(width: 8),
-              Column(
+              const Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                 Text('m-Transfer',
                     style: TextStyle(
                         fontWeight: FontWeight.w700,
@@ -3213,9 +3213,9 @@ class _BcaSlip extends StatelessWidget {
                       color: Color(0xFF1c1b1c),
                       height: 1.0)),
               const SizedBox(height: 4),
-              Row(
+              const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                 Icon(Icons.check_circle_outline,
                     size: 14,
                     color: Color(0xFF059669)),

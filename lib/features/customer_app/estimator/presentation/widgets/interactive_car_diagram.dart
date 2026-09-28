@@ -6,10 +6,10 @@ class InteractiveCarDiagram extends StatelessWidget {
   final Function(CarPanel) onToggle;
 
   const InteractiveCarDiagram({
-    Key? key,
+    super.key,
     required this.selectedPanels,
     required this.onToggle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -131,8 +131,11 @@ class CarPathData {
     Path poly(List<double> coords) {
       final path = Path();
       for (int i = 0; i < coords.length; i += 2) {
-        if (i == 0) path.moveTo(coords[i], coords[i+1]);
-        else path.lineTo(coords[i], coords[i+1]);
+        if (i == 0) {
+          path.moveTo(coords[i], coords[i+1]);
+        } else {
+          path.lineTo(coords[i], coords[i+1]);
+        }
       }
       path.close();
       return path;
@@ -141,8 +144,11 @@ class CarPathData {
     Path symTop(List<double> topHalfX, List<double> topHalfY) {
       final path = Path();
       for (int i = 0; i < topHalfX.length; i++) {
-        if (i == 0) path.moveTo(topHalfX[i], topHalfY[i]);
-        else path.lineTo(topHalfX[i], topHalfY[i]);
+        if (i == 0) {
+          path.moveTo(topHalfX[i], topHalfY[i]);
+        } else {
+          path.lineTo(topHalfX[i], topHalfY[i]);
+        }
       }
       for (int i = topHalfX.length - 1; i >= 0; i--) {
         path.lineTo(topHalfX[i], 305 + (305 - topHalfY[i]));
@@ -155,8 +161,11 @@ class CarPathData {
     Path mirrorBottom(List<double> topCoords) {
       final path = Path();
       for (int i = 0; i < topCoords.length; i += 2) {
-        if (i == 0) path.moveTo(topCoords[i], 610 - topCoords[i+1]);
-        else path.lineTo(topCoords[i], 610 - topCoords[i+1]);
+        if (i == 0) {
+          path.moveTo(topCoords[i], 610 - topCoords[i+1]);
+        } else {
+          path.lineTo(topCoords[i], 610 - topCoords[i+1]);
+        }
       }
       path.close();
       return path;
@@ -166,8 +175,11 @@ class CarPathData {
       final path = Path();
       for (final coords in polys) {
         for (int i = 0; i < coords.length; i += 2) {
-          if (i == 0) path.moveTo(coords[i], coords[i+1]);
-          else path.lineTo(coords[i], coords[i+1]);
+          if (i == 0) {
+            path.moveTo(coords[i], coords[i+1]);
+          } else {
+            path.lineTo(coords[i], coords[i+1]);
+          }
         }
         path.close();
       }

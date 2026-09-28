@@ -6,7 +6,7 @@ import '../application/notifications_provider.dart';
 import '../domain/app_notification.dart';
 
 class CustomerNotificationsScreen extends ConsumerWidget {
-  CustomerNotificationsScreen({super.key});
+  const CustomerNotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,7 +18,7 @@ class CustomerNotificationsScreen extends ConsumerWidget {
       final isDesktop = constraints.maxWidth > 900;
       Widget inner = Scaffold(
       appBar: ReVAppBar(
-        title: Text('Notifikasi'),
+        title: const Text('Notifikasi'),
         showBackButton: true,
         actions: [
           TextButton(
@@ -32,14 +32,14 @@ class CustomerNotificationsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
         ],
       ),
       body: Center(
         child: Container(
-          constraints: BoxConstraints(maxWidth: 600),
+          constraints: const BoxConstraints(maxWidth: 600),
           child: notifState.when(
-            loading: () => Center(
+            loading: () => const Center(
               child: CircularProgressIndicator(color: AppColors.fireRed),
             ),
             error: (e, _) => Center(
@@ -47,13 +47,13 @@ class CustomerNotificationsScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text('Gagal memuat notifikasi', style: theme.textTheme.titleMedium),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   TextButton(
                     onPressed: () =>
                         ref.invalidate(notificationsProvider),
-                    child: Text('Coba lagi'),
+                    child: const Text('Coba lagi'),
                   ),
                 ],
               ),
@@ -87,7 +87,7 @@ class CustomerNotificationsScreen extends ConsumerWidget {
         ),
       ),
     );
-      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+      return isDesktop ? Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: inner)) : inner;
     });
   }
 
@@ -100,13 +100,13 @@ class CustomerNotificationsScreen extends ConsumerWidget {
           size: 64,
           color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         Text(
           'Belum ada notifikasi',
           style: theme.textTheme.titleLarge
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Text(
           'Update status booking akan muncul di sini.',
           style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
@@ -164,7 +164,7 @@ class _NotificationTile extends StatelessWidget {
                 BoxShadow(
                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                   blurRadius: 4,
-                  offset: Offset(0, 2),
+                  offset: const Offset(0, 2),
                 ),
             ],
             border: notif.isRead
@@ -185,7 +185,7 @@ class _NotificationTile extends StatelessWidget {
                 ),
                 child: Icon(notif.icon, color: notif.color, size: 22),
               ),
-              SizedBox(width: 14),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,7 +207,7 @@ class _NotificationTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(
                           _formatTimestamp(notif.timestamp),
                           style: TextStyle(
@@ -217,7 +217,7 @@ class _NotificationTile extends StatelessWidget {
                         ),
                       ],
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       notif.body,
                       style: TextStyle(
@@ -230,12 +230,12 @@ class _NotificationTile extends StatelessWidget {
                 ),
               ),
               if (!notif.isRead) ...[
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Container(
                   width: 8,
                   height: 8,
                   margin: const EdgeInsets.only(top: 4),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.primaryContainer,
                     shape: BoxShape.circle,
                   ),

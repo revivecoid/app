@@ -5,6 +5,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/jobs/job_status.dart'; // S-08 fix
 import 'partner_dashboard_controller.dart';
 import 'widgets/partner_job_action.dart';
+import '../../../core/l10n/app_localizations_extension.dart';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const _primary = Color(0xFFa40016);
@@ -51,7 +52,7 @@ class _PartnerDashboardMobileState extends ConsumerState<PartnerDashboardMobile>
     if (state.isLoading && state.activeJobs.isEmpty) {
       return Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-        body: Center(child: CircularProgressIndicator(color: _primary)),
+        body: const Center(child: CircularProgressIndicator(color: _primary)),
       );
     }
 
@@ -62,7 +63,9 @@ class _PartnerDashboardMobileState extends ConsumerState<PartnerDashboardMobile>
         if (!j.carMake.toLowerCase().contains(q) &&
             !j.carModel.toLowerCase().contains(q) &&
             !j.licensePlate.toLowerCase().contains(q) &&
-            !j.customerName.toLowerCase().contains(q)) return false;
+            !j.customerName.toLowerCase().contains(q)) {
+          return false;
+        }
       }
       // A job only counts as incoming while nobody has taken the car in. Once it
       // is admitted it is in the bay for the rest of the money steps too, so
@@ -130,20 +133,20 @@ class _MobileHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Row(children: [
-        Container(width: 28, height: 28, decoration: BoxDecoration(color: _primaryContainer, shape: BoxShape.circle), child: Icon(Icons.build_circle, color: _onPrimary, size: 16)),
-        SizedBox(width: 8),
+        Container(width: 28, height: 28, decoration: const BoxDecoration(color: _primaryContainer, shape: BoxShape.circle), child: const Icon(Icons.build_circle, color: _onPrimary, size: 16)),
+        const SizedBox(width: 8),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(AppL.of(context)!.partnerPortal, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(context.l10n.partnerPortal, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
           Row(children: [
             Container(width: 6, height: 6, decoration: BoxDecoration(color: isLive ? _emerald500 : Colors.orange, shape: BoxShape.circle)),
-            SizedBox(width: 4),
+            const SizedBox(width: 4),
             Text(isLive ? 'Live Sync' : 'Reconnecting…', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
           ]),
         ]),
         const Spacer(),
         Badge(
           isLabelVisible: unreadCount > 0,
-          label: Text('$unreadCount', style: TextStyle(fontSize: 9)),
+          label: Text('$unreadCount', style: const TextStyle(fontSize: 9)),
           backgroundColor: _primaryContainer,
           child: IconButton(icon: Icon(Icons.forum_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant), onPressed: onCommlink),
         ),
@@ -169,11 +172,11 @@ class _KpiRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Row(children: [
         Expanded(child: _MobileKpi(label: 'Active Jobs', value: '$total', color: _primary, icon: Icons.build_outlined)),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Expanded(child: _MobileKpi(label: 'In Bay', value: '$inBay', color: _amber500, icon: Icons.hardware_outlined)),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Expanded(child: _MobileKpi(label: 'QC Ready', value: '$qc', color: _emerald500, icon: Icons.local_shipping_outlined)),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Expanded(child: _MobileKpi(label: 'Messages', value: '${state.unreadMessageCount}', color: _blue500, icon: Icons.forum_outlined, highlight: state.unreadMessageCount > 0)),
       ]),
     );
@@ -198,9 +201,9 @@ class _MobileKpi extends StatelessWidget {
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, color: color, size: 16),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(value, style: TextStyle(color: highlight ? color : Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
-        SizedBox(height: 2),
+        const SizedBox(height: 2),
         Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w600), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
       ]),
     );
@@ -223,7 +226,7 @@ class _SearchBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(children: [
           Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 16),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Expanded(child: TextField(
             controller: ctrl,
             onChanged: onSearch,
@@ -273,7 +276,7 @@ class _FilterChips extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         itemCount: filters.length,
-        separatorBuilder: (_, __) => SizedBox(width: 6),
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
         itemBuilder: (_, i) {
           final f = filters[i];
           final isActive = f == selected;
@@ -288,7 +291,7 @@ class _FilterChips extends StatelessWidget {
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Text(f, style: TextStyle(color: isActive ? _onPrimary : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500)),
-                SizedBox(width: 5),
+                const SizedBox(width: 5),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                   decoration: BoxDecoration(color: isActive ? Colors.white.withValues(alpha: 0.25) : Theme.of(context).colorScheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(8)),
@@ -324,10 +327,10 @@ class _JobList extends StatelessWidget {
     if (jobs.isEmpty) {
       return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.emoji_transportation, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
-        SizedBox(height: 12),
-        Text(AppL.of(context)!.partnerNoJobsFound, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Text(context.l10n.partnerNoJobsFound, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(AppL.of(context)!.partnerNoJobsFoundSub, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+        Text(context.l10n.partnerNoJobsFoundSub, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
       ]));
     }
 
@@ -368,7 +371,7 @@ class _JobList extends StatelessWidget {
                     Text('#$jobIdShort', style: TextStyle(color: color.withValues(alpha: 0.55), fontSize: 9, fontFamily: 'monospace')),
                   ],
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
@@ -376,7 +379,7 @@ class _JobList extends StatelessWidget {
                 ),
                 const Spacer(),
                 Icon(Icons.timer_outlined, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                SizedBox(width: 3),
+                const SizedBox(width: 3),
                 Text(elapsedText, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
               ]),
             ),
@@ -385,11 +388,11 @@ class _JobList extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('${job.carMake} ${job.carModel}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Row(children: [
                   Text('• ${job.customerName}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                 ]),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Row(children: [
                   Expanded(child: SizedBox(
                     height: 34,
@@ -400,12 +403,12 @@ class _JobList extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      icon: Icon(Icons.photo_camera_outlined, size: 14),
-                      label: Text(AppL.of(context)!.partnerPhotoBtn, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.photo_camera_outlined, size: 14),
+                      label: Text(context.l10n.partnerPhotoBtn, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () => controller.captureAndUploadProgressPhoto(job.id, job.status),
                     ),
                   )),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   // The shared control, so this card offers exactly what the desktop
                   // card does. It previously offered a bare "Advance" for an admitted
                   // job, which was the only way to reach Issue Invoice on a phone-less
@@ -477,10 +480,10 @@ class _NavItem extends StatelessWidget {
             if (badge > 0) Positioned(top: -4, right: -8, child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               decoration: BoxDecoration(color: _primaryContainer, borderRadius: BorderRadius.circular(8)),
-              child: Text('$badge', style: TextStyle(color: _onPrimary, fontSize: 9, fontWeight: FontWeight.bold)),
+              child: Text('$badge', style: const TextStyle(color: _onPrimary, fontSize: 9, fontWeight: FontWeight.bold)),
             )),
           ]),
-          SizedBox(height: 3),
+          const SizedBox(height: 3),
           Text(label, style: TextStyle(color: active ? _primary : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
         ]),
       ),

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/signed_image.dart';
@@ -16,7 +15,7 @@ const _green  = Color(0xFF10B981);
 const _amber  = Color(0xFFF59E0B);
 
 class PartnerProfileScreen extends ConsumerStatefulWidget {
-  PartnerProfileScreen({super.key});
+  const PartnerProfileScreen({super.key});
 
   @override
   ConsumerState<PartnerProfileScreen> createState() =>
@@ -636,7 +635,7 @@ class _TierCard extends StatelessWidget {
               decoration: BoxDecoration(
                   color: selected ? _red : cs.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(4)),
-              child: Text('T${tier}',
+              child: Text('T$tier',
                   style: TextStyle(
                       color: selected ? _onRed : cs.onSurface,
                       fontSize: 10, fontWeight: FontWeight.bold)),
@@ -722,7 +721,7 @@ class _PhotoSlot extends StatelessWidget {
         ),
         clipBehavior: Clip.antiAlias,
         child: isUploading
-            ? Center(child: CircularProgressIndicator(color: _red, strokeWidth: 2))
+            ? const Center(child: CircularProgressIndicator(color: _red, strokeWidth: 2))
             : publicUrl != null
                 ? Stack(fit: StackFit.expand, children: [
                     SignedImage(fileKey: publicUrl, fit: BoxFit.cover,
@@ -754,7 +753,7 @@ class _PhotoSlot extends StatelessWidget {
                     ),
                   ])
                 : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.cloud_upload_outlined, color: _red, size: 28),
+                    const Icon(Icons.cloud_upload_outlined, color: _red, size: 28),
                     const SizedBox(height: 6),
                     Text(label,
                         style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: cs.onSurface),
@@ -830,7 +829,7 @@ class _DocRowState extends State<_DocRow> {
             const SizedBox(height: 2),
             if (hasDoc)
               Text('${current.fileName}  ·  ${_fmtDate(current.uploadedAt)}',
-                  style: TextStyle(fontSize: 10, color: _green),
+                  style: const TextStyle(fontSize: 10, color: _green),
                   overflow: TextOverflow.ellipsis)
             else
               Text('Not yet uploaded',

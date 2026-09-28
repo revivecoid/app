@@ -65,7 +65,7 @@ class _BookingSchedulingScreenState
 
   // ── Date availability cache (from get_available_dates RPC) ──────────────────
   // C-41, S-03, REL-16: server computes capacity + holidays — client does NOT
-  Map<String, bool> _availabilityCache = {}; // date → available
+  final Map<String, bool> _availabilityCache = {}; // date → available
   bool _availabilityLoaded = false;
 
   Future<void> _loadAvailability() async {
@@ -207,8 +207,8 @@ class _BookingSchedulingScreenState
     return LayoutBuilder(builder: (context, constraints) {
       final isDesktop = constraints.maxWidth > 900;
       Widget inner = Scaffold(
-        appBar: ReVAppBar(
-          title: const Text('Review Estimate & Book'),
+        appBar: const ReVAppBar(
+          title: Text('Review Estimate & Book'),
           showBackButton: true,
         ),
         body: jobAsync.when(
@@ -688,7 +688,7 @@ class _EstimationSummaryState extends State<_EstimationSummary> {
                                     _Tag(sev.toUpperCase(),
                                         _sevColor(sev)),
                                     if (needsReplace)
-                                      _Tag('REPLACE', Colors.red),
+                                      const _Tag('REPLACE', Colors.red),
                                     if (scratches > 0)
                                       _Tag('$scratches scratch${scratches > 1 ? 'es' : ''}',
                                           Colors.grey),

@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/l10n/app_localizations_extension.dart';
 
 class FaqScreen extends ConsumerStatefulWidget {
   const FaqScreen({super.key});
@@ -112,7 +113,7 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cs = theme.colorScheme;
-    final l = AppL.of(context)!;
+    final l = context.l10n;
     final locale = ref.watch(localeProvider).languageCode;
     final isId = locale == 'id';
 

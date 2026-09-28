@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/signed_image.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import 'job_stream_controller.dart';
+import '../../../../core/l10n/app_localizations_extension.dart';
 
 // ─── Status → step index mapping ───────────────────────────────────────────
 const _statusSteps = [
@@ -161,10 +162,10 @@ class _LiveStepperTimelineState extends ConsumerState<LiveStepperTimeline> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(AppL.of(context)!.trackingLiveTracker, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
+              Text(context.l10n.trackingLiveTracker, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
               Text(
                 widget.jobId.length > 8 ? '#${widget.jobId.substring(0, 8).toUpperCase()}' : '#${widget.jobId}',
-                style: TextStyle(fontSize: 11, color: AppColors.fireRed, letterSpacing: 1.0),
+                style: const TextStyle(fontSize: 11, color: AppColors.fireRed, letterSpacing: 1.0),
               ),
             ],
           ),
@@ -263,7 +264,7 @@ class _TrackerBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final progressPhotos = photos.where((p) =>
         // C-40 fix: partner writes 'in_progress' context; also include 'progress', 'finished', 'inspected'
-        p.context != null && !['payment', 'intake', 'booking'].contains(p.context)).toList();
+        !['payment', 'intake', 'booking'].contains(p.context)).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -272,7 +273,7 @@ class _TrackerBody extends StatelessWidget {
         children: [
           // ─── Status Banner ───
           _StatusBanner(status: status, mutedColor: mutedColor),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // ─── Timeline ───
           _card(
@@ -280,13 +281,13 @@ class _TrackerBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppL.of(context)!.trackingStatus, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
-                SizedBox(height: 4),
+                Text(context.l10n.trackingStatus, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
+                const SizedBox(height: 4),
                 Text(
                   'Step ${currentStepIndex + 1} of ${_statusSteps.length}',
-                  style: TextStyle(fontSize: 12, color: AppColors.fireRed, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 12, color: AppColors.fireRed, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 ...List.generate(_statusSteps.length, (i) {
                   final stepStatus = i < currentStepIndex
                       ? _StepState.completed
@@ -294,8 +295,8 @@ class _TrackerBody extends StatelessWidget {
                           ? _StepState.active
                           : _StepState.pending;
                   return _TimelineStep(
-                    label: _stepLabel(AppL.of(context)!, i),
-                    description: _stepDesc(AppL.of(context)!, i),
+                    label: _stepLabel(context.l10n, i),
+                    description: _stepDesc(context.l10n, i),
                     state: stepStatus,
                     isLast: i == _statusSteps.length - 1,
                     textColor: textColor,
@@ -306,7 +307,7 @@ class _TrackerBody extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // ─── Live Photo Stream ───
           _card(
@@ -316,12 +317,12 @@ class _TrackerBody extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.camera_alt, color: AppColors.fireRed, size: 18),
-                    SizedBox(width: 8),
-                    Text(AppL.of(context)!.trackingWorkshop, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
+                    const Icon(Icons.camera_alt, color: AppColors.fireRed, size: 18),
+                    const SizedBox(width: 8),
+                    Text(context.l10n.trackingWorkshop, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
                   ],
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 if (progressPhotos.isEmpty)
                   Container(
                     width: double.infinity,
@@ -334,7 +335,7 @@ class _TrackerBody extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.image_search, size: 36, color: mutedColor),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           'Awaiting photo updates from the workshop floor…',
                           style: TextStyle(color: mutedColor, fontSize: 12),
@@ -346,8 +347,8 @@ class _TrackerBody extends StatelessWidget {
                 else
                   GridView.builder(
                     shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
@@ -387,7 +388,7 @@ class _TrackerBody extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // ─── Job Details ───
           _card(
@@ -396,16 +397,16 @@ class _TrackerBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Job Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 _detailRow(Icons.tag, 'Job ID', jobId, textColor, mutedColor),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 _detailRow(Icons.info_outline, 'Current Status', status.replaceAll('_', ' ').toUpperCase(), textColor, mutedColor),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 _detailRow(Icons.photo_library, 'Workshop Photos', '${progressPhotos.length} uploaded', textColor, mutedColor),
               ],
             ),
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -415,7 +416,7 @@ class _TrackerBody extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 16, color: AppColors.fireRed),
-        SizedBox(width: 10),
+        const SizedBox(width: 10),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -434,7 +435,7 @@ class _TrackerBody extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Color(0xFF000000).withValues(alpha: 0.06), blurRadius: 6, offset: Offset(0, 2))],
+        boxShadow: [BoxShadow(color: const Color(0xFF000000).withValues(alpha: 0.06), blurRadius: 6, offset: const Offset(0, 2))],
       ),
       child: child,
     );
@@ -607,7 +608,7 @@ class _ActionBar extends StatelessWidget {
                 Expanded(
                 child: Text(
                   _hint,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.fireRed,
                     fontWeight: FontWeight.w500,
@@ -690,13 +691,13 @@ class _StatusBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.sync, color: AppColors.fireRed, size: 18),
-          SizedBox(width: 10),
+          const Icon(Icons.sync, color: AppColors.fireRed, size: 18),
+          const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('CURRENT STATUS', style: TextStyle(fontSize: 10, color: AppColors.fireRed, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-              Text(label, style: TextStyle(fontSize: 14, color: AppColors.fireRed, fontWeight: FontWeight.bold)),
+              const Text('CURRENT STATUS', style: TextStyle(fontSize: 10, color: AppColors.fireRed, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+              Text(label, style: const TextStyle(fontSize: 14, color: AppColors.fireRed, fontWeight: FontWeight.bold)),
             ],
           ),
         ],
@@ -766,7 +767,7 @@ class _TimelineStep extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           // ─── Content ───
           Expanded(
             child: Opacity(
@@ -805,7 +806,7 @@ class _TimelineStep extends StatelessWidget {
                           ),
                       ],
                     ),
-                    SizedBox(height: 3),
+                    const SizedBox(height: 3),
                     Text(description, style: TextStyle(fontSize: 11, color: isActive ? AppColors.fireRed.withValues(alpha: 0.85) : mutedColor)),
                   ],
                 ),

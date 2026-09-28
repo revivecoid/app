@@ -297,7 +297,7 @@ class CheckoutController extends StateNotifier<CheckoutState> {
       // C-38 fix: baca hasil RPC langsung, tidak mengandalkan realtime webhook.
 
       // 1. Buat payment record
-      final idempotencyKey = state.jobId + '_' + DateTime.now().millisecondsSinceEpoch.toString();
+      final idempotencyKey = '${state.jobId}_${DateTime.now().millisecondsSinceEpoch}';
       final paymentResult = await _supabase.rpc('create_payment', params: {
         'p_job_id': state.jobId,
         'p_method': 'mock',
@@ -421,7 +421,7 @@ class CheckoutController extends StateNotifier<CheckoutState> {
 
     _paymentChannel?.unsubscribe();
     
-    // Subscribe to strict RLS-filtered changes for this exact job row
+    // Subscribe to realtime updates (RLS protected) for this exact job row
     _paymentChannel = _supabase.channel('public:repair_jobs:id=eq.${state.jobId}')
       .onPostgresChanges(
         event: PostgresChangeEvent.update,

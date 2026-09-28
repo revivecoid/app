@@ -368,10 +368,10 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              const Row(
                 children: [
-                  const Icon(Icons.verified, size: 14, color: AppColors.primaryContainer),
-                  const SizedBox(width: 4),
+                  Icon(Icons.verified, size: 14, color: AppColors.primaryContainer),
+                  SizedBox(width: 4),
                   Text('AUTHORIZED NETWORK ACCREDITATION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: AppColors.primaryContainer)),
                 ],
               ),
@@ -655,9 +655,9 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
                 child: TextFormField(
                   controller: controller,
                   style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16),
                     isDense: true,
                   ),
                 ),
@@ -714,9 +714,9 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
                   activeColor: AppColors.primaryContainer,
                   onChanged: (v) => setState(() => _throughput = v),
                 ),
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Text('Light (4 panels)', style: TextStyle(fontSize: 10, color: Colors.grey)),
                     Text('Standard (12 panels)', style: TextStyle(fontSize: 10, color: Colors.grey)),
                     Text('Heavy Industry (30+ panels)', style: TextStyle(fontSize: 10, color: Colors.grey)),
@@ -1003,7 +1003,7 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(4)), child: const Text('LAT: -6.191204 | LNG: 106.768192', style: TextStyle(fontSize: 10, fontFamily: 'monospace'))),
-                            Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(4)), child: Row(children: const [Icon(Icons.satellite_alt, size: 12, color: Colors.green), SizedBox(width: 4), Text('HD 99.4% FIX', style: TextStyle(fontSize: 10, color: Colors.green))])),
+                            Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(4)), child: const Row(children: [Icon(Icons.satellite_alt, size: 12, color: Colors.green), SizedBox(width: 4), Text('HD 99.4% FIX', style: TextStyle(fontSize: 10, color: Colors.green))])),
                           ],
                         ),
                         // Radar
@@ -1037,9 +1037,9 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.95), borderRadius: BorderRadius.circular(4)),
-                          child: Row(
+                          child: const Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: const [
+                            children: [
                               Row(
                                 children: [
                                   Icon(Icons.location_on, size: 16, color: AppColors.primaryContainer),
@@ -1077,9 +1077,9 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen> w
                   activeColor: AppColors.primaryContainer,
                   onChanged: (v) => setState(() => _radius = v),
                 ),
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Text('5 km (Local District)', style: TextStyle(fontSize: 10, color: Colors.grey)),
                     Text('12 km (Optimal Metropolitan)', style: TextStyle(fontSize: 10, color: Colors.grey)),
                     Text('30 km (Jabodetabek Wide)', style: TextStyle(fontSize: 10, color: Colors.grey)),

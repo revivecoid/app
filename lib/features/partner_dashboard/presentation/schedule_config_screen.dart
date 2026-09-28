@@ -256,7 +256,7 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
           const SizedBox(height: 32),
 
           // ── Working Days Row ────────────────────────────────────────
-          Text('Standard Working Days',
+          const Text('Standard Working Days',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold,
                   color: AppColors.fireRed, letterSpacing: 0.5)),
           const SizedBox(height: 10),
@@ -464,7 +464,7 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
               Switch(
                 value: enabled,
                 onChanged: onToggle,
-                activeColor: AppColors.fireRed,
+                activeThumbColor: AppColors.fireRed,
               ),
             ],
           ),
@@ -691,7 +691,7 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
                           )
                         else if (isStandardWorkingDay && !isPast && dotColor != null)
                           Text(
-                            '${_guaranteedSlotsPerDay}/${_simultaneousPanelCapacity}',
+                            '$_guaranteedSlotsPerDay/$_simultaneousPanelCapacity',
                             style: TextStyle(fontSize: 8, color: subtitleColor),
                           ),
                       ],

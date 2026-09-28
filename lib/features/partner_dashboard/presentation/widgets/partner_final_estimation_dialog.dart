@@ -144,10 +144,8 @@ class _PartnerFinalEstimationDialogState
         ],
       ),
     );
-    if (name == null || name.isEmpty) {
-      ctrl.dispose();
-      return;
-    }
+    ctrl.dispose(); // G-04 fix
+    if (name == null || name.isEmpty) return;
     setState(() {
       _rows.add(_PanelRow(
         panel: name,

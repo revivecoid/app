@@ -45,10 +45,12 @@ class _AdminJobAssignmentScreenState extends ConsumerState<AdminJobAssignmentScr
         });
       }
     } catch (e) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _error = e.toString();
         _isLoading = false;
       });
+      }
     }
   }
 

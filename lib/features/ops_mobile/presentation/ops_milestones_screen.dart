@@ -337,9 +337,9 @@ class _StageTile extends StatelessWidget {
                           style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
                         ),
                     ] else if (canAct) ...[
-                      Text(
+                      const Text(
                         'Tap to add photos & complete stage',
-                        style: TextStyle(fontSize: 11, color: const Color(0xFFD10721)),
+                        style: TextStyle(fontSize: 11, color: Color(0xFFD10721)),
                       ),
                     ] else if (blockedByRole) ...[
                       Text(

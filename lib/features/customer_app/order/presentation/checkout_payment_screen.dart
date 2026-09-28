@@ -78,7 +78,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
   }
 
   void _submitLocationDetails() {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState?.validate() ?? true) {
       final lat = double.tryParse(_latController.text);
       final lng = double.tryParse(_lngController.text);
       ref.read(checkoutControllerProvider(widget.jobId).notifier)
@@ -168,8 +168,8 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
               controller.setDeliveryOption(newSelection.first);
             },
             style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
-                if (states.contains(MaterialState.selected)) return AppColors.fireRed;
+              backgroundColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                if (states.contains(WidgetState.selected)) return AppColors.fireRed;
                 return Colors.transparent;
               }),
             ),
@@ -297,8 +297,8 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
               controller.setPaymentMethod(newSelection.first);
             },
             style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
-                if (states.contains(MaterialState.selected)) return AppColors.fireRed;
+              backgroundColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                if (states.contains(WidgetState.selected)) return AppColors.fireRed;
                 return Colors.transparent;
               }),
             ),
@@ -383,7 +383,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
                 : () {
                     if (!state.paymentOnlyMode &&
                         state.deliveryOption == DeliveryOption.pickup &&
-                        !_formKey.currentState!.validate()) {
+                        !(_formKey.currentState?.validate() ?? true)) {
                       return;
                     }
                     if (state.paymentOnlyMode) {

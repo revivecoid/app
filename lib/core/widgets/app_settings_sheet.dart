@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
 import '../theme/app_theme.dart';
+import '../../core/l10n/app_localizations_extension.dart';
 
 /// Call [AppSettingsSheet.show] from anywhere to open the language + theme panel.
 class AppSettingsSheet {
@@ -29,7 +30,7 @@ class _SettingsPanelBody extends ConsumerWidget {
     final t = Theme.of(context);
     final currentLocale = ref.watch(localeProvider);
     final currentTheme = ref.watch(themeModeProvider);
-    final l = AppL.of(context)!;
+    final l = context.l10n;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),

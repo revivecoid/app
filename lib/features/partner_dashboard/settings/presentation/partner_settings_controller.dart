@@ -53,8 +53,8 @@ class PartnerSettingsState {
 class PartnerSettingsController extends StateNotifier<PartnerSettingsState> {
   final SupabaseClient _supabase = Supabase.instance.client;
   StreamSubscription? _messageSubscription;
-  late final String currentUserId;
-  late final String partnerId;
+  String? currentUserId;
+  String? partnerId;
 
   PartnerSettingsController() : super(PartnerSettingsState()) {
     _init();
@@ -68,7 +68,7 @@ class PartnerSettingsController extends StateNotifier<PartnerSettingsState> {
     // SEC-08 FIX: Read partner_id from app_metadata ONLY (set by service_role)
     partnerId = user.appMetadata['partner_id']?.toString() ?? '';
     
-    if (partnerId.isEmpty) {
+    if (partnerId == null || partnerId!.isEmpty) {
       state = state.copyWith(isLoading: false, errorMessage: 'Partner ID not found in token.');
       return;
     }
@@ -78,7 +78,7 @@ class PartnerSettingsController extends StateNotifier<PartnerSettingsState> {
       final sRes = await _supabase
           .from('partner_schedules')
           .select()
-          .eq('partner_id', partnerId)
+          .eq('partner_id', partnerId!)
           .maybeSingle();
 
       if (sRes != null) {
@@ -103,7 +103,7 @@ class PartnerSettingsController extends StateNotifier<PartnerSettingsState> {
       _messageSubscription = _supabase
           .from('partner_messages')
           .stream(primaryKey: ['id'])
-          .eq('partner_id', partnerId)
+          .eq('partner_id', partnerId!)
           .order('created_at', ascending: false)
           .limit(50)
           .listen((data) {
@@ -176,7 +176,7 @@ class PartnerSettingsController extends StateNotifier<PartnerSettingsState> {
             'guaranteed_slots_per_day': slots,
             'blacklisted_dates': blacklistedDates,
           })
-          .eq('partner_id', partnerId)
+          .eq('partner_id', partnerId!)
           .select()
           .single();
       

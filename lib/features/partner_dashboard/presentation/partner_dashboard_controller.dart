@@ -361,7 +361,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
   Future<void> captureAndUploadProgressPhoto(String jobId, String currentContext) async {
     try {
       // 1. Pick image — camera on mobile, gallery on web
-      final source = kIsWeb ? ImageSource.gallery : ImageSource.camera;
+      const source = kIsWeb ? ImageSource.gallery : ImageSource.camera;
       final XFile? rawImage = await _imagePicker.pickImage(source: source);
       if (rawImage == null) return; // User cancelled
 
@@ -499,7 +499,19 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
         }
       }
 
-      await file.writeAsString(jsonEncode(failedItems));
+      // REL-15 FIX: Do not overwrite the file blindly. Load it again to keep items added during sync.
+      final updatedContent = await file.readAsString();
+      final List<dynamic> updatedQueue = updatedContent.isNotEmpty ? jsonDecode(updatedContent) : [];
+      
+      // Remove successfully processed items (those not in failedItems) from updatedQueue
+      // We assume items can be matched by their contents (using JSON string comparison or similar, 
+      // but simpler is to remove the exact instances we successfully processed).
+      final failedItemStrings = failedItems.map((e) => jsonEncode(e)).toSet();
+      final itemsToRemove = queue.where((item) => !failedItemStrings.contains(jsonEncode(item))).map((e) => jsonEncode(e)).toSet();
+      
+      final finalQueue = updatedQueue.where((item) => !itemsToRemove.contains(jsonEncode(item))).toList();
+      
+      await file.writeAsString(jsonEncode(finalQueue));
       state = state.copyWith(isOfflineSyncing: false);
 
     } catch (e) {

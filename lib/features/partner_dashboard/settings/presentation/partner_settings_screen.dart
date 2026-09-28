@@ -7,16 +7,17 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../presentation/partner_shell_screen.dart';
 import '../../../ops_mobile/ops_access.dart';
+import '../../../../core/l10n/app_localizations_extension.dart';
 
 class PartnerSettingsScreen extends ConsumerWidget {
-  PartnerSettingsScreen({super.key});
+  const PartnerSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final currentLocale = ref.watch(localeProvider);
     final currentTheme = ref.watch(themeModeProvider);
-    final l = AppL.of(context)!;
+    final l = context.l10n;
 
     final user = Supabase.instance.client.auth.currentUser;
     final email = user?.email ?? '—';
@@ -44,7 +45,7 @@ class PartnerSettingsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SettingsLabel(icon: Icons.dark_mode_outlined, label: 'Theme'),
+                  const _SettingsLabel(icon: Icons.dark_mode_outlined, label: 'Theme'),
                   const SizedBox(height: 12),
                   SegmentedButton<ThemeMode>(
                     segments: const [
@@ -118,7 +119,7 @@ class PartnerSettingsScreen extends ConsumerWidget {
             const SizedBox(height: 28),
 
             // ── Section: Account ─────────────────────────────────────────────
-            _SectionHeader(
+            const _SectionHeader(
               icon: Icons.manage_accounts_outlined,
               title: 'Account',
               subtitle: 'Your account details and sign-out options.',
@@ -129,7 +130,7 @@ class PartnerSettingsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SettingsLabel(icon: Icons.person_outline, label: 'Signed in as'),
+                  const _SettingsLabel(icon: Icons.person_outline, label: 'Signed in as'),
                   const SizedBox(height: 8),
                   Row(children: [
                     Container(
@@ -212,12 +213,12 @@ class PartnerSettingsScreen extends ConsumerWidget {
             const SizedBox(height: 28),
 
             // ── Section: About ───────────────────────────────────────────────
-            _SettingsCard(
+            const _SettingsCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _SettingsLabel(icon: Icons.info_outline, label: 'About re-V Partner Portal'),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   _InfoRow(label: 'Platform', value: 're-V Partner Ops Core'),
                   _InfoRow(label: 'Version', value: '2.0.0'),
                   _InfoRow(label: 'Support', value: 'partner-support@revive.co.id'),
@@ -472,7 +473,7 @@ class _OpsAccessModeCardState extends ConsumerState<_OpsAccessModeCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(
+        const _SectionHeader(
           icon: Icons.badge_outlined,
           title: 'Workshop Access',
           subtitle: 'Control what your staff and drivers can see and handle.',

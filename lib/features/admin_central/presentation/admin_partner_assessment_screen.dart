@@ -5,9 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/widgets/signed_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/rev_app_bar.dart';
-import '../../../core/widgets/responsive_layout_guard.dart';
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 const _red    = Color(0xFFd10721);
@@ -254,7 +252,7 @@ class _AdminPartnerAssessmentScreenState
               border: Border(bottom: BorderSide(color: cs.outlineVariant)),
             ),
             child: Row(children: [
-              Icon(Icons.store_mall_directory_outlined, color: _red, size: 20),
+              const Icon(Icons.store_mall_directory_outlined, color: _red, size: 20),
               const SizedBox(width: 10),
               Text('Partner Assessment',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: cs.onSurface)),
@@ -1006,7 +1004,7 @@ class _AdminDocSectionState extends State<_AdminDocSection> {
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: cs.onSurface)),
               if (current != null)
                 Text('Current: ${current['file_name']} · ${_fmtDate(current['uploaded_at']?.toString())}',
-                    style: TextStyle(fontSize: 11, color: _green),
+                    style: const TextStyle(fontSize: 11, color: _green),
                     overflow: TextOverflow.ellipsis),
               if (!hasDocs)
                 Text('Not uploaded', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),

@@ -132,7 +132,9 @@ class CustomerIntakeNotifier extends StateNotifier<CustomerIntakeState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys().where((k) => k.startsWith('customer_intake_'));
-      for (final k in keys) await prefs.remove(k);
+      for (final k in keys) {
+        await prefs.remove(k);
+      }
     } catch (_) {}
   }
 

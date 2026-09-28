@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/l10n/app_localizations_extension.dart';
 
 class CustomerSupportScreen extends StatelessWidget {
   const CustomerSupportScreen({super.key});
@@ -12,7 +13,7 @@ class CustomerSupportScreen extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label ${AppL.of(context)!.supportCopy}'),
+        content: Text('$label ${context.l10n.supportCopy}'),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -23,7 +24,7 @@ class CustomerSupportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final l = AppL.of(context)!;
+    final l = context.l10n;
 
     return Scaffold(
       appBar: ReVAppBar(title: Text(l.faqTitle), showBackButton: true),
@@ -41,13 +42,13 @@ class CustomerSupportScreen extends StatelessWidget {
                   style: theme.textTheme.headlineMedium
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   l.supportFindAnswers,
                   style: theme.textTheme.titleMedium
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
-                SizedBox(height: 32),
+                const SizedBox(height: 32),
 
                 // ── Contact Cards ───────────────────────────────────────────
                 Row(
@@ -68,7 +69,7 @@ class CustomerSupportScreen extends StatelessWidget {
                         isDark: isDark,
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: _buildContactCard(
                         context,
@@ -81,7 +82,7 @@ class CustomerSupportScreen extends StatelessWidget {
                         isDark: isDark,
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: _buildContactCard(
                         context,
@@ -145,7 +146,7 @@ class CustomerSupportScreen extends StatelessWidget {
                   ),
                 ),
 
-                SizedBox(height: 32),
+                const SizedBox(height: 32),
 
                 // ── FAQ ─────────────────────────────────────────────────────
                 Text(
@@ -153,7 +154,7 @@ class CustomerSupportScreen extends StatelessWidget {
                   style: theme.textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
 
                 _buildFaqItem(context, l.faqSearch, l.faqSubtitle, isDark),
                 _buildFaqItem(
@@ -210,7 +211,7 @@ class CustomerSupportScreen extends StatelessWidget {
                         foregroundColor: AppColors.primaryContainer),
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -262,7 +263,7 @@ class CustomerSupportScreen extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(

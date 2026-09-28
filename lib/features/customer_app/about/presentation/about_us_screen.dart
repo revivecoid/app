@@ -80,10 +80,10 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
                       child: Row(children: [
                         _StatItem(theme: theme, value: c('stat_partners', en: '38+', id: '38+'),
                             label: isId ? 'Bengkel Mitra' : 'Partner Hubs'),
-                        _Divider(),
+                        const _Divider(),
                         _StatItem(theme: theme, value: c('stat_rating', en: '4.9/5', id: '4.9/5'),
                             label: isId ? 'Rating Pelanggan' : 'Customer Rating'),
-                        _Divider(),
+                        const _Divider(),
                         _StatItem(theme: theme, value: c('stat_jobs', en: '12,000+', id: '12.000+'),
                             label: isId ? 'Kendaraan Diperbaiki' : 'Cars Repaired'),
                       ]),

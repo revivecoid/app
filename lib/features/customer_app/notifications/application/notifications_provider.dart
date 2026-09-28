@@ -94,7 +94,7 @@ class NotificationsNotifier extends StateNotifier<AsyncValue<List<AppNotificatio
           ),
           callback: (payload) {
             final newNotif = AppNotification.fromMap(
-              payload.newRecord as Map<String, dynamic>,
+              payload.newRecord,
             );
             final current = state.valueOrNull ?? [];
             state = AsyncValue.data([newNotif, ...current]);
@@ -227,7 +227,7 @@ class NotificationPreferencesNotifier
         );
       } else {
         state = AsyncValue.data(
-          NotificationPreferences.fromMap(res as Map<String, dynamic>),
+          NotificationPreferences.fromMap(res),
         );
       }
     } catch (e, st) {

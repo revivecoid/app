@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import 'customer_profile_screen.dart';
+import '../../../../core/l10n/app_localizations_extension.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Vehicle Registration Modal
@@ -81,8 +82,8 @@ class _VehicleRegistrationModalState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 8),
               Text(
                   '${_makeCtrl.text} ${_modelCtrl.text} registered to your garage!'),
             ]),
@@ -97,7 +98,7 @@ class _VehicleRegistrationModalState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${AppL.of(context)!.vehicleRegistrationFailed}: ${e.toString()}'),
+            content: Text('${context.l10n.vehicleRegistrationFailed}: ${e.toString()}'),
             backgroundColor: AppColors.fireRed,
             behavior: SnackBarBehavior.floating,
           ),
@@ -128,7 +129,7 @@ class _VehicleRegistrationModalState
         decoration: BoxDecoration(
           // UX-02 FIX: Use theme-aware surface color instead of hardcoded white
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -162,19 +163,19 @@ class _VehicleRegistrationModalState
                                   .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(Icons.directions_car,
+                            child: const Icon(Icons.directions_car,
                                 color: AppColors.primaryContainer, size: 20),
                           ),
-                          SizedBox(width: 12),
+                          const SizedBox(width: 12),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(AppL.of(context)!.vehicleRegisterTitle,
+                              Text(context.l10n.vehicleRegisterTitle,
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                       color: Theme.of(context).colorScheme.onSurface)),
-                              Text(AppL.of(context)!.vehicleRegisterSub,
+                              Text(context.l10n.vehicleRegisterSub,
                                   style: TextStyle(
                                       fontSize: 12,
                                       color: Theme.of(context).colorScheme.onSurfaceVariant)),
@@ -182,15 +183,15 @@ class _VehicleRegistrationModalState
                           ),
                         ],
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
                       // Vehicle Type
-                      Text(AppL.of(context)!.vehicleType,
+                      Text(context.l10n.vehicleType,
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
@@ -229,7 +230,7 @@ class _VehicleRegistrationModalState
                           }).toList(),
                         ),
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
                       // Make & Model
                       Row(
@@ -244,7 +245,7 @@ class _VehicleRegistrationModalState
                                   v!.trim().isEmpty ? 'Required' : null,
                             ),
                           ),
-                          SizedBox(width: 12),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: TextFormField(
                               controller: _modelCtrl,
@@ -257,7 +258,7 @@ class _VehicleRegistrationModalState
                           ),
                         ],
                       ),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
                       // Year & Plate
                       Row(
@@ -284,7 +285,7 @@ class _VehicleRegistrationModalState
                               },
                             ),
                           ),
-                          SizedBox(width: 12),
+                          const SizedBox(width: 12),
                           Expanded(
                             flex: 3,
                             child: TextFormField(
@@ -299,7 +300,7 @@ class _VehicleRegistrationModalState
                           ),
                         ],
                       ),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
                       // Color
                       TextFormField(
@@ -309,7 +310,7 @@ class _VehicleRegistrationModalState
                             icon: Icons.palette),
                         textCapitalization: TextCapitalization.words,
                       ),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
                       // VIN (optional)
                       TextFormField(
@@ -323,7 +324,7 @@ class _VehicleRegistrationModalState
                           LengthLimitingTextInputFormatter(17),
                         ],
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
                       // Insurance toggle
                       Container(
@@ -336,19 +337,19 @@ class _VehicleRegistrationModalState
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.shield,
+                            const Icon(Icons.shield,
                                 color: AppColors.primaryContainer, size: 20),
-                            SizedBox(width: 10),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(AppL.of(context)!.vehicleInsured,
+                                  Text(context.l10n.vehicleInsured,
                                       style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
                                           color: Theme.of(context).colorScheme.onSurface)),
-                                  Text(AppL.of(context)!.vehicleInsuredSub,
+                                  Text(context.l10n.vehicleInsuredSub,
                                       style: TextStyle(
                                           fontSize: 11,
                                           color: Theme.of(context).colorScheme.onSurfaceVariant)),
@@ -366,7 +367,7 @@ class _VehicleRegistrationModalState
                         ),
                       ),
                       if (_isInsured) ...[
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         TextFormField(
                           controller: _insurerCtrl,
                           decoration: _inputDec('Insurance Provider',
@@ -375,7 +376,7 @@ class _VehicleRegistrationModalState
                           textCapitalization: TextCapitalization.words,
                         ),
                       ],
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
                       // Submit
                       SizedBox(
@@ -383,17 +384,17 @@ class _VehicleRegistrationModalState
                         child: ElevatedButton.icon(
                           onPressed: _isLoading ? null : _submit,
                           icon: _isLoading
-                              ? SizedBox(
+                              ? const SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
                                       color: Colors.white, strokeWidth: 2))
-                              : Icon(Icons.check, size: 18),
+                              : const Icon(Icons.check, size: 18),
                           label: Text(
                             _isLoading
                                 ? 'Registering...'
                                 : 'Register Vehicle to Garage',
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                           style: ElevatedButton.styleFrom(

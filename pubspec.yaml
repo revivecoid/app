@@ -33,6 +33,7 @@ dependencies:
   # tree transitively; declared directly now that the ops screens depend on it.
   url_launcher: ^6.3.2
 
+  web: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

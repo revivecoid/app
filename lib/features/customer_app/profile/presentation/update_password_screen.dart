@@ -6,9 +6,10 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../app_router.dart';
+import '../../../../core/l10n/app_localizations_extension.dart';
 
 class UpdatePasswordScreen extends ConsumerStatefulWidget {
-  UpdatePasswordScreen({super.key});
+  const UpdatePasswordScreen({super.key});
 
   @override
   ConsumerState<UpdatePasswordScreen> createState() => _UpdatePasswordScreenState();
@@ -26,7 +27,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
   bool get _isRecoveryFlow => ref.read(passwordRecoveryProvider);
 
   Future<void> _updatePassword() async {
-    final l = AppL.of(context)!;
+    final l = context.l10n;
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() => _errorMessage = l.passwordNoMatch);
       return;
@@ -65,13 +66,13 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
         UserAttributes(password: _passwordController.text),
       );
       
-      setState(() => _successMessage = AppL.of(context)!.passwordSuccess);
+      setState(() => _successMessage = context.l10n.passwordSuccess);
       
       // Clear the recovery state
       ref.read(passwordRecoveryProvider.notifier).state = false;
       
       // Give the user a moment to read the success message before redirecting
-      Future.delayed(Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 2), () {
         if (mounted) context.go('/');
       });
       
@@ -80,7 +81,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
       final msg = _mapAuthError(e.message);
       setState(() => _errorMessage = msg);
     } catch (e) {
-      setState(() => _errorMessage = AppL.of(context)!.somethingWentWrong);
+      setState(() => _errorMessage = context.l10n.somethingWentWrong);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -112,7 +113,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
       Widget inner = Scaffold(
       backgroundColor: cs.surface,
       appBar: ReVAppBar(
-        title: Text(AppL.of(context)!.passwordUpdateTitle),
+        title: Text(context.l10n.passwordUpdateTitle),
         showBackButton: true,
       ),
       body: Center(
@@ -129,17 +130,17 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.lock_reset, size: 64, color: AppColors.fireRed),
-                SizedBox(height: 16),
+                const Icon(Icons.lock_reset, size: 64, color: AppColors.fireRed),
+                const SizedBox(height: 16),
                 Builder(builder: (context) {
-                  final l = AppL.of(context)!;
+                  final l = context.l10n;
                   return Column(mainAxisSize: MainAxisSize.min, children: [
                     Text(l.passwordSecureAccount, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface), textAlign: TextAlign.center),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(l.passwordEnterNew, style: TextStyle(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
                   ]);
                 }),
-                SizedBox(height: 32),
+                const SizedBox(height: 32),
 
                 // SEC-10 fix: current password field (not shown during recovery flow)
                 if (!_isRecoveryFlow) ...[
@@ -175,26 +176,26 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                   controller: _passwordController,
                   style: TextStyle(color: cs.onSurface),
                   decoration: InputDecoration(
-                    labelText: AppL.of(context)!.passwordNew, 
+                    labelText: context.l10n.passwordNew, 
                     labelStyle: TextStyle(color: cs.onSurfaceVariant),
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                     enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: cs.outlineVariant))
                   ),
                   obscureText: true,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 TextField(
                   controller: _confirmPasswordController,
                   style: TextStyle(color: cs.onSurface),
                   decoration: InputDecoration(
-                    labelText: AppL.of(context)!.passwordConfirm, 
+                    labelText: context.l10n.passwordConfirm, 
                     labelStyle: TextStyle(color: cs.onSurfaceVariant),
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                     enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: cs.outlineVariant))
                   ),
                   obscureText: true,
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -203,7 +204,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed),
                     child: _isLoading 
                       ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: cs.surface, strokeWidth: 2))
-                      : Text(AppL.of(context)!.passwordSave, style: TextStyle(color: cs.surface, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                      : Text(context.l10n.passwordSave, style: TextStyle(color: cs.surface, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   ),
                 ),
               ],
@@ -212,7 +213,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
         ),
       ),
     );
-      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+      return isDesktop ? Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: inner)) : inner;
     });
   }
 }

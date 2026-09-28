@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/rev_app_bar.dart';
 import 'core/utils/auth_url.dart';
@@ -127,7 +126,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: authNotifier,
     
-    // STRICT SECURITY ROLE GUARDS & ROUTING INTERCEPTOR
+    // Role-based routing guards & ROUTING INTERCEPTOR
     redirect: (context, state) async {
       final session = Supabase.instance.client.auth.currentSession;
       final isLoggingIn = state.uri.path == '/login';
@@ -276,13 +275,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // --- PASSWORD RECOVERY ---
       GoRoute(
         path: '/update-password',
-        builder: (context, state) => UpdatePasswordScreen(),
+        builder: (context, state) => const UpdatePasswordScreen(),
       ),
 
       // --- CUSTOMER DOMAIN ---
       GoRoute(
         path: '/',
-        builder: (context, state) => CustomerLandingScreen(), // Public Home Landing
+        builder: (context, state) => const CustomerLandingScreen(), // Public Home Landing
       ),
       GoRoute(
         path: '/partner/register',
@@ -290,7 +289,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/estimator',
-        builder: (context, state) => EstimatorScreen(), // Move estimator here
+        builder: (context, state) => const EstimatorScreen(), // Move estimator here
       ),
       GoRoute(
         path: '/booking/schedule/:jobId',
@@ -348,7 +347,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/notifications',
-        builder: (context, state) => CustomerNotificationsScreen(),
+        builder: (context, state) => const CustomerNotificationsScreen(),
       ),
       GoRoute(
         path: '/notification-settings',
@@ -492,17 +491,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/partner-dashboard',
-        builder: (context, state) => PartnerDashboardDesktop(),
+        builder: (context, state) => const PartnerDashboardDesktop(),
       ),
       GoRoute(
         path: '/partner-dashboard/profile',
         // PartnerProfileScreen now embeds PartnerShellScreen internally
-        builder: (context, state) => PartnerProfileScreen(),
+        builder: (context, state) => const PartnerProfileScreen(),
       ),
       GoRoute(
         path: '/partner-dashboard/settings',
         // PartnerSettingsScreen now embeds PartnerShellScreen internally
-        builder: (context, state) => PartnerSettingsScreen(),
+        builder: (context, state) => const PartnerSettingsScreen(),
       ),
       GoRoute(
         path: '/partner-dashboard/staff',
@@ -515,19 +514,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/partner-dashboard/schedule',
         // ScheduleConfigScreen is a pure body widget — wrap it with the shell
-        builder: (context, state) => PartnerShellScreen(
+        builder: (context, state) => const PartnerShellScreen(
           activeRoute: '/partner-dashboard/schedule',
           pageTitle: 'Schedule Config',
-          child: const ScheduleConfigScreen(),
+          child: ScheduleConfigScreen(),
         ),
       ),
       GoRoute(
         path: '/partner-dashboard/quota',
         // PanelDurationConfigScreen is a pure body widget — wrap with shell
-        builder: (context, state) => PartnerShellScreen(
+        builder: (context, state) => const PartnerShellScreen(
           activeRoute: '/partner-dashboard/quota',
           pageTitle: 'Quota & Panel Durations',
-          child: const PanelDurationConfigScreen(),
+          child: PanelDurationConfigScreen(),
         ),
       ),
       GoRoute(
@@ -708,7 +707,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
     return Consumer(builder: (context, ref, child) {
       return Scaffold(
         backgroundColor: bgColor,
-        appBar: ReVAppBar(),
+        appBar: const ReVAppBar(),
         body: Center(
           child: SingleChildScrollView(
             child: Container(
@@ -735,7 +734,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                           height: 40,
                           color: theme.colorScheme.primary,
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Text(
                           're-V',
                           style: TextStyle(
@@ -853,9 +852,9 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                       child: Text('Back to Login', style: TextStyle(color: textColor.withValues(alpha: 0.8))),
                     ),
                   ],
-                  SizedBox(height: 16),
-                  Row(
-                    children: const [
+                  const SizedBox(height: 16),
+                  const Row(
+                    children: [
                       Expanded(child: Divider()),
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
@@ -864,7 +863,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                       Expanded(child: Divider()),
                     ],
                   ),
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     height: 48,

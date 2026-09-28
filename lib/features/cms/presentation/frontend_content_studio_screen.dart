@@ -417,7 +417,9 @@ class _ContentTabState extends State<_ContentTab> {
       _ppTitle, _ppUpdated, _ppIntro, _ppTitleId, _ppIntroId,
       ..._ppST, ..._ppSB, ..._ppSTId, ..._ppSBId,
       ..._faqQ, ..._faqA, ..._faqQId, ..._faqAId,
-    ]) c.dispose();
+    ]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -782,7 +784,9 @@ class _PricingTabState extends State<_PricingTab> {
 
   @override
   void dispose() {
-    for (final c in [..._rate.values, ..._min.values, ..._max.values]) c.dispose();
+    for (final c in [..._rate.values, ..._min.values, ..._max.values]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -874,7 +878,7 @@ class _PricingTabState extends State<_PricingTab> {
                   Text('Rp ${fmt.format(base * sMin)}', style: const TextStyle(fontSize: 11, color: Color(0xFF059669))),
                   Text('Rp ${fmt.format(base * sMax)}', style: const TextStyle(fontSize: 11, color: Color(0xFFDC2626))),
                 ])),
-                SizedBox(width: 90, child: Center(child: Switch(value: active, activeColor: cs.primary, onChanged: (v) async {
+                SizedBox(width: 90, child: Center(child: Switch(value: active, activeThumbColor: cs.primary, onChanged: (v) async {
                   final updated = Map<String, dynamic>.from(r);
                   updated['is_active'] = v;
                   await widget.onUpdate(updated);
@@ -923,7 +927,7 @@ class _NlpTab extends StatelessWidget {
             Text('${intent.accuracy}% accuracy', style: const TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w600)),
           ]),
           const SizedBox(width: 16),
-          Switch(value: active, activeColor: cs.primary, onChanged: (v) => onToggle(i, v)),
+          Switch(value: active, activeThumbColor: cs.primary, onChanged: (v) => onToggle(i, v)),
         ]));
     })),
   ]));
@@ -994,7 +998,7 @@ class _Flag extends StatelessWidget {
         Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface)),
         Text(sub, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
       ])),
-      Switch(value: value, activeColor: cs.primary, onChanged: onChange),
+      Switch(value: value, activeThumbColor: cs.primary, onChanged: onChange),
     ]));
 }
 
@@ -1002,7 +1006,7 @@ class _Field extends StatelessWidget {
   final ColorScheme cs; final String label, hint;
   final TextEditingController ctrl; final int maxLines; final VoidCallback onChange;
   const _Field({required this.cs, required this.label, required this.hint,
-    required this.ctrl, this.maxLines = 1, required this.onChange});
+    required this.ctrl, required this.onChange}) : maxLines = 1;
   @override
   Widget build(BuildContext context) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
     SizedBox(width: 110, child: Padding(padding: const EdgeInsets.only(top: 12),
@@ -1165,7 +1169,9 @@ class _AboutCmsTabState extends State<_AboutCmsTab> {
       _v1t, _v1s, _v1tId, _v1sId, _v2t, _v2s, _v2tId, _v2sId,
       _v3t, _v3s, _v3tId, _v3sId, _v4t, _v4s, _v4tId, _v4sId,
       _pcTitle, _pcSub, _pcTitleId, _pcSubId,
-    ]) c.dispose();
+    ]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -1333,7 +1339,9 @@ class _PrivacyCmsTabState extends State<_PrivacyCmsTab> {
   @override
   void dispose() {
     for (final c in [_pageTitleEn, _pageTitleId, _introEn, _introId, _updatedEn, _updatedId,
-      ..._secTitleEn, ..._secTitleId, ..._secBodyEn, ..._secBodyId]) c.dispose();
+      ..._secTitleEn, ..._secTitleId, ..._secBodyEn, ..._secBodyId]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -1354,8 +1362,10 @@ class _PrivacyCmsTabState extends State<_PrivacyCmsTab> {
     }
     await Future.wait(saves);
     setState(() => _dirty = false);
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Privacy Policy saved'), backgroundColor: Color(0xFF059669)));
+    }
   }
 
   void _mark() => setState(() => _dirty = true);

@@ -5,9 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../notifications/application/notifications_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/l10n/app_localizations.dart';
-import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/widgets/app_settings_sheet.dart';
 import 'vehicle_registration_modal.dart';
+import '../../../../core/l10n/app_localizations_extension.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Providers
@@ -128,7 +128,7 @@ class CustomerProfileScreen extends ConsumerWidget {
       case 'partner_driver':  return 'Driver';
       case 'partner_mechanic': return 'Partner';
       case 'master_admin':    return 'Admin';
-      default:                return AppL.of(context)!.profileMember;
+      default:                return context.l10n.profileMember;
     }
   }
 
@@ -208,11 +208,11 @@ class CustomerProfileScreen extends ConsumerWidget {
                           context, ref, userName, userEmail, userAvatar, initials,
                           phone: dbProfile?['phone']?.toString() ?? '',
                           role: user?.appMetadata['role']?.toString() ?? 'customer'),
-                      SizedBox(height: 16), if (user?.appMetadata['role'] == 'partner_staff' || user?.appMetadata['role'] == 'partner_driver' || user?.appMetadata['role'] == 'partner_mechanic') Padding(padding: const EdgeInsets.only(bottom: 16), child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), ), onPressed: () => GoRouter.of(context).go('/ops'), icon: const Icon(Icons.rocket_launch), label: const Text('Open Workshop Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), ), ),
+                      const SizedBox(height: 16), if (user?.appMetadata['role'] == 'partner_staff' || user?.appMetadata['role'] == 'partner_driver' || user?.appMetadata['role'] == 'partner_mechanic') Padding(padding: const EdgeInsets.only(bottom: 16), child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), ), onPressed: () => GoRouter.of(context).go('/ops'), icon: const Icon(Icons.rocket_launch), label: const Text('Open Workshop Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), ), ),
 
                       // ── Digital Garage ────────────────────────────────────
                       _buildGarageHeader(context, ref),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 12),
                       ...ref.watch(customerVehiclesProvider).when(
                             data: (vehicles) {
                               if (vehicles.isEmpty) {
@@ -247,7 +247,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                               }).toList();
                             },
                             loading: () => [
-                              Center(
+                              const Center(
                                   child: Padding(
                                 padding: EdgeInsets.all(24),
                                 child: CircularProgressIndicator(),
@@ -259,11 +259,11 @@ class CustomerProfileScreen extends ConsumerWidget {
                             ],
                           ),
                       _buildAddVehicleButton(context, ref),
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
                       // ── Job History ───────────────────────────────────────
                       _buildHistoryHeader(context, ref),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 12),
                       ...ref.watch(customerJobsProvider).when(
                             data: (jobs) {
                               if (jobs.isEmpty) {
@@ -288,7 +288,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                               }).toList();
                             },
                             loading: () => [
-                              Center(
+                              const Center(
                                   child: Padding(
                                 padding: EdgeInsets.all(24),
                                 child: CircularProgressIndicator(),
@@ -299,21 +299,21 @@ class CustomerProfileScreen extends ConsumerWidget {
                                   'Pull down to retry.')
                             ],
                           ),
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
                       // ── Account & Telemetry ───────────────────────────────
-                      Text(AppL.of(context)!.profileAccountTelemetry,
+                      Text(context.l10n.profileAccountTelemetry,
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.onSurface)),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 12),
                       _buildAccountTiles(context, ref),
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
                       // ── Logout ────────────────────────────────────────────
                       _buildLogout(context),
-                      SizedBox(height: 32),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -403,7 +403,7 @@ class CustomerProfileScreen extends ConsumerWidget {
               children: [
                 Image.asset('assets/images/revive_logo.png',
                     height: 28, color: AppColors.fireRed),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,7 +414,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                             fontWeight: FontWeight.bold,
                             height: 1.0,
                             color: Theme.of(context).colorScheme.onSurface)),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text('GARAGE PROFILE',
                         style: TextStyle(
                             fontSize: 11,
@@ -507,7 +507,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                           style: TextStyle(
                               fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
-                        Divider(height: 16),
+                        const Divider(height: 16),
                       ],
                     ),
                   ),
@@ -516,8 +516,8 @@ class CustomerProfileScreen extends ConsumerWidget {
                     child: Row(children: [
                       Icon(Icons.person_outline,
                           size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      SizedBox(width: 10),
-                      Text(AppL.of(context)!.profileTitle),
+                      const SizedBox(width: 10),
+                      Text(context.l10n.profileTitle),
                     ]),
                   ),
                   PopupMenuItem(
@@ -525,19 +525,19 @@ class CustomerProfileScreen extends ConsumerWidget {
                     child: Row(children: [
                       Icon(Icons.settings_outlined,
                           size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      SizedBox(width: 10),
-                      Text(AppL.of(context)!.settings),
+                      const SizedBox(width: 10),
+                      Text(context.l10n.settings),
                     ]),
                   ),
                   const PopupMenuDivider(),
                   PopupMenuItem(
                     value: 'logout',
                     child: Row(children: [
-                      Icon(Icons.logout,
+                      const Icon(Icons.logout,
                           size: 18, color: AppColors.primaryContainer),
-                      SizedBox(width: 10),
-                      Text(AppL.of(context)!.logout,
-                          style: TextStyle(
+                      const SizedBox(width: 10),
+                      Text(context.l10n.logout,
+                          style: const TextStyle(
                               color: AppColors.primaryContainer,
                               fontWeight: FontWeight.bold)),
                     ]),
@@ -689,7 +689,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     // Name / email
                     Expanded(
                       child: Column(
@@ -709,7 +709,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              SizedBox(width: 6),
+                              const SizedBox(width: 6),
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 6, vertical: 2),
@@ -723,7 +723,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                                     Icon(_roleBadgeIcon(role),
                                         color: _roleBadgeForeground(role, context),
                                         size: 12),
-                                    SizedBox(width: 4),
+                                    const SizedBox(width: 4),
                                     Text(_roleBadgeLabel(role, context),
                                         style: TextStyle(
                                             fontSize: 10,
@@ -734,13 +734,13 @@ class CustomerProfileScreen extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             userEmail.isNotEmpty ? userEmail : '—',
                             style: TextStyle(
                                 fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Row(
                             children: [
                               Image.asset('assets/images/google_logo.png',
@@ -750,8 +750,8 @@ class CustomerProfileScreen extends ConsumerWidget {
                                       Icons.account_circle,
                                       size: 14,
                                       color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                              SizedBox(width: 4),
-                              Text(AppL.of(context)!.profileSignedInGoogle,
+                              const SizedBox(width: 4),
+                              Text(context.l10n.profileSignedInGoogle,
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: Theme.of(context).colorScheme.onSurfaceVariant)),
@@ -769,7 +769,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 // Membership perks strip
                 Container(
                   padding: const EdgeInsets.all(10),
@@ -793,21 +793,21 @@ class CustomerProfileScreen extends ConsumerWidget {
                                 offset: const Offset(0, 1))
                           ],
                         ),
-                        child: Icon(Icons.verified_user,
+                        child: const Icon(Icons.verified_user,
                             color: AppColors.primaryContainer, size: 18),
                       ),
-                      SizedBox(width: 10),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(AppL.of(context)!.profileReviveMember,
+                            Text(context.l10n.profileReviveMember,
                                 style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 0.5,
                                     color: Theme.of(context).colorScheme.onSurface)),
-                            Text(AppL.of(context)!.profileMemberPerks,
+                            Text(context.l10n.profileMemberPerks,
                                 style: TextStyle(
                                     fontSize: 11,
                                     color: Theme.of(context).colorScheme.onSurfaceVariant)),
@@ -839,10 +839,10 @@ class CustomerProfileScreen extends ConsumerWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.garage,
+            const Icon(Icons.garage,
                 color: AppColors.primaryContainer, size: 20),
-            SizedBox(width: 6),
-            Text(AppL.of(context)!.profileGarageTitle,
+            const SizedBox(width: 6),
+            Text(context.l10n.profileGarageTitle,
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -889,14 +889,14 @@ class CustomerProfileScreen extends ConsumerWidget {
         children: [
           Icon(Icons.garage_outlined,
               size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-          SizedBox(height: 12),
-          Text(AppL.of(context)!.profileGarageEmpty,
+          const SizedBox(height: 12),
+          Text(context.l10n.profileGarageEmpty,
               style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface)),
-          SizedBox(height: 4),
-          Text(AppL.of(context)!.profileGarageEmptyDesc,
+          const SizedBox(height: 4),
+          Text(context.l10n.profileGarageEmptyDesc,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
@@ -966,7 +966,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                                   letterSpacing: 0.5)),
                         ),
                         if (hasActiveJob) ...[
-                          SizedBox(width: 6),
+                          const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
@@ -981,14 +981,14 @@ class CustomerProfileScreen extends ConsumerWidget {
                                 Container(
                                   width: 6,
                                   height: 6,
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: AppColors.primaryContainer,
                                   ),
                                 ),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(statusLabel,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.primaryContainer)),
@@ -996,7 +996,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                             ),
                           ),
                         ] else if (year.isNotEmpty) ...[
-                          SizedBox(width: 6),
+                          const SizedBox(width: 6),
                           Text('$year Model',
                               style: TextStyle(
                                   fontSize: 10,
@@ -1004,7 +1004,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                         ],
                       ],
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       title.isNotEmpty ? title : 'Unknown Vehicle',
                       style: TextStyle(
@@ -1012,7 +1012,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.onSurface),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Wrap(
                       spacing: 8,
                       runSpacing: 4,
@@ -1044,7 +1044,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                                     shape: BoxShape.circle,
                                     color: Theme.of(context).colorScheme.onSurface),
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(color,
                                   style: TextStyle(
                                       fontSize: 11,
@@ -1080,7 +1080,7 @@ class CustomerProfileScreen extends ConsumerWidget {
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           // Status strip
           Container(
             padding: const EdgeInsets.all(10),
@@ -1107,7 +1107,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                             color: hasActiveJob
                                 ? AppColors.primaryContainer
                                 : Colors.grey)),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Text(
                       hasActiveJob
                           ? 'Active Repair · $statusLabel'
@@ -1131,7 +1131,7 @@ class CustomerProfileScreen extends ConsumerWidget {
               ],
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           // CTA — Track if in repair, Book if idle
           SizedBox(
             width: double.infinity,
@@ -1139,9 +1139,9 @@ class CustomerProfileScreen extends ConsumerWidget {
                 ? ElevatedButton.icon(
                     onPressed: () =>
                         context.push('/track/$activeJobId'),
-                    icon: Icon(Icons.fmd_good_outlined, size: 16),
-                    label: Text(AppL.of(context)!.profileTrackLive,
-                        style: TextStyle(fontSize: 13)),
+                    icon: const Icon(Icons.fmd_good_outlined, size: 16),
+                    label: Text(context.l10n.profileTrackLive,
+                        style: const TextStyle(fontSize: 13)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryContainer,
                       foregroundColor: Theme.of(context).colorScheme.surface,
@@ -1153,9 +1153,9 @@ class CustomerProfileScreen extends ConsumerWidget {
                   )
                 : OutlinedButton.icon(
                     onPressed: () => context.push('/estimator'),
-                    icon: Icon(Icons.auto_fix_high,
+                    icon: const Icon(Icons.auto_fix_high,
                         size: 16, color: AppColors.primaryContainer),
-                    label: Text(AppL.of(context)!.profileBookService,
+                    label: Text(context.l10n.profileBookService,
                             style: TextStyle(
                             color: Theme.of(context).colorScheme.onSurface, fontSize: 13)),
                     style: OutlinedButton.styleFrom(
@@ -1205,12 +1205,12 @@ class CustomerProfileScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.primaryContainer.withValues(alpha: 0.1)),
-              child: Icon(Icons.add,
+              child: const Icon(Icons.add,
                   size: 20, color: AppColors.primaryContainer),
             ),
-            SizedBox(width: 10),
-            Text(AppL.of(context)!.profileRegisterVehicle,
-                style: TextStyle(
+            const SizedBox(width: 10),
+            Text(context.l10n.profileRegisterVehicle,
+                style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primaryContainer)),
@@ -1234,10 +1234,10 @@ class CustomerProfileScreen extends ConsumerWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.history_edu,
+            const Icon(Icons.history_edu,
                 color: AppColors.primaryContainer, size: 20),
-            SizedBox(width: 6),
-            Text(AppL.of(context)!.profileJobHistory,
+            const SizedBox(width: 6),
+            Text(context.l10n.profileJobHistory,
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -1250,12 +1250,12 @@ class CustomerProfileScreen extends ConsumerWidget {
               // TODO: navigate to full job history screen
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                    content: Text(AppL.of(context)!.profileHistoryComing),
+                    content: Text(context.l10n.profileHistoryComing),
                     behavior: SnackBarBehavior.floating),
               );
             },
             child: Text('View All ($count)',
-                style: TextStyle(
+                style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primaryContainer)),
@@ -1307,7 +1307,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                                 fontFamily: 'monospace',
                                 fontSize: 13,
                                 color: Theme.of(context).colorScheme.onSurface)),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
@@ -1317,14 +1317,14 @@ class CustomerProfileScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(statusLabel,
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.primaryContainer)),
                         ),
                       ],
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                         jobTitle.isNotEmpty
                             ? jobTitle
@@ -1350,7 +1350,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(cost,
-                      style: TextStyle(
+                      style: const TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
@@ -1363,15 +1363,15 @@ class CustomerProfileScreen extends ConsumerWidget {
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () => context.push('/track/${job['id']}'),
-                  icon: Icon(Icons.fmd_good_outlined, size: 15),
-                  label: Text(AppL.of(context)!.profileTrackOrder,
-                      style: TextStyle(fontSize: 12)),
+                  icon: const Icon(Icons.fmd_good_outlined, size: 15),
+                  label: Text(context.l10n.profileTrackOrder,
+                      style: const TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryContainer,
                     foregroundColor: Theme.of(context).colorScheme.surface,
@@ -1382,7 +1382,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
@@ -1393,8 +1393,8 @@ class CustomerProfileScreen extends ConsumerWidget {
                           behavior: SnackBarBehavior.floating),
                     );
                   },
-                  icon: Icon(Icons.verified_outlined, size: 15),
-                  label: Text('Guarantee',
+                  icon: const Icon(Icons.verified_outlined, size: 15),
+                  label: const Text('Guarantee',
                       style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -1458,7 +1458,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                                 fontFamily: 'monospace',
                                 fontSize: 13,
                                 color: Theme.of(context).colorScheme.onSurface)),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
@@ -1466,15 +1466,15 @@ class CustomerProfileScreen extends ConsumerWidget {
                             color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(AppL.of(context)!.profileCompleted,
-                              style: TextStyle(
+                          child: Text(context.l10n.profileCompleted,
+                              style: const TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.green)),
                         ),
                       ],
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                         jobTitle.isNotEmpty
                             ? jobTitle
@@ -1509,7 +1509,7 @@ class CustomerProfileScreen extends ConsumerWidget {
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -1521,8 +1521,8 @@ class CustomerProfileScreen extends ConsumerWidget {
                           behavior: SnackBarBehavior.floating),
                     );
                   },
-                  icon: Icon(Icons.receipt_long_outlined, size: 15),
-                  label: Text('Tax Receipt',
+                  icon: const Icon(Icons.receipt_long_outlined, size: 15),
+                  label: const Text('Tax Receipt',
                       style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -1533,7 +1533,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
@@ -1544,8 +1544,8 @@ class CustomerProfileScreen extends ConsumerWidget {
                           behavior: SnackBarBehavior.floating),
                     );
                   },
-                  icon: Icon(Icons.verified_outlined, size: 15),
-                  label: Text('Guarantee',
+                  icon: const Icon(Icons.verified_outlined, size: 15),
+                  label: const Text('Guarantee',
                       style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -1673,7 +1673,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8)),
               child: Icon(icon, color: iconColor, size: 20),
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1696,7 +1696,7 @@ class CustomerProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _divider() => Divider(
+  Widget _divider() => const Divider(
       height: 1, thickness: 1, color: Color(0xFFF0F0F0), indent: 16);
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1710,10 +1710,10 @@ class CustomerProfileScreen extends ConsumerWidget {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () => _signOut(context),
-            icon: Icon(Icons.logout,
+            icon: const Icon(Icons.logout,
                 color: AppColors.primaryContainer, size: 20),
-            label: Text(AppL.of(context)!.profileLogOut,
-                style: TextStyle(
+            label: Text(context.l10n.profileLogOut,
+                style: const TextStyle(
                     color: AppColors.primaryContainer,
                     fontSize: 14,
                     fontWeight: FontWeight.bold)),
@@ -1726,8 +1726,8 @@ class CustomerProfileScreen extends ConsumerWidget {
             ),
           ),
         ),
-        SizedBox(height: 12),
-        Text(AppL.of(context)!.profileTelemetryVersion,
+        const SizedBox(height: 12),
+        Text(context.l10n.profileTelemetryVersion,
             style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6))),
@@ -1750,12 +1750,12 @@ class CustomerProfileScreen extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline,
+          const Icon(Icons.error_outline,
               color: AppColors.fireRed, size: 20),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(message,
-                style: TextStyle(
+                style: const TextStyle(
                     fontSize: 13, color: AppColors.fireRed)),
           ),
         ],
@@ -1781,13 +1781,13 @@ class CustomerProfileScreen extends ConsumerWidget {
           Icon(icon,
               size: 36,
               color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(title,
               style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface)),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -1843,7 +1843,7 @@ class CustomerProfileScreen extends ConsumerWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content:
-                      Text(AppL.of(context)!.profileSelectJob),
+                      Text(context.l10n.profileSelectJob),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -1881,7 +1881,7 @@ class CustomerProfileScreen extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(isActive ? activeIcon : icon, color: color, size: 24),
-            SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text(label,
                 style: TextStyle(
                     fontSize: 11,
@@ -2006,7 +2006,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                 color: AppColors.primaryContainer.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.person_outline, color: AppColors.primaryContainer, size: 20),
+              child: const Icon(Icons.person_outline, color: AppColors.primaryContainer, size: 20),
             ),
             const SizedBox(width: 12),
             Text('Edit Profile', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface)),
@@ -2024,7 +2024,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.4),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cs.outlineVariant)),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cs.outlineVariant)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryContainer, width: 2)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primaryContainer, width: 2)),
             ),
           ),
           const SizedBox(height: 14),
@@ -2040,7 +2040,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.4),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cs.outlineVariant)),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cs.outlineVariant)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryContainer, width: 2)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primaryContainer, width: 2)),
             ),
           ),
           if (_error != null) ...[

@@ -10,6 +10,7 @@ import '../../../../core/jobs/job_status.dart'; // S-08 fix
 import 'partner_dashboard_controller.dart';
 import 'partner_dashboard_mobile.dart';
 import 'widgets/partner_job_action.dart';
+import '../../../core/l10n/app_localizations_extension.dart';
 
 // ─── Brand accent colors (theme-invariant) ───────────────────────────────────
 const _primary = Color(0xFFa40016);
@@ -32,7 +33,7 @@ bool _isInBay(PartnerJobNode j) =>
 
 // ─── Main Widget ─────────────────────────────────────────────────────────────
 class PartnerDashboardDesktop extends ConsumerStatefulWidget {
-  PartnerDashboardDesktop({super.key});
+  const PartnerDashboardDesktop({super.key});
 
   @override
   ConsumerState<PartnerDashboardDesktop> createState() => _PartnerDashboardDesktopState();
@@ -104,7 +105,7 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
       Widget inner = Scaffold(
       backgroundColor: cs.surface,
       body: state.isLoading && state.activeJobs.isEmpty
-          ? Center(child: CircularProgressIndicator(color: _primaryContainer))
+          ? const Center(child: CircularProgressIndicator(color: _primaryContainer))
           : Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -142,7 +143,7 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
                                 awaiting: inQC.length,
                                 unread: state.unreadMessageCount,
                               ),
-                              SizedBox(height: 24),
+                              const SizedBox(height: 24),
 
                               // TITLE + FILTER PILLS
                               Row(
@@ -151,10 +152,10 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(AppL.of(context)!.partnerJobBoard,
+                                      Text(context.l10n.partnerJobBoard,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface)),
                 const SizedBox(height: 4),
-                Text(AppL.of(context)!.partnerJobBoardSub,
+                Text(context.l10n.partnerJobBoardSub,
                                           style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                                     ],
                                   ),
@@ -174,7 +175,7 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 24),
+                              const SizedBox(height: 24),
 
                               // KANBAN BOARD
                               if (state.errorMessage != null && allJobs.isEmpty)
@@ -191,21 +192,21 @@ class _PartnerDashboardDesktopState extends ConsumerState<PartnerDashboardDeskto
                                       jobs: incoming,
                                       controller: controller,
                                     ),
-                                    SizedBox(width: 16),
+                                    const SizedBox(width: 16),
                                     _Swimlane(
                                       title: 'Body Repair / Frame',
                                       color: _primary,
                                       jobs: inBay,
                                       controller: controller,
                                     ),
-                                    SizedBox(width: 16),
+                                    const SizedBox(width: 16),
                                     _Swimlane(
                                       title: 'Heated Paint Chamber',
                                       color: _amber500,
                                       jobs: inPaint,
                                       controller: controller,
                                     ),
-                                    SizedBox(width: 16),
+                                    const SizedBox(width: 16),
                                     _Swimlane(
                                       title: 'QC Audit & Handover',
                                       color: _emerald500,
@@ -256,7 +257,7 @@ class _Sidebar extends StatelessWidget {
       width: 272,
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-        boxShadow: [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 1), blurRadius: 8)],
+        boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 1), blurRadius: 8)],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -273,22 +274,22 @@ class _Sidebar extends StatelessWidget {
                   children: [
                     Container(
                       width: 32, height: 32,
-                      decoration: BoxDecoration(color: _primaryContainer, shape: BoxShape.circle),
-                      child: Icon(Icons.build_circle, color: _onPrimary, size: 18),
+                      decoration: const BoxDecoration(color: _primaryContainer, shape: BoxShape.circle),
+                      child: const Icon(Icons.build_circle, color: _onPrimary, size: 18),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('re-V', style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text(AppL.of(context)!.partnerOpsCore, style: TextStyle(color: _primary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                        Text(context.l10n.partnerOpsCore, style: const TextStyle(color: _primary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                       ],
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               // Active Hub info
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -297,14 +298,14 @@ class _Sidebar extends StatelessWidget {
                   decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(8)),
                   child: Row(
                     children: [
-                      Icon(Icons.warehouse_outlined, color: _primary, size: 18),
-                      SizedBox(width: 8),
+                      const Icon(Icons.warehouse_outlined, color: _primary, size: 18),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(AppL.of(context)!.partnerActiveHub, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                            Text(AppL.of(context)!.partnerWorkshopOps, style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text(context.l10n.partnerActiveHub, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                            Text(context.l10n.partnerWorkshopOps, style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ),
@@ -312,9 +313,9 @@ class _Sidebar extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               // Nav
-              _SidebarNavItem(icon: Icons.view_kanban_outlined, text: 'Job Board / Pipeline', isActive: true),
+              const _SidebarNavItem(icon: Icons.view_kanban_outlined, text: 'Job Board / Pipeline', isActive: true),
               _SidebarNavItem(
                 icon: Icons.calendar_month_outlined,
                 text: 'Schedule Config',
@@ -352,20 +353,20 @@ class _Sidebar extends StatelessWidget {
               children: [
                 Container(
                   width: 32, height: 32,
-                  decoration: BoxDecoration(color: _primary, shape: BoxShape.circle),
-                  child: Icon(Icons.person, color: _onPrimary, size: 18),
+                  decoration: const BoxDecoration(color: _primary, shape: BoxShape.circle),
+                  child: const Icon(Icons.person, color: _onPrimary, size: 18),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(AppL.of(context)!.partnerSignedIn, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.bold)),
-                      Text(AppL.of(context)!.partnerAccount, style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text(context.l10n.partnerSignedIn, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.bold)),
+                      Text(context.l10n.partnerAccount, style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
-                Container(width: 8, height: 8, decoration: BoxDecoration(color: _emerald500, shape: BoxShape.circle)),
+                Container(width: 8, height: 8, decoration: const BoxDecoration(color: _emerald500, shape: BoxShape.circle)),
               ],
             ),
           ),
@@ -406,13 +407,13 @@ class _SidebarNavItem extends StatelessWidget {
           child: Row(
             children: [
               Icon(icon, color: isActive ? const Color(0xFFFFE1DE) : Theme.of(context).colorScheme.onSurfaceVariant, size: 18),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(child: Text(text, style: TextStyle(color: isActive ? const Color(0xFFFFE1DE) : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: isActive ? FontWeight.bold : FontWeight.w500))),
               if (badge > 0)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(color: _primaryContainer, borderRadius: BorderRadius.circular(10)),
-                  child: Text('$badge', style: TextStyle(color: _onPrimary, fontSize: 10, fontWeight: FontWeight.bold)),
+                  child: Text('$badge', style: const TextStyle(color: _onPrimary, fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
             ],
           ),
@@ -449,7 +450,7 @@ class _Header extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 32),
       decoration: BoxDecoration(
         color: cs.surface,
-        boxShadow: [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 1), blurRadius: 8)],
+        boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 1), blurRadius: 8)],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -463,7 +464,7 @@ class _Header extends ConsumerWidget {
             child: Row(
               children: [
                 Icon(Icons.search, color: cs.onSurfaceVariant, size: 18),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     controller: searchController,
@@ -489,12 +490,12 @@ class _Header extends ConsumerWidget {
                 child: Row(
                   children: [
                     Container(width: 8, height: 8, decoration: BoxDecoration(color: isLive ? _emerald500 : Colors.orange, shape: BoxShape.circle)),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Text(isLive ? 'LIVE SYNC' : 'RECONNECTING', style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               IconButton(
                 icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: cs.onSurfaceVariant),
                 tooltip: 'Toggle Theme',
@@ -502,20 +503,20 @@ class _Header extends ConsumerWidget {
                   ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
                 },
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(userName, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
-                  Text(AppL.of(context)!.partnerWorkshopPartner, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                  Text(context.l10n.partnerWorkshopPartner, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
                 ],
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Container(
                 width: 32, height: 32,
-                decoration: BoxDecoration(color: _primary, shape: BoxShape.circle),
-                child: Icon(Icons.person, color: _onPrimary, size: 18),
+                decoration: const BoxDecoration(color: _primary, shape: BoxShape.circle),
+                child: const Icon(Icons.person, color: _onPrimary, size: 18),
               ),
             ],
           ),
@@ -540,11 +541,11 @@ class _KpiStrip extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: _KpiCard(title: 'Active Repairs', value: '$totalJobs', subtitle: 'total jobs', icon: Icons.build_outlined, iconColor: _primary)),
-        SizedBox(width: 16),
+        const SizedBox(width: 16),
         Expanded(child: _KpiCard(title: 'In Active Bay', value: '$inProgress', subtitle: 'in-progress', icon: Icons.hardware_outlined, iconColor: _amber500)),
-        SizedBox(width: 16),
+        const SizedBox(width: 16),
         Expanded(child: _KpiCard(title: 'Awaiting Dispatch', value: '$awaiting', subtitle: 'ready to go', icon: Icons.local_shipping_outlined, iconColor: _emerald500)),
-        SizedBox(width: 16),
+        const SizedBox(width: 16),
         Expanded(child: _KpiCard(title: 'Unread Messages', value: '$unread', subtitle: 'from admin', icon: Icons.forum_outlined, iconColor: _blue500, highlight: unread > 0)),
       ],
     );
@@ -570,7 +571,7 @@ class _KpiCard extends StatelessWidget {
         color: highlight ? _primaryContainer.withValues(alpha: 0.08) : cs.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(12),
         border: highlight ? Border.all(color: _primaryContainer.withValues(alpha: 0.3)) : null,
-        boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 1))],
+        boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 1))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -582,13 +583,13 @@ class _KpiCard extends StatelessWidget {
               Icon(icon, color: iconColor, size: 20),
             ],
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(value, style: TextStyle(color: highlight ? _primaryContainer : cs.onSurface, fontSize: 36, fontWeight: FontWeight.bold)),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               Text(subtitle, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
             ],
           ),
@@ -618,16 +619,16 @@ class _FilterPill extends StatelessWidget {
         decoration: BoxDecoration(
           color: isActive ? _primaryContainer : cs.surfaceContainerHighest.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Color(0x0D000000), blurRadius: 4)],
+          boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 4)],
         ),
         child: Row(
           children: [
             Text(text, style: TextStyle(color: isActive ? _onPrimary : cs.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
-            SizedBox(width: 6),
+            const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isActive ? Color(0x33FFFFFF) : cs.outlineVariant,
+                color: isActive ? const Color(0x33FFFFFF) : cs.outlineVariant,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(count, style: TextStyle(color: isActive ? _onPrimary : cs.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold)),
@@ -675,7 +676,7 @@ class _Swimlane extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           if (jobs.isEmpty)
             Container(
               width: double.infinity,
@@ -688,8 +689,8 @@ class _Swimlane extends StatelessWidget {
               child: Column(
                 children: [
                   Icon(Icons.inbox_outlined, color: cs.onSurfaceVariant, size: 28),
-                  SizedBox(height: 6),
-                  Text(AppL.of(context)!.partnerNoJobsStage, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                  const SizedBox(height: 6),
+                  Text(context.l10n.partnerNoJobsStage, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                 ],
               ),
             )
@@ -723,7 +724,7 @@ class _JobCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(10),
-        boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 2))],
+        boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -764,7 +765,7 @@ class _JobCard extends StatelessWidget {
               children: [
                 Text('${job.carMake} ${job.carModel}',
                     style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold, fontSize: 15)),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Row(
                   children: [
                     Text('• ${job.customerName}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
@@ -772,7 +773,7 @@ class _JobCard extends StatelessWidget {
                 ),
                 // The workshop needs the customer's number to arrange a pickup or
                 // chase a delivery, and it never appeared here before.
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 CustomerContactLine(
                   jobContactPhone: job.contactPhone,
                   profilePhone: job.profilePhone,
@@ -780,7 +781,7 @@ class _JobCard extends StatelessWidget {
                   dense: true,
                 ),
                 if (job.latestPhotoUrl != null) ...[
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   SignedImage(
                     fileKey: job.latestPhotoUrl,
                     width: double.infinity,
@@ -790,14 +791,14 @@ class _JobCard extends StatelessWidget {
                     errorWidget: const SizedBox.shrink(),
                   ),
                 ],
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
                         Icon(Icons.timer_outlined, size: 13, color: cs.onSurfaceVariant),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Text(elapsedText, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
                       ],
                     ),
@@ -811,16 +812,16 @@ class _JobCard extends StatelessWidget {
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: _primaryContainer,
-                                side: BorderSide(color: _primaryContainer, width: 1),
+                                side: const BorderSide(color: _primaryContainer, width: 1),
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                               ),
-                              icon: Icon(Icons.photo_camera_outlined, size: 13),
-                              label: Text(AppL.of(context)!.partnerPhotoBtn, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                              icon: const Icon(Icons.photo_camera_outlined, size: 13),
+                              label: Text(context.l10n.partnerPhotoBtn, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                               onPressed: () => controller.captureAndUploadProgressPhoto(job.id, job.status),
                             ),
                           ),
-                          SizedBox(width: 6),
+                          const SizedBox(width: 6),
                           SizedBox(
                             height: 28,
                             child: PartnerJobActionControl(
@@ -855,10 +856,10 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         children: [
           Icon(Icons.emoji_transportation, size: 56, color: cs.onSurfaceVariant),
-          SizedBox(height: 16),
-          Text(AppL.of(context)!.partnerNoActiveJobs, style: TextStyle(color: cs.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Text(context.l10n.partnerNoActiveJobs, style: TextStyle(color: cs.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text(AppL.of(context)!.partnerNoActiveJobsSub,
+          Text(context.l10n.partnerNoActiveJobsSub,
               style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14), textAlign: TextAlign.center),
         ],
       ),
@@ -880,9 +881,9 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         children: [
           Icon(Icons.error_outline, size: 40, color: cs.onErrorContainer),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Text(message, style: TextStyle(color: cs.onErrorContainer, fontSize: 14), textAlign: TextAlign.center),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text('Check that your partner account has a partner_id set in user metadata.',
               style: TextStyle(color: cs.onErrorContainer, fontSize: 12), textAlign: TextAlign.center),
         ],

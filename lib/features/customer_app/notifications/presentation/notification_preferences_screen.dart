@@ -4,6 +4,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../application/notifications_provider.dart';
+import '../../../../core/l10n/app_localizations_extension.dart';
 
 class NotificationPreferencesScreen extends ConsumerStatefulWidget {
   const NotificationPreferencesScreen({super.key});
@@ -59,7 +60,7 @@ class _NotificationPreferencesScreenState
     setState(() => _saving = false);
 
     if (mounted) {
-      final l = AppL.of(context)!;
+      final l = context.l10n;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l.saveChanges,
@@ -75,7 +76,7 @@ class _NotificationPreferencesScreenState
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final l = AppL.of(context)!;
+    final l = context.l10n;
     final prefsState = ref.watch(notificationPreferencesProvider);
 
     return Scaffold(
@@ -400,7 +401,7 @@ class _NotificationPreferencesScreenState
               Switch(
                 value: value,
                 onChanged: enabled ? onChanged : null,
-                activeColor: AppColors.fireRed,
+                activeThumbColor: AppColors.fireRed,
               ),
             ],
           ),

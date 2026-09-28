@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import 'partner_shell_screen.dart';
+import '../../../core/l10n/app_localizations_extension.dart';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const _primary = Color(0xFFa40016);
@@ -124,7 +124,7 @@ class _CommLinkNotifier extends StateNotifier<_CommLinkState> {
           .select()
           .single();
 
-      final newMsg = _CommMessage.fromMap(response as Map<String, dynamic>);
+      final newMsg = _CommMessage.fromMap(response);
       state = state.copyWith(
         messages: [...state.messages, newMsg],
         isSending: false,
@@ -230,7 +230,7 @@ class _PartnerCommLinkScreenState
 
     return PartnerShellScreen(
       activeRoute: '/partner-dashboard/commlink',
-      pageTitle: AppL.of(context)!.commlinkTitle,
+      pageTitle: context.l10n.commlinkTitle,
       child: chatArea,
     );
   }
@@ -265,12 +265,12 @@ class _CommHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(AppL.of(context)!.commlinkTitle,
+              Text(context.l10n.commlinkTitle,
                   style: TextStyle(
                       color: cs.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w700)),
-              Text(AppL.of(context)!.commlinkSub,
+              Text(context.l10n.commlinkSub,
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
             ],
           ),
@@ -287,7 +287,7 @@ class _CommHeader extends StatelessWidget {
             Container(width: 7, height: 7,
                 decoration: const BoxDecoration(color: _emerald500, shape: BoxShape.circle)),
             const SizedBox(width: 5),
-            Text(AppL.of(context)!.commlinkAdminOnline,
+            Text(context.l10n.commlinkAdminOnline,
                 style: TextStyle(
                     color: cs.onSurface,
                     fontSize: 10,
@@ -416,7 +416,7 @@ class _MessageBubble extends StatelessWidget {
                 if (isAdmin)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 3, left: 2),
-                    child: Text(AppL.of(context)!.commlinkReviveAdmin,
+                    child: Text(context.l10n.commlinkReviveAdmin,
                         style: TextStyle(
                             color: cs.onSurfaceVariant,
                             fontSize: 10,
@@ -498,13 +498,13 @@ class _EmptyCommState extends StatelessWidget {
           child: const Icon(Icons.forum_outlined, color: _primary, size: 36),
         ),
         const SizedBox(height: 16),
-        Text(AppL.of(context)!.commlinkNoMessages,
+        Text(context.l10n.commlinkNoMessages,
             style: TextStyle(
                 color: cs.onSurface,
                 fontSize: 18,
                 fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        Text(AppL.of(context)!.commlinkNoMessagesSub,
+        Text(context.l10n.commlinkNoMessagesSub,
             style: TextStyle(
                 color: cs.onSurfaceVariant, fontSize: 13, height: 1.5),
             textAlign: TextAlign.center),
@@ -577,8 +577,8 @@ class _MessageComposer extends StatelessWidget {
                     ],
             ),
             child: isSending
-                ? Padding(
-                    padding: const EdgeInsets.all(10),
+                ? const Padding(
+                    padding: EdgeInsets.all(10),
                     child: CircularProgressIndicator(
                         color: _primary, strokeWidth: 2))
                 : const Icon(Icons.send_rounded, color: _onPrimary, size: 20),

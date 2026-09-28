@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import 'partner_dashboard_controller.dart';
+import '../../../core/l10n/app_localizations_extension.dart';
 
 // ─── Brand accent colors (theme-invariant) ────────────────────────────────────
 const _shellPrimary = Color(0xFFa40016);
@@ -145,7 +146,7 @@ class _PartnerShellSidebar extends ConsumerWidget {
       width: 272,
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-        boxShadow: [BoxShadow(color: const Color(0x0A000000), offset: const Offset(0, 1), blurRadius: 8)],
+        boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 1), blurRadius: 8)],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -171,7 +172,7 @@ class _PartnerShellSidebar extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('re-V', style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text(AppL.of(context)!.partnerOpsCore,
+                      Text(context.l10n.partnerOpsCore,
                           style: const TextStyle(color: _shellPrimary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                     ],
                   ),
@@ -193,9 +194,9 @@ class _PartnerShellSidebar extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(AppL.of(context)!.partnerActiveHub,
+                        Text(context.l10n.partnerActiveHub,
                             style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                        Text(AppL.of(context)!.partnerWorkshopOps,
+                        Text(context.l10n.partnerWorkshopOps,
                             style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
                       ]),
                     ),
@@ -232,9 +233,9 @@ class _PartnerShellSidebar extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(AppL.of(context)!.partnerSignedIn,
+                  Text(context.l10n.partnerSignedIn,
                       style: TextStyle(color: cs.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.bold)),
-                  Text(AppL.of(context)!.partnerAccount,
+                  Text(context.l10n.partnerAccount,
                       style: TextStyle(color: cs.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
                 ]),
               ),
@@ -325,7 +326,7 @@ class _PartnerShellTopBar extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         color: cs.surface,
-        boxShadow: [BoxShadow(color: const Color(0x0A000000), offset: const Offset(0, 1), blurRadius: 8)],
+        boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 1), blurRadius: 8)],
       ),
       child: Row(children: [
         // Page title / breadcrumb
@@ -360,7 +361,7 @@ class _PartnerShellTopBar extends ConsumerWidget {
           children: [
             Text(userName,
                 style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
-            Text(AppL.of(context)!.partnerWorkshopPartner,
+            Text(context.l10n.partnerWorkshopPartner,
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
           ],
         ),

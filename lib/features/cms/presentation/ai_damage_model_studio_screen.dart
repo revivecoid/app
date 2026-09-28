@@ -24,10 +24,10 @@ class AiDamageModelStudioScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text('Operations Hub', style: TextStyle(color: AppColors.daysGray, fontSize: 12)),
-                    Icon(Icons.chevron_right, size: 16, color: AppColors.tertiary),
-                    Text('Automated Estimation Core', style: TextStyle(color: AppColors.daysGray, fontSize: 12)),
-                    Icon(Icons.chevron_right, size: 16, color: AppColors.tertiary),
+                    const Text('Operations Hub', style: TextStyle(color: AppColors.daysGray, fontSize: 12)),
+                    const Icon(Icons.chevron_right, size: 16, color: AppColors.tertiary),
+                    const Text('Automated Estimation Core', style: TextStyle(color: AppColors.daysGray, fontSize: 12)),
+                    const Icon(Icons.chevron_right, size: 16, color: AppColors.tertiary),
                     Text('Pricing & AI Model Rules', style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.bold)),
                   ],
                 ),
@@ -87,13 +87,13 @@ class AiDamageModelStudioScreen extends StatelessWidget {
                       icon: const Icon(Icons.biotech, size: 18),
                       label: const Text('CV Sandbox'),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     OutlinedButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.history, size: 18),
                       label: const Text('Audit Logs'),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     ElevatedButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.rocket_launch, size: 18),
@@ -104,21 +104,21 @@ class AiDamageModelStudioScreen extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             
             // KPI Tiles
             Row(
               children: [
                 Expanded(child: _buildKpiTile('Active Vision Model', 'v2.4-YOLO-AutoDent', '99.4% OCR & Part Seg', Icons.camera_indoor, AppColors.fireRed, isDark)),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Expanded(child: _buildKpiTile('Calibrated Panels', '14 Panels Active', '100% Geometry Matched', Icons.tune, Colors.blue, isDark)),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Expanded(child: _buildKpiTile('Dynamic Margin Index', '32.5% Target GM', '+2.4% vs Standard', Icons.query_stats, Colors.green, isDark)),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Expanded(child: _buildKpiTile('Production Latency', '340ms Inference', 'ResNet TensorRT', Icons.speed, Colors.orange, isDark)),
               ],
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             
             // Main Content Split
             Row(
@@ -140,7 +140,7 @@ class AiDamageModelStudioScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('Panel Rate Editor Matrix', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             // Placeholder for table
                             Container(
                               height: 300,
@@ -153,7 +153,7 @@ class AiDamageModelStudioScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                SizedBox(width: 24),
+                const SizedBox(width: 24),
                 // Right Column
                 Expanded(
                   flex: 5,
@@ -190,7 +190,7 @@ class AiDamageModelStudioScreen extends StatelessWidget {
                             color: AppColors.background,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Column(
+                          child: const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Simulated Mobile App Quote', style: TextStyle(color: AppColors.daysGray, fontSize: 12)),
@@ -229,7 +229,7 @@ class AiDamageModelStudioScreen extends StatelessWidget {
               Icon(icon, size: 20, color: iconColor),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppColors.sleekBlack)),
           const SizedBox(height: 4),
           Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.daysGray)),

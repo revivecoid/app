@@ -30,7 +30,7 @@ String _cmsL(Map<String, String> s, String key, {required String fallback, bool 
 }
 
 class CustomerLandingScreen extends ConsumerStatefulWidget {
-  CustomerLandingScreen({super.key});
+  const CustomerLandingScreen({super.key});
 
   @override
   ConsumerState<CustomerLandingScreen> createState() => _CustomerLandingScreenState();
@@ -85,50 +85,50 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
       final isDesktop = constraints.maxWidth > 900;
       Widget inner = Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: ReVAppBar(),
+      appBar: const ReVAppBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildHeroSection(theme, cms, isId),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             if (isLoggedIn)
               activeJobAsync.when(
                 data: (job) => job != null 
                     ? Column(
                         children: [
                           _buildActiveRepairWidget(theme, job),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                         ],
                       )
                     : const SizedBox.shrink(),
-                loading: () => Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, st) => Text('Error loading active job: $e'),
               ),
             _buildQuickActions(theme),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             _buildFeatureHighlight(theme, cms, isId),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             _buildHowItWorks(theme, cms, isId),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             _buildRecentInspections(theme),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             _buildTrustBadges(theme, cms, isId),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             if (cms['contact_phone'] != null || cms['contact_email'] != null || cms['contact_address'] != null)
               _buildContactSection(theme, cms, isId),
             if (cms['contact_phone'] != null || cms['contact_email'] != null || cms['contact_address'] != null)
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
             _buildQuickLinks(theme),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             _buildFooterWidget(theme),
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
-      return isDesktop ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 800), child: inner)) : inner;
+      return isDesktop ? Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: inner)) : inner;
     });
   }
 
@@ -142,7 +142,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -157,25 +157,25 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.verified, size: 16, color: AppColors.primary),
-                SizedBox(width: 4),
+                const Icon(Icons.verified, size: 16, color: AppColors.primary),
+                const SizedBox(width: 4),
                 Text('AUTOMOTIVE AI CARE', style: theme.textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Text(heroTitle, style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800, height: 1.1)),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(heroSub, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () => context.go('/estimator'),
-            icon: Icon(Icons.auto_awesome, size: 18),
-            label: Text(heroCta, style: TextStyle(fontWeight: FontWeight.bold)),
+            icon: const Icon(Icons.auto_awesome, size: 18),
+            label: Text(heroCta, style: const TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryContainer,
               foregroundColor: Theme.of(context).colorScheme.surface,
-              minimumSize: Size(double.infinity, 48),
+              minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
@@ -194,7 +194,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -264,7 +264,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   color: AppColors.primaryContainer.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.directions_car, color: AppColors.primary),
+                child: const Icon(Icons.directions_car, color: AppColors.primary),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -370,7 +370,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   children: [
                     Row(
                       children: [
-                        Container(width: 6, height: 6, decoration: BoxDecoration(color: AppColors.primaryContainer, shape: BoxShape.circle)),
+                        Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppColors.primaryContainer, shape: BoxShape.circle)),
                         const SizedBox(width: 4),
                         Text('Repair Progress', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                       ],
@@ -631,7 +631,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                 color: AppColors.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: Offset(0, 2)),
+                  BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
                 ],
               ),
               child: Column(
@@ -645,14 +645,14 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                     ),
                     child: Icon(Icons.photo_camera, color: Theme.of(context).colorScheme.surface),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text('New Claim', style: theme.textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold)),
                   Text('Scan car damage with AI', style: theme.textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8))),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Text('Start Scan', style: theme.textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold)),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Icon(Icons.arrow_forward, size: 14, color: Theme.of(context).colorScheme.surface),
                     ],
                   ),
@@ -661,7 +661,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
             ),
           ),
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 12),
         Expanded(
           child: InkWell(
             onTap: () => context.go('/profile'),
@@ -671,7 +671,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                 color: theme.colorScheme.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: Offset(0, 2)),
+                  BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
                 ],
               ),
               child: Column(
@@ -685,15 +685,15 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                     ),
                     child: Icon(Icons.query_stats, color: theme.colorScheme.onSurface),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text('Track Status', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                   Text('Live workshop cameras', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Text('View Queue', style: theme.textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_forward, size: 14, color: AppColors.primary),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_forward, size: 14, color: AppColors.primary),
                     ],
                   ),
                 ],
@@ -714,7 +714,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -723,7 +723,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         children: [
           Container(
             height: 144,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               image: DecorationImage(
                 image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuD6_i0-JevFbsWeSnSO-l4IiY1GyUK7WV8CKi3uoVHz3hbyZvdc9AjQf28OLUud3jPKYG3nJqCx453hc1_drevXy14QhHxmO1J31oVAFFW9t0n_DFjBq83jjXHNjCcvugxkPP4SJKyCim_FG1XQFvvx3hRzreVpwfziy22BMKVxMeX1GaMZ_bcd8S-duhC43IxiXpwE12m-t3AVup9TPAlQGgk-M_Hmp38P27rvWsy6r0XRXjdYKkbnxw'),
                 fit: BoxFit.cover,
@@ -742,9 +742,9 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                     Text(ftBadge, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   ],
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(ftTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(ftBody, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               ],
             ),
@@ -776,7 +776,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -799,10 +799,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               ),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           for (final step in steps) ...[
             _buildStepItem(theme, step.$4, step.$1, step.$2, step.$3),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
           ],
         ],
       ),
@@ -826,9 +826,9 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
-            child: Text(number, style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+            child: Text(number, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -840,7 +840,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                     Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
                   ],
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(description, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               ],
             ),
@@ -857,7 +857,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -870,7 +870,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               Text('100% Guaranteed', style: theme.textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -878,7 +878,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   height: 96,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    image: DecorationImage(
+                    image: const DecorationImage(
                       image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuCE6uwD7ofjFSiCWhMiFGQD3Y0UrKl8Y3YkAb5-O4Gi_FEIqMalS-4jdQXRW3Zjx5JELKha7HI-FBhuxXWs1wEPRQxhc1CJTArcb5HqJSgtGvznaKJoIkbHLnkp_hTQZ3LTYj1gwxlzuAZ1NKxa8l97kWBOvYL6JwL2MncDJdAsIbbAMbRKXMe47PKRa3Iu1QTGnCdbcaF9EMVCJHoONkKT2DMKKiiLi8jMSO3bZCliuQDyTTBIaHZQww'),
                       fit: BoxFit.cover,
                     ),
@@ -897,13 +897,13 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   ),
                 ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Container(
                   height: 96,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    image: DecorationImage(
+                    image: const DecorationImage(
                       image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuB0Vm52V0Oiw2niui1LP_P5o0HD_NstOTd58mvawvQm66g_yE7X1Z5no1FWGtJ7vhWrPkuWIEW5upsuL6ya7f5RoSMizLmetbHrHztG9NrUl5NpURzmrttwBAA-PDHNgrYLUJkQ_r7ouXfnZkNX6fMdQvf3ZJY_oqrcGTrIV9Q0XH9XrxMdfoznTa1UKhG7y1NvqykaIcRmK_f4dx6HQbziRpHqUlXLTHT-Iz8a2lg2eEBth0HFopUKYg'),
                       fit: BoxFit.cover,
                     ),
@@ -941,26 +941,26 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
         children: [
           Text('VERIFIED STANDARDS', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(isId ? 'Terpercaya oleh Ribuan Pengemudi di Jabodetabek dan Bandung' : 'Trusted by Thousands Across Jabodetabek and Bandung',
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           _buildBadgeItem(theme, '$b1v $b1l', isId ? 'Pusat di Jakarta Bogor Depok Tangerang Bekasi dan Bandung' : '38+ Centers in Jakarta Bogor Depok Tangerang Bekasi and Bandung', Icons.hub, AppColors.primary),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           _buildBadgeItem(theme, 'Garda Oto & Astra SLA Compliant', isId ? 'Integrasi langsung asuransi & garansi' : 'Direct insurance paperwork integration & warranty', Icons.shield, AppColors.primary),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           _buildBadgeItem(theme, '$b2v $b2l ($b3v+ ${isId ? "Pengemudi" : "Drivers"})', isId ? '98,7% metrik pengiriman tepat waktu terverifikasi telemetri' : '98.7% on-time delivery metric verified by telemetry', Icons.star, theme.colorScheme.secondary),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Center(
             child: TextButton.icon(
               onPressed: () => context.go('/partner/register'),
-              icon: Icon(Icons.handshake),
+              icon: const Icon(Icons.handshake),
               label: Text(isId ? 'Bergabung sebagai Bengkel Mitra Tersertifikasi' : 'Become a Certified Partner Workshop'),
               style: TextButton.styleFrom(foregroundColor: AppColors.fireRed),
             ),
@@ -990,7 +990,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
             ),
             child: Icon(icon, color: iconColor, size: 20),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1065,20 +1065,20 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('NEED QUICK HELP?', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text('Talk with an on-duty master estimator', style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
             ],
           ),
           ElevatedButton.icon(
             onPressed: () => context.go('/support'),
-            icon: Icon(Icons.chat, size: 16),
-            label: Text('Consult', style: TextStyle(fontWeight: FontWeight.bold)),
+            icon: const Icon(Icons.chat, size: 16),
+            label: const Text('Consult', style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.surfaceContainerLowest,
               foregroundColor: theme.colorScheme.onSurface,
               elevation: 1,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              minimumSize: Size(0, 36),
+              minimumSize: const Size(0, 36),
             ),
           ),
         ],

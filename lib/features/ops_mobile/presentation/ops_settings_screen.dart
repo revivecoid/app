@@ -19,7 +19,7 @@ class OpsSettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             radius: 40,
             child: Icon(Icons.person, size: 40),
           ),
