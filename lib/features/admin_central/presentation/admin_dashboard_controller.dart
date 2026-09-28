@@ -535,18 +535,19 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       final today = DateTime.now();
       final todayStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
+      // BIZ-04 fix: query payments.status='paid' + paid_at (not repair_jobs.status='completed')
       final res = await _supabase
-          .from('repair_jobs')
-          .select('final_cost')
-          .eq('status', 'completed')
-          .gte('created_at', '${todayStr}T00:00:00')
-          .lte('created_at', '${todayStr}T23:59:59');
+          .from('payments')
+          .select('amount')
+          .eq('status', 'paid')
+          .gte('paid_at', '${todayStr}T00:00:00')
+          .lte('paid_at', '${todayStr}T23:59:59');
 
       double total = 0;
       for (final row in (res as List)) {
-        final price = row['final_cost'];
-        if (price != null) {
-          total += (price as num).toDouble();
+        final amount = row['amount'];
+        if (amount != null) {
+          total += (amount as num).toDouble();
         }
       }
 

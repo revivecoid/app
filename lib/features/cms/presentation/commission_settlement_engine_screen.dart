@@ -12,6 +12,7 @@ class CommissionSettlementEngineScreen extends StatefulWidget {
 
 class _CommissionSettlementEngineScreenState extends State<CommissionSettlementEngineScreen> {
   bool _isLoading = true;
+  String? _error;  // BIZ-11: distinguish error from empty
   List<Map<String, dynamic>> _settlements = [];
 
   @override
@@ -21,25 +22,51 @@ class _CommissionSettlementEngineScreenState extends State<CommissionSettlementE
   }
 
   Future<void> _fetchSettlements() async {
+    setState(() { _isLoading = true; _error = null; });
     try {
+      // BIZ-11 fix: query partner_settlements view (created in F5 migration)
+      // Falls back to empty list if view not yet applied
       final response = await Supabase.instance.client
-          .from('commission_settlements')
+          .from('partner_settlements')
           .select()
-          .order('created_at', ascending: false);
+          .order('settlement_date', ascending: false)
+          .limit(100);
       setState(() {
         _settlements = List<Map<String, dynamic>>.from(response);
         _isLoading = false;
       });
     } catch (e) {
+      // BIZ-11 fix: show error explicitly, not silent empty
       debugPrint('Error fetching settlements: $e');
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _error = 'Gagal memuat data settlement: ${e.toString().replaceAll('Exception:', '').trim()}';
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
+    // BIZ-11: show error state explicitly
+    if (!_isLoading && _error != null) {
+      return Scaffold(
+        appBar: const RevAppBar(title: 'Settlement & Komisi'),
+        body: Center(child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+            const SizedBox(height: 16),
+            Text(_error!, textAlign: TextAlign.center,
+                style: TextStyle(color: theme.colorScheme.error)),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: _fetchSettlements, child: const Text('Coba lagi')),
+          ]),
+        )),
+      );
+    }
+
     Widget content = SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
