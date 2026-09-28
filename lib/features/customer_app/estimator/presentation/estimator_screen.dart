@@ -672,7 +672,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Add up to 5 photos. Clearly capture scratches (gores) and dents (penyok). First photo is used for AI analysis.',
+                    'Add up to 5 photos. All photos are analyzed by AI to estimate damage severity. The first photo will be used as the main picture.',
                     style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, height: 1.3),
                   ),
                 ),
