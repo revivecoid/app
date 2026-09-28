@@ -324,25 +324,19 @@ BEGIN
     END IF;
 
     -- Tentukan scope dan role membership
-    CASE p_new_role
-        WHEN 'master_admin' THEN
-            v_scope           := 'platform';
-            v_membership_role := 'master_admin';
-        WHEN 'customer' THEN
-            v_scope           := 'platform';
-            v_membership_role := 'customer';
-        WHEN 'partner_mechanic', 'owner' THEN
-            v_scope           := 'partner';
-            v_membership_role := 'owner';
-        WHEN 'partner_staff', 'staff' THEN
-            v_scope           := 'partner';
-            v_membership_role := 'staff';
-        WHEN 'partner_driver', 'driver' THEN
-            v_scope           := 'partner';
-            v_membership_role := 'driver';
-        ELSE
-            RAISE EXCEPTION 'Unknown role: %', p_new_role;
-    END CASE;
+    IF p_new_role = 'master_admin' THEN
+        v_scope := 'platform'; v_membership_role := 'master_admin';
+    ELSIF p_new_role = 'customer' THEN
+        v_scope := 'platform'; v_membership_role := 'customer';
+    ELSIF p_new_role IN ('partner_mechanic', 'owner') THEN
+        v_scope := 'partner';  v_membership_role := 'owner';
+    ELSIF p_new_role IN ('partner_staff', 'staff') THEN
+        v_scope := 'partner';  v_membership_role := 'staff';
+    ELSIF p_new_role IN ('partner_driver', 'driver') THEN
+        v_scope := 'partner';  v_membership_role := 'driver';
+    ELSE
+        RAISE EXCEPTION 'Unknown role: %', p_new_role;
+    END IF;
 
     -- C-15: Selalu cabut membership master_admin bila new_role bukan master_admin
     IF p_new_role != 'master_admin' THEN
@@ -462,11 +456,11 @@ BEGIN
     END IF;
 
     -- Tentukan role membership
-    v_role := CASE p_staff_role
-        WHEN 'partner_staff', 'staff'   THEN 'staff'::public.membership_role
-        WHEN 'partner_driver', 'driver' THEN 'driver'::public.membership_role
-        ELSE 'staff'::public.membership_role
-    END;
+    IF p_staff_role IN ('partner_driver', 'driver') THEN
+        v_role := 'driver'::public.membership_role;
+    ELSE
+        v_role := 'staff'::public.membership_role;
+    END IF;
 
     -- Tulis membership
     INSERT INTO public.memberships (user_id, scope, org_id, role, status, created_at)
