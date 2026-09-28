@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/signed_image.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/customer_contact_line.dart';
+import '../../../../core/jobs/job_status.dart'; // S-08 fix
 import 'partner_dashboard_controller.dart';
 import 'partner_dashboard_mobile.dart';
 import 'widgets/partner_job_action.dart';
@@ -19,8 +20,7 @@ const _amber500 = Color(0xFFF59E0B);
 const _blue500 = Color(0xFF3B82F6);
 
 // ─── Status bucket helpers ────────────────────────────────────────────────────
-String _statusLabel(String raw) =>
-    raw.replaceAll(RegExp(r'^\d+_'), '').replaceAll('_', ' ').toUpperCase();
+String _statusLabel(String raw) => jobStatusLabel(raw); // S-08 fix
 
 /// A vehicle is in the bay from the moment it is admitted until the work is done
 /// — that span covers invoice issuance (3_inspected) and payment (4_paid) too.

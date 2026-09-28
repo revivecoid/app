@@ -242,7 +242,9 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
           carModel: vehicle['model']?.toString() ?? 'Unknown',
           licensePlate: vehicle['license_plate']?.toString() ?? 'No Plate',
           status: job['status'].toString(),
-          admittedAt: DateTime.parse(job['created_at'].toString()),
+          admittedAt: DateTime.tryParse(job['status_changed_at']?.toString() ?? '') ??
+                      DateTime.tryParse(job['created_at']?.toString() ?? '') ??
+                      DateTime.now(), // C-82 fix: use status_changed_at (time of last transition), fallback to created_at
           latestPhotoUrl: latestPhotoUrl,
           contactPhone: job['contact_phone']?.toString(),
           profilePhone: profile['phone']?.toString(),

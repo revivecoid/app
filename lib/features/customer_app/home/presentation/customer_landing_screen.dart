@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/utils/auth_url.dart';
+import '../../../../core/jobs/job_status.dart'; // L-08/S-08 fix
 
 // ── CMS settings provider ──────────────────────────────────────────────────────
 final cmsSettingsProvider = FutureProvider.autoDispose<Map<String, String>>((ref) async {
@@ -35,20 +36,21 @@ class CustomerLandingScreen extends ConsumerStatefulWidget {
   ConsumerState<CustomerLandingScreen> createState() => _CustomerLandingScreenState();
 }
 
-final activeJobProvider =
-    FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
+final activeJobProvider = StreamProvider.autoDispose<Map<String, dynamic>?>((ref) {
   final user = Supabase.instance.client.auth.currentUser;
-  if (user == null) return null;
-  final data = await Supabase.instance.client
+  if (user == null) return Stream.value(null);
+  return Supabase.instance.client
       .from('repair_jobs')
-      .select('*, vehicles(*)')
+      .stream(primaryKey: ['id'])
       .eq('customer_id', user.id)
-      // Exclude terminal states: cancelled and done
-      .not('status', 'in', '("0_cancelled","9_done")')
-      .order('created_at', ascending: false)
-      .limit(1);
-  final list = List<Map<String, dynamic>>.from(data);
-  return list.isNotEmpty ? list.first : null;
+      .order('created_at')
+      .map((data) {
+    if (data.isEmpty) return null;
+    final active = data.where((j) => j['status'] != '0_cancelled' && j['status'] != '9_done').toList();
+    if (active.isEmpty) return null;
+    active.sort((a, b) => (b['created_at']?.toString() ?? '').compareTo(a['created_at']?.toString() ?? ''));
+    return active.first;
+  });
 });
 
 class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
@@ -231,16 +233,11 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     final needsAction       = isEstimated || isInvoiced;
     final isActive          = !needsAction && statusStr != '0_cancelled';
 
-    // Progress fraction for the progress bar
-    final stages = ['1_intake','2_estimated','3_booked','4_paid','5_admitted','6_in_progress','7_finished','8_awaiting_delivery','9_done'];
-    final stageIdx = stages.indexOf(statusStr);
-    final progressFraction = stageIdx < 0 ? 0.0 : (stageIdx + 1) / stages.length;
+    // Progress fraction for the progress bar — L-08 fix: use canonical sortOrder from JobStatus
+    final progressFraction = jobStatusProgress(statusStr);
 
-    // Human-readable label
-    final statusLabel = statusStr
-        .replaceAll(RegExp(r'^\d+_'), '')
-        .replaceAll('_', ' ')
-        .toUpperCase();
+    // Human-readable label — S-08 fix: use canonical label from JobStatus constant
+    final statusLabel = jobStatusLabel(statusStr);
 
     return Container(
       padding: const EdgeInsets.all(16),

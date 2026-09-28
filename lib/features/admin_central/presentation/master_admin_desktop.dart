@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/jobs/job_status.dart'; // S-08 fix
 import 'admin_dashboard_controller.dart';
 
 // ─── Nav Items ────────────────────────────────────────────────────────────────
@@ -1252,7 +1253,7 @@ class _StatusBadge extends StatelessWidget {
       case '5_scheduled':
         bg = const Color(0xFF10b981).withValues(alpha: 0.1);
         fg = const Color(0xFF059669);
-        label = status == '4_paid' ? 'PAID' : 'SCHEDULED';
+        label = status == '4_paid' ? 'PAID' : jobStatusLabel(status).toUpperCase(); // S-08: remove dead '5_scheduled'
         icon = Icons.event_available_rounded;
       default:
         bg = cs.surfaceContainerHigh;
@@ -2745,18 +2746,7 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = switch (status) {
-      '1_intake' => 'Intake',
-      '2_estimated' => 'Estimated',
-      '3_booked' => 'Booked',
-      '4_paid' => 'Paid',
-      '5_scheduled' => 'Scheduled',
-      '6_in_progress' => 'In Progress',
-      '7_finished' => 'Finished',
-      '8_awaiting_delivery' => 'Awaiting',
-      '9_done' || 'completed' => 'Done',
-      _ => status,
-    };
+    final label = jobStatusLabel(status, english: true); // S-08 fix: single source
     final color = switch (status) {
       '6_in_progress' => const Color(0xFF0ea5e9),
       '7_finished' || '8_awaiting_delivery' => const Color(0xFFf59e0b),

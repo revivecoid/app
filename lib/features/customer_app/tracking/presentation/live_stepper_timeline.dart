@@ -261,7 +261,9 @@ class _TrackerBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progressPhotos = photos.where((p) => p.context == 'progress' || p.context == 'finished').toList();
+    final progressPhotos = photos.where((p) =>
+        // C-40 fix: partner writes 'in_progress' context; also include 'progress', 'finished', 'inspected'
+        p.context != null && !['payment', 'intake', 'booking'].contains(p.context)).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),

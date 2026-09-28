@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/jobs/job_status.dart'; // L-12, C-29 fix
 
 // ─── DOMAIN MODELS ────────────────────────────────────────────────────────────
 
@@ -377,7 +378,7 @@ class AdminDashboardState {
         case AssignSortField.vehicle:
           cmp = a.carIdentity.compareTo(b.carIdentity);
         case AssignSortField.assignStatus:
-          cmp = a.status.compareTo(b.status);
+          cmp = jobStatusSortOrder(a.status).compareTo(jobStatusSortOrder(b.status)); // L-12 fix: sort by flow order not lexicographic
         case AssignSortField.paymentStatus:
           cmp = (a.isPaid ? 1 : 0).compareTo(b.isPaid ? 1 : 0);
         case AssignSortField.createdAt:

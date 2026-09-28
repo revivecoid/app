@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/jobs/job_status.dart'; // S-08 fix
 import 'partner_dashboard_controller.dart';
 import 'widgets/partner_job_action.dart';
 
@@ -13,8 +14,7 @@ const _emerald500 = Color(0xFF10B981);
 const _amber500 = Color(0xFFF59E0B);
 const _blue500 = Color(0xFF3B82F6);
 
-String _statusLabel(String raw) =>
-    raw.replaceAll(RegExp(r'^\d+_'), '').replaceAll('_', ' ').toUpperCase();
+String _statusLabel(String raw) => jobStatusLabel(raw); // S-08 fix: single source from JobStatus constants
 
 class PartnerDashboardMobile extends ConsumerStatefulWidget {
   const PartnerDashboardMobile({super.key});
