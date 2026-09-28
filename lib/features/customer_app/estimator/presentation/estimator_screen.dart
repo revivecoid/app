@@ -1,8 +1,10 @@
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/utils/guest_session.dart';
 import '../../../../core/utils/image_compressor.dart';
@@ -130,28 +132,27 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     setState(() {
       _isAnalyzing = true;
       _aiResult = null;
+      _structuredData = null; // L-03/C-31 fix: clear stale data before each analysis
     });
 
     try {
-      // Upload ALL selected images (up to _maxImages), not just the first
-      final List<String> photoUrls = [];
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      // C-31/L-03 fix: clear estimatedCost before every analysis run
+      ref.read(customerIntakeProvider.notifier).updateEstimatedCost(0);
 
-      for (int i = 0; i < _selectedImages.length; i++) {
-        final compressedBytes =
-            await ImageCompressor.compressImage(_selectedImages[i]);
-        // SEC-04 path scope is kept: the bucket policy enforces <user_id>/, and
-        // for a guest that id is the anonymous account's.
-        final fileName = '$guestId/${timestamp}_$i.jpg';
-        await Supabase.instance.client.storage
-            .from('revive-photos')
-            .uploadBinary(fileName, compressedBytes);
-        // SEC-04 FIX: Use signed URL instead of public URL (bucket is now private)
-        final signedUrl = await Supabase.instance.client.storage
-            .from('revive-photos')
-            .createSignedUrl(fileName, 3600); // 1 hour expiry
-        photoUrls.add(signedUrl);
-      }
+      // PERF-04 fix: parallel uploads with Future.wait
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final List<String> photoUrls = await Future.wait(
+        List.generate(_selectedImages.length, (i) async {
+          final compressedBytes = await ImageCompressor.compressImage(_selectedImages[i]);
+          final fileName = '$guestId/${timestamp}_$i.jpg';
+          await Supabase.instance.client.storage
+              .from('revive-photos')
+              .uploadBinary(fileName, compressedBytes);
+          return Supabase.instance.client.storage
+              .from('revive-photos')
+              .createSignedUrl(fileName, 3600);
+        }),
+      );
 
       final selectedPanels = ref.read(selectedPanelsProvider);
       final selectedPanelLabels = selectedPanels.map((p) => p.label).toList();
@@ -203,13 +204,22 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     if (_currentStep == 0) {
       if (_aiResult == null) {
         if (_selectedImages.isNotEmpty && ref.read(selectedPanelsProvider).isNotEmpty) {
-          _submitToVisionAi();
+          await _submitToVisionAi(); // UX-08 fix: await so result is ready before any further action
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppL.of(context)!.estimatorSelectPanels)),
           );
         }
       } else {
+        // C-31 fix: only advance if structuredData has actual panels with cost > 0
+        final panels = _structuredData?['assessment']?['damaged_panels_detail'];
+        final cost = _structuredData?['financial_estimation']?['calculated_base_cost'] ?? 0;
+        if (_structuredData == null || panels == null || (panels as List).isEmpty || cost <= 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Estimasi belum valid — ulangi analisis foto.')),
+          );
+          return;
+        }
         setState(() => _currentStep += 1);
       }
     } else if (_currentStep < 3) {
@@ -272,30 +282,45 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           }
         }
 
-        final vehicleRes = await Supabase.instance.client.from('vehicles').insert({
+        final vehicleRes = await Supabase.instance.client.from('vehicles').upsert({
           'customer_id': user.id,
           'make': intake.brand,
           'model': intake.model,
           'year': int.tryParse(intake.year) ?? 2020,
-          'license_plate': intake.licensePlate,
-        }).select('id').single();
-        
-        final jobRes = await Supabase.instance.client.from('repair_jobs').insert({
-          'customer_id': user.id,
-          'vehicle_id': vehicleRes['id'],
-          'initial_estimation_cost': intake.estimatedCost,
-          'estimation_result': _structuredData,   // Persist full AI breakdown for booking screen
-          'status': '2_estimated',
-          'service_area': intake.location.isEmpty ? null : intake.location,
-          // Snapshot of the number this booking was made with, so the job keeps a
-          // reachable contact even if the profile number changes later.
-          'contact_phone': contactPhone.isEmpty ? null : contactPhone,
-        }).select('id').single();
+          'license_plate': intake.licensePlate.isEmpty ? null : intake.licensePlate.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), ''),
+        }, onConflict: 'customer_id,license_plate').select('id').single(); // B-08/DAT-08 fix: upsert
+
+        // B-11 fix: price from server via create_job_from_estimation — not client-written
+        final estimationId = res.data?['estimationId']?.toString();
+        late String jobId;
+        if (estimationId != null) {
+          final jobRes = await Supabase.instance.client.rpc('create_job_from_estimation', params: {
+            'p_estimation_id':  estimationId,
+            'p_vehicle_make':   intake.brand,
+            'p_vehicle_model':  intake.model,
+            'p_vehicle_year':   int.tryParse(intake.year) ?? 2020,
+            'p_license_plate':  intake.licensePlate,
+            'p_contact_phone':  contactPhone.isEmpty ? null : contactPhone,
+            'p_service_area':   intake.location.isEmpty ? null : intake.location,
+          });
+          jobId = jobRes.toString();
+        } else {
+          // Fallback for older flow without estimation_id
+          final jobRes = await Supabase.instance.client.from('repair_jobs').insert({
+            'customer_id': user.id,
+            'vehicle_id': vehicleRes['id'],
+            'initial_estimation_cost': intake.estimatedCost,
+            'estimation_result': _structuredData,
+            'status': '2_estimated',
+            'service_area': intake.location.isEmpty ? null : intake.location,
+            'contact_phone': contactPhone.isEmpty ? null : contactPhone,
+          }).select('id').single();
+          jobId = jobRes['id'].toString();
+        }
         
         if (context.mounted) {
           Navigator.of(context).pop();
-          // Route to booking screen where customer reviews estimate + picks admission date
-          context.push('/booking/${jobRes['id']}');
+          context.push('/booking/$jobId');
         }
       } catch (e) {
         if (context.mounted) {
@@ -527,8 +552,15 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                           color: cs.surfaceContainerLow,
                         ),
                         clipBehavior: Clip.antiAlias,
-                        child: Image.network(img.path, fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Center(child: Icon(Icons.broken_image_outlined, color: cs.onSurfaceVariant))),
+                        // PLAT-05 fix: XFile.path is a blob URL on web, filesystem path on native.
+                        // Image.network fails on native filesystem paths — use readAsBytes() instead.
+                        child: FutureBuilder<Uint8List>(
+                          future: img.readAsBytes(),
+                          builder: (ctx, snap) {
+                            if (snap.hasData) return Image.memory(snap.data!, fit: BoxFit.cover);
+                            return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                          },
+                        ),
                       ),
                       Positioned(
                         top: -6,
@@ -983,8 +1015,12 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               _customMakeController.clear();
               _customModelController.clear();
             });
+            // C-71 fix: always clear model in intake when brand changes
+            ref.read(customerIntakeProvider.notifier).updateModel('');
             if (val != null && val != 'Other') {
               ref.read(customerIntakeProvider.notifier).updateBrand(val);
+            } else if (val == 'Other') {
+              ref.read(customerIntakeProvider.notifier).updateBrand('');
             }
           },
         ),

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CustomerIntakeState {
   final String name;
@@ -76,28 +78,68 @@ class CustomerIntakeState {
 class CustomerIntakeNotifier extends StateNotifier<CustomerIntakeState> {
   CustomerIntakeNotifier() : super(CustomerIntakeState()) {
     _loadState();
+    // PRIV-03 fix: clear intake on logout
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (data.event == AuthChangeEvent.signedOut) clearIntake();
+    });
   }
+
+  Timer? _debounce; // PERF-06 fix: debounce saves
 
   Future<void> _loadState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final data = prefs.getString('customer_intake');
+      // C-37/PRIV-03 fix: key by user_id so different users don't share intake
+      final userId = Supabase.instance.client.auth.currentUser?.id ?? 'guest';
+      final data = prefs.getString('customer_intake_$userId');
       if (data != null) {
         state = CustomerIntakeState.fromJson(jsonDecode(data));
       }
-    } catch (e) { debugPrint('[IntakeProvider] error: $e'); }
+    } catch (e) { debugPrint('[IntakeProvider] load error: $e'); }
   }
 
-  void _saveState(CustomerIntakeState newState) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('customer_intake', jsonEncode(newState.toJson()));
-    } catch (e) { debugPrint('[IntakeProvider] error: $e'); }
+  void _saveState(CustomerIntakeState newState) {
+    _debounce?.cancel();
+    // PERF-06 fix: debounce 400ms — avoid write per keystroke
+    _debounce = Timer(const Duration(milliseconds: 400), () async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final userId = Supabase.instance.client.auth.currentUser?.id ?? 'guest';
+        // PRIV-03 fix: only persist non-sensitive fields (not estimatedCost)
+        final toSave = {
+          'name': newState.name,
+          'brand': newState.brand,
+          'model': newState.model,
+          'year': newState.year,
+          'licensePlate': newState.licensePlate,
+          'location': newState.location,
+          // phone deliberately excluded — PII, loaded from profile on login
+        };
+        await prefs.setString('customer_intake_$userId', jsonEncode(toSave));
+      } catch (e) { debugPrint('[IntakeProvider] save error: $e'); }
+    });
   }
 
   void _updateAndSave(CustomerIntakeState newState) {
     state = newState;
     _saveState(newState);
+  }
+
+  /// PRIV-03/C-37 fix: clear on logout
+  Future<void> clearIntake() async {
+    _debounce?.cancel();
+    state = CustomerIntakeState();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys().where((k) => k.startsWith('customer_intake_'));
+      for (final k in keys) await prefs.remove(k);
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 
   void updateName(String name) => _updateAndSave(state.copyWith(name: name));

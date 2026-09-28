@@ -12,40 +12,37 @@ const openaiApiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// SEC-03 FIX: Lock CORS to production domain only
-const ALLOWED_ORIGINS = ["https://revive.co.id", "http://localhost"];
+// SEC-03 FIX: Lock CORS to production domain only (exact match — no startsWith)
+const ALLOWED_ORIGINS = new Set(["https://revive.co.id", "https://app.revive.co.id", "http://localhost:3000", "http://localhost"]);
 
 function getCorsHeaders(origin?: string | null): Record<string, string> {
-  const allowedOrigin = origin && ALLOWED_ORIGINS.some(o => origin.startsWith(o))
-    ? origin
-    : ALLOWED_ORIGINS[0];
+  const allowedOrigin = (origin && ALLOWED_ORIGINS.has(origin)) ? origin : "https://revive.co.id";
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   };
 }
 
-// SEC-03 FIX: Simple in-memory rate limiter (per user, resets on function cold start)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_MAX = 10; // max requests per window
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return true;
+// B-09 fix: DB-backed rate limit replaces in-memory map (per isolate, bypassable)
+// Called via supabase service role after JWT verification
+async function checkDbRateLimit(supabaseAdmin: any, userId: string, isAnon: boolean): Promise<boolean> {
+  const { data, error } = await supabaseAdmin.rpc('check_ai_rate_limit', {
+    p_user_id: userId,
+    p_is_anon: isAnon,
+  });
+  if (error) {
+    console.error('[RateLimit] DB check failed:', error.message, '— fail-open');
+    return true; // fail-open: don't block on DB error
   }
-  entry.count++;
-  return entry.count <= RATE_LIMIT_MAX;
+  return data === true;
 }
 
-// SEC-03 FIX: Validate photo URLs belong to our Supabase Storage domain
+// SEC-03 FIX: Only accept signed URLs from our own Supabase project
+const ownSupabaseHost = new URL(supabaseUrl || "https://ahaospjkkuetkaixwzzz.supabase.co").hostname;
 function isValidPhotoUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.hostname.endsWith(".supabase.co") || parsed.hostname === "localhost";
+    return parsed.hostname === ownSupabaseHost || parsed.hostname === "localhost";
   } catch {
     return false;
   }
@@ -121,28 +118,45 @@ function calculateDeterministicCost(
 ): number {
   if (!structuredData?.assessment?.damaged_panels_detail) return 0;
 
-  // Build a fast lookup map: panel_name → rule
-  const ruleMap = new Map<string, LivePricingRule>(
-    rules.map((r) => [r.panel_name, r])
-  );
+  // L-10 fix: closed severity list — unknown value = berat (fail-safe, not ringan)
+  const VALID_SEVERITIES = new Set(['ringan', 'sedang', 'berat']);
+
+  // Build lookup map (case-insensitive handled at query time)
+  const ruleMap = new Map<string, LivePricingRule>(rules.map((r) => [r.panel_name, r]));
+
+  // C-34 fix: dedup panels by name, keep highest severity
+  const panelMap = new Map<string, { severity: string; panel: any }>();
+  for (const panel of structuredData.assessment.damaged_panels_detail) {
+    const name: string = (panel.panel_name ?? '').trim();
+    if (!name) continue;
+    const rawSev: string = (panel.panel_severity ?? '').toLowerCase().trim();
+    // L-10: unknown severity → berat (safe default, not ringan)
+    const severity = VALID_SEVERITIES.has(rawSev) ? rawSev : 'berat';
+    const existing = panelMap.get(name);
+    // Keep highest severity (berat > sedang > ringan)
+    const sevRank = (s: string) => s === 'berat' ? 2 : s === 'sedang' ? 1 : 0;
+    if (!existing || sevRank(severity) > sevRank(existing.severity)) {
+      panelMap.set(name, { severity, panel: { ...panel, panel_severity: severity } });
+    }
+  }
 
   let totalCost = 0;
-  for (const panel of structuredData.assessment.damaged_panels_detail) {
-    const name: string = panel.panel_name;
-    const severity: string = (panel.panel_severity || "ringan").toLowerCase();
-
-    const rule = ruleMap.get(name);
-    const basePrice = rule?.base_rate ?? FALLBACK_PRICES[name] ?? 500000;
-
-    let multiplier = 1.0;
-    if (severity === "sedang") {
-      multiplier = rule?.severity_min ?? 1.5;
-    } else if (severity === "berat") {
-      multiplier = rule?.severity_max ?? 2.0;
+  for (const [name, { severity, panel }] of panelMap) {
+    // C-34 fix: case-insensitive lookup via normalized name
+    const normName = name.toLowerCase();
+    const rule = [...ruleMap.entries()].find(([k]) => k.toLowerCase() === normName)?.[1];
+    if (!rule) {
+      // Unknown panel — skip with log, no fallback price (C-34: don't price silently)
+      console.warn(`[pricing] Unknown panel skipped: "${name}"`);
+      continue;
     }
 
-    const panelCost = Math.round(basePrice * multiplier);  // C-72: round to whole rupiah
-    panel.calculated_cost = panelCost; // inject per-panel cost for frontend display
+    let multiplier = 1.0;
+    if (severity === 'sedang') multiplier = rule?.severity_min ?? 1.5;
+    else if (severity === 'berat') multiplier = rule?.severity_max ?? 2.0;
+
+    const panelCost = Math.round(rule.base_rate * multiplier);
+    panel.calculated_cost = panelCost;
     panel.applied_multiplier = multiplier;
     totalCost += panelCost;
   }
@@ -181,9 +195,11 @@ serve(async (req) => {
       });
     }
 
-    // SEC-03 FIX: Rate limit per user
-    if (!checkRateLimit(user.id)) {
-      return new Response(JSON.stringify({ error: "Rate limit exceeded. Max 10 requests per hour." }), {
+    // B-09 fix: DB-backed rate limit (persistent across isolate restarts)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const isAnon = user.is_anonymous === true;
+    if (!await checkDbRateLimit(supabaseAdmin, user.id, isAnon)) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again tomorrow.", code: "RATE_LIMITED" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 429,
       });
@@ -322,7 +338,16 @@ Return precise counts for dents, scratches, and broken panels in the exact follo
         finalCostEstimation.financial_estimation.pricing_source = "live_db";
         
     } catch (e: any) {
-        estimationResult = estimationResult + "\n\n[PARSE ERROR]: " + e.message;
+        // L-03 fix: parse fail = hard failure, not success with null structuredData
+        console.error('[vision-estimation] JSON parse failed:', e.message.slice(0, 200));
+        return new Response(JSON.stringify({
+          success: false,
+          code: 'PARSE_ERROR',
+          error: 'AI response could not be parsed as valid JSON',
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 502,
+        });
     }
 
     return new Response(JSON.stringify({
@@ -347,20 +372,30 @@ Return precise counts for dents, scratches, and broken panels in the exact follo
 
 async function callGoogleGemini(photoUrls: string[], prompt: string, modelName: string, apiKey: string) {
   // Fetch and base64-encode ALL images, add each as a separate inline_data part
+  // C-66 fix: AbortSignal.timeout for image fetch (8s per image)
   const imageParts: object[] = [];
   for (const url of photoUrls) {
-    const imageResp = await fetch(url);
-    if (!imageResp.ok) throw new Error(`Failed to fetch image from URL: ${url}`);
+    const imageResp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!imageResp.ok) throw new Error(`Image fetch failed: HTTP ${imageResp.status}`);
+    // C-66 fix: limit image size to 10MB before reading
+    const contentLength = imageResp.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
+      throw new Error('Image too large (max 10MB)');
+    }
     const imageBuffer = await imageResp.arrayBuffer();
-    // PERF-09 FIX: Use standard library base64 encoder instead of byte-by-byte loop
     const base64Image = base64Encode(new Uint8Array(imageBuffer));
     const mimeType = imageResp.headers.get('content-type') || 'image/jpeg';
     imageParts.push({ inline_data: { mime_type: mimeType, data: base64Image } });
   }
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+  // C-67 fix: send API key via header x-goog-api-key, not query string
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(30000),   // C-66: 30s model timeout
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,           // C-67: header, not query string
+    },
     body: JSON.stringify({
       contents: [{
         parts: [
@@ -397,11 +432,16 @@ async function callOpenAICompatible(photoUrls: string[], prompt: string, modelNa
   // native API takes inline_data only), so handing them an https URL makes the
   // upstream call stall or silently drop the image. Groq/OpenAI also accept
   // data URLs, so this path is safe for every provider.
+  // C-66 fix: timeout per image + size limit
   const imageParts: object[] = [];
   for (const url of photoUrls) {
-    const imageResp = await fetch(url);
+    const imageResp = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!imageResp.ok) {
-      throw new Error(`Failed to fetch image from URL (${imageResp.status}): ${url}`);
+      throw new Error(`Image fetch failed: HTTP ${imageResp.status}`);
+    }
+    const contentLength = imageResp.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
+      throw new Error('Image too large (max 10MB)');
     }
     const imageBuffer = await imageResp.arrayBuffer();
     const base64Image = base64Encode(new Uint8Array(imageBuffer));
@@ -429,6 +469,7 @@ async function callOpenAICompatible(photoUrls: string[], prompt: string, modelNa
 
   const response = await fetch(apiBaseUrl, {
     method: "POST",
+    signal: AbortSignal.timeout(35000), // C-66: 35s model timeout
     headers: {
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",

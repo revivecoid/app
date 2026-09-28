@@ -8,7 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'core/l10n/app_localizations.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/utils/session_health.dart';
-import 'features/shared/services/pricing_matrix.dart';
+// G-03: PricingMatrix import removed — preload() deleted
 
 void main() async {
   // 1. Ensure Flutter engine is fully initialized before async network bindings run
@@ -31,9 +31,8 @@ void main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-  // 4. Pre-warm the PricingMatrix cache so the first AI estimation request
-  //    has no extra latency. Runs in the background — does not block launch.
-  PricingMatrix.preload();
+  // 4. G-03 fix: PricingMatrix.preload() removed — dead cache, every visitor paid 1 startup query.
+  //    Pricing is now loaded on demand inside vision-estimation Edge Function only.
 
   // 5. Heal a stored session whose access token is dated in the future.
   //    PostgREST answers such a token with 401 / PGRST303 before any policy
