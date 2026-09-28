@@ -233,7 +233,14 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     IconButton(
                       icon: const Icon(Icons.arrow_back),
                       color: theme.colorScheme.onSurface,
-                      onPressed: () => context.pop(),
+                      // C-84 fix: canPop check before pop; fallback to '/' to avoid GoError
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/');
+                        }
+                      },
                     ),
                   InkWell(
                     onTap: () {

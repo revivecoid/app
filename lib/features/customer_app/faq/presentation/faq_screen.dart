@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // C-74: Clipboard
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -97,9 +98,10 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
   }
 
   void _copy(String text, String label) {
-    // ignore: avoid_print
+    // C-74 fix: actually copy to clipboard (was missing Clipboard.setData)
+    Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('$label copied'),
+      content: Text('$label disalin'),
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
     ));

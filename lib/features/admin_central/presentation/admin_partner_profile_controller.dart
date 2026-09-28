@@ -81,9 +81,15 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
   StreamSubscription? _messageSubscription;
   final String currentUserId;
 
+  // REL-10 fix: safe currentUser access — empty string if session expired
   AdminPartnerProfileController(this.partnerId)
-      : currentUserId = Supabase.instance.client.auth.currentUser!.id,
+      : currentUserId = Supabase.instance.client.auth.currentUser?.id ?? '',
         super(AdminPartnerProfileState()) {
+    if (currentUserId.isEmpty) {
+      // Session expired — don't init, let UI redirect to login
+      state = AdminPartnerProfileState(isLoading: false, errorMessage: 'Session expired. Please log in again.');
+      return;
+    }
     _init();
   }
 

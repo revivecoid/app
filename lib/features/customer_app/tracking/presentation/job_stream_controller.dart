@@ -60,8 +60,11 @@ class JobStreamState {
 
 // --- CONTROLLER IMPLEMENTATION ---
 
-final jobStreamProvider = StateNotifierProvider.family<JobStreamController, JobStreamState, String>((ref, jobId) {
-  return JobStreamController(Supabase.instance.client, jobId);
+// C-39 fix: autoDispose so channels are cancelled when screen leaves tree
+final jobStreamProvider = StateNotifierProvider.autoDispose.family<JobStreamController, JobStreamState, String>((ref, jobId) {
+  final controller = JobStreamController(Supabase.instance.client, jobId);
+  ref.onDispose(() => controller.dispose());
+  return controller;
 });
 
 class JobStreamController extends StateNotifier<JobStreamState> {

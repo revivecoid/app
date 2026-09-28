@@ -83,16 +83,26 @@ class SupabaseAuthRefreshNotifier extends ChangeNotifier {
 }
 
 // --- ROUTER GLOBAL STATE ---
-String? _globalReturnToPath;
+// SEC-16/PERF-10 fix: in-memory cache replaces _globalReturnToPath mutable global
+// Avoids SharedPreferences I/O on every navigation and cross-session leakage.
+String? _cachedReturnTo;
+
+// SEC-16 fix: whitelist of allowed returnTo destinations
+const _allowedReturnPaths = {
+  '/estimator', '/booking', '/tracking', '/login', '/register',
+  '/faq', '/profile', '/notifications', '/partner-dashboard',
+  '/admin', '/',
+};
 
 // INT-10 FIX: Sanitize returnTo to prevent open redirect attacks.
-// Only allow relative paths starting with '/'. Block absolute URLs,
-// javascript: schemes, and protocol-relative URLs (//evil.com).
+// Only allow relative paths starting with '/' and matching whitelist prefix.
 String? _sanitizeReturnTo(String? raw) {
   if (raw == null || raw.isEmpty) return null;
   final trimmed = raw.trim();
-  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return trimmed;
-  return null; // Block absolute URLs
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return null;
+  // SEC-16: must start with an allowed path prefix
+  final allowed = _allowedReturnPaths.any((p) => trimmed == p || trimmed.startsWith('$p/'));
+  return allowed ? trimmed : null;
 }
 
 // Builds the OAuth / password-recovery redirect target.
@@ -128,12 +138,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         final publicPaths = ['/', '/estimator', '/diagram-test', '/auth/callback', '/partner/register', '/faq', '/about', '/privacy'];
         if (publicPaths.contains(path) || path.startsWith('/auth/')) return null;
         if (!isLoggingIn) {
+          // PERF-10/SEC-16 fix: in-memory only, no SharedPreferences I/O
+          _cachedReturnTo = _sanitizeReturnTo(state.uri.toString());
           final returnTo = Uri.encodeComponent(state.uri.toString());
-          _globalReturnToPath = state.uri.toString();
-          try {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('returnTo', _globalReturnToPath!);
-          } catch (e) { debugPrint('[Router] SharedPreferences error: $e'); }
           return '/login?returnTo=$returnTo';
         }
         return null;
@@ -151,11 +158,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return null;
         }
         final returnTo = Uri.encodeComponent(state.uri.toString());
-        _globalReturnToPath = state.uri.toString();
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('returnTo', _globalReturnToPath!);
-        } catch (e) { debugPrint('[Router] SharedPreferences error: $e'); }
+        // PERF-10/SEC-16 fix: in-memory cache, no SharedPreferences
+        _cachedReturnTo = _sanitizeReturnTo(state.uri.toString());
         return '/login?returnTo=$returnTo';
       }
 
@@ -176,36 +180,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         final decodedQueryParam = queryParamReturnTo != null ? Uri.decodeComponent(queryParamReturnTo) : null;
         
         // INT-10 FIX: Sanitize all returnTo sources to block open redirects
-        String? targetPath = _sanitizeReturnTo(decodedQueryParam) ?? _sanitizeReturnTo(_globalReturnToPath);
-        if (targetPath == null) {
-          try {
-            final prefs = await SharedPreferences.getInstance();
-            targetPath = _sanitizeReturnTo(prefs.getString('returnTo'));
-            if (targetPath != null) {
-              await prefs.remove('returnTo');
-            }
-          } catch (e) { debugPrint('[Router] SharedPreferences error: $e'); }
-        }
+        // PERF-10/SEC-16 fix: use in-memory cache, decode query param once
+        String? targetPath = _sanitizeReturnTo(decodedQueryParam) ?? _cachedReturnTo;
+        _cachedReturnTo = null; // consume it
         
         if (role == 'master_admin') return targetPath ?? '/admin-central';
         if (role == 'partner_mechanic') return targetPath ?? '/partner-dashboard';
         if (role == 'partner_staff' || role == 'partner_driver') return targetPath ?? '/ops';
         return targetPath ?? '/'; 
       } else {
-        // If we landed somewhere else unexpectedly right after login (e.g. Supabase fallback to '/'),
-        // see if we have a trapped returnTo in SharedPreferences we should be honoring.
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          final trappedPath = _sanitizeReturnTo(prefs.getString('returnTo'));
-          if (trappedPath != null) {
-            await prefs.remove('returnTo');
-            return trappedPath; 
-          }
-        } catch (e) { debugPrint('[Router] SharedPreferences error: $e'); }
-
-        // We have securely landed on an authenticated route and are not in a login loop.
-        // It is now strictly safe to garbage collect the global return path.
-        _globalReturnToPath = null;
+        // Consume cached returnTo if present after non-callback login
+        final trappedPath = _cachedReturnTo;
+        _cachedReturnTo = null;
+        if (trappedPath != null) return trappedPath;
       }
 
       // 1. MASTER ADMIN DOMAIN GUARD
@@ -579,20 +566,14 @@ class _AuthCallbackScreenState extends State<_AuthCallbackScreen> {
       }
     }
     if (mounted) {
-      // Respect the returnTo parameter if present, otherwise fall back to global cache, then SharedPreferences
-      String? returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'] ?? _globalReturnToPath;
-      if (returnTo == null) {
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          returnTo = prefs.getString('returnTo');
-          if (returnTo != null) {
-            await prefs.remove('returnTo');
-          }
-        } catch (e) { debugPrint('[Router] SharedPreferences error: $e'); }
-      }
-      
+      // PERF-10/SEC-16 fix: read from query param or in-memory cache (no SharedPreferences)
+      final rawReturnTo = GoRouterState.of(context).uri.queryParameters['returnTo'] ?? _cachedReturnTo;
+      _cachedReturnTo = null;
+      String? returnTo = _sanitizeReturnTo(
+        rawReturnTo != null ? Uri.decodeComponent(rawReturnTo) : null,
+      );
       if (returnTo != null) {
-        context.go(Uri.decodeComponent(returnTo));
+        context.go(returnTo);
       } else {
         context.go('/');
       }

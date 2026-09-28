@@ -7,6 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../estimator/providers/customer_intake_provider.dart';
 
+// C-42 fix: sentinel for copyWith null-clear pattern
+const _sentinel = Object();
+
 enum DeliveryOption { selfDeliver, pickup }
 enum PaymentStatus { pending, awaitingWebhook, paid, failed, manualTransferPending }
 enum PaymentMethod { onlineGateway, manualTransfer }
@@ -54,7 +57,7 @@ class CheckoutState {
     DateTime? scheduledDate,
     PaymentMethod? paymentMethod,
     PaymentStatus? paymentStatus,
-    String? errorMessage,
+    Object? errorMessage = _sentinel, // C-42 fix: sentinel allows explicit null clear
     bool? isLoading,
     XFile? transferProof,
     bool? paymentOnlyMode,
@@ -69,7 +72,8 @@ class CheckoutState {
       scheduledDate: scheduledDate ?? this.scheduledDate,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       paymentStatus: paymentStatus ?? this.paymentStatus,
-      errorMessage: errorMessage ?? this.errorMessage,
+      // C-42 fix: null explicitly clears; omitted preserves existing
+      errorMessage: identical(errorMessage, _sentinel) ? this.errorMessage : errorMessage as String?,
       isLoading: isLoading ?? this.isLoading,
       transferProof: transferProof ?? this.transferProof,
       paymentOnlyMode: paymentOnlyMode ?? this.paymentOnlyMode,
@@ -77,7 +81,8 @@ class CheckoutState {
   }
 }
 
-final checkoutControllerProvider = StateNotifierProvider.family<CheckoutController, CheckoutState, String>((ref, jobId) {
+// C-39 fix: autoDispose so realtime subscriptions are cancelled when screen leaves tree
+final checkoutControllerProvider = StateNotifierProvider.autoDispose.family<CheckoutController, CheckoutState, String>((ref, jobId) {
   // Use the cached estimated cost from the intake flow for new (unassigned) jobs
   final intakeState = ref.read(customerIntakeProvider);
   return CheckoutController(Supabase.instance.client, jobId, intakeState.estimatedCost);
@@ -85,7 +90,7 @@ final checkoutControllerProvider = StateNotifierProvider.family<CheckoutControll
 
 /// Payment-only provider — used when the customer is paying after workshop inspection.
 /// Loads the final_cost set by the partner; hides calendar and logistics fields.
-final paymentOnlyCheckoutProvider = StateNotifierProvider.family<CheckoutController, CheckoutState, String>((ref, jobId) {
+final paymentOnlyCheckoutProvider = StateNotifierProvider.autoDispose.family<CheckoutController, CheckoutState, String>((ref, jobId) {
   return CheckoutController(Supabase.instance.client, jobId, 0.0, paymentOnly: true);
 });
 

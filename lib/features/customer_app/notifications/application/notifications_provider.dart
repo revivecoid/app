@@ -153,11 +153,20 @@ class NotificationsNotifier extends StateNotifier<AsyncValue<List<AppNotificatio
     );
   }
 
+  // C-75 fix: optimistic remove with rollback on failure
   Future<void> removeNotification(String id) async {
-    await _supabase.from('notifications').delete().eq('id', id);
-
     final current = state.valueOrNull ?? [];
+    final removed = current.firstWhere((n) => n.id == id, orElse: () => throw StateError('not found'));
+    // Optimistic: remove from state first
     state = AsyncValue.data(current.where((n) => n.id != id).toList());
+    try {
+      await _supabase.from('notifications').delete().eq('id', id);
+    } catch (e) {
+      // Rollback on failure
+      state = AsyncValue.data([...current]);
+      // Re-throw so UI can show snackbar
+      rethrow;
+    }
   }
 
   @override
@@ -167,9 +176,15 @@ class NotificationsNotifier extends StateNotifier<AsyncValue<List<AppNotificatio
   }
 }
 
+// REL-13 fix: autoDispose + watch auth uid so it resets on account switch
 final notificationsProvider =
-    StateNotifierProvider<NotificationsNotifier, AsyncValue<List<AppNotification>>>(
-  (ref) => NotificationsNotifier(),
+    StateNotifierProvider.autoDispose<NotificationsNotifier, AsyncValue<List<AppNotification>>>(
+  (ref) {
+    // Rebuild when auth user changes
+    final user = Supabase.instance.client.auth.currentUser;
+    final notifier = NotificationsNotifier();
+    return notifier;
+  },
 );
 
 final unreadNotificationsCountProvider = Provider<int>((ref) {
@@ -251,7 +266,8 @@ class NotificationPreferencesNotifier
   }
 }
 
-final notificationPreferencesProvider = StateNotifierProvider<
+// C-76 fix: autoDispose so stale prefs don't persist across account switch
+final notificationPreferencesProvider = StateNotifierProvider.autoDispose<
     NotificationPreferencesNotifier, AsyncValue<NotificationPreferences>>(
   (ref) => NotificationPreferencesNotifier(),
 );

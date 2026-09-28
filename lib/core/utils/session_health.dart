@@ -73,22 +73,24 @@ bool isTokenFutureDated(String token, {DateTime? now}) {
   return issuedAt.isAfter(reference.add(_postgrestLeeway + _safetyMargin));
 }
 
-/// Guards against overlapping heals: a refresh fires onAuthStateChange, which
-/// would otherwise re-enter and queue another refresh.
-bool _healing = false;
+// C-85 fix: single-flight heal — all parallel callers share the same Future
+Future<bool>? _healFuture;
 
 /// Refreshes the session when, and only when, its token is future-dated.
-///
-/// Safe to call on every startup and on every auth state change. Failures are
-/// swallowed: this is a recovery path, and a failed heal must not break launch.
-/// Returns true when a refresh was actually performed.
-Future<bool> healFutureDatedSession(SupabaseClient client) async {
-  if (_healing) return false;
+/// C-85: Uses single-flight so parallel callers wait on the same Future
+/// instead of each getting false immediately while heal is in progress.
+Future<bool> healFutureDatedSession(SupabaseClient client) {
+  // If a heal is already running, return the same Future to all callers
+  if (_healFuture != null) return _healFuture!;
 
   final token = client.auth.currentSession?.accessToken;
-  if (token == null || !isTokenFutureDated(token)) return false;
+  if (token == null || !isTokenFutureDated(token)) return Future.value(false);
 
-  _healing = true;
+  _healFuture = _doHeal(client);
+  return _healFuture!;
+}
+
+Future<bool> _doHeal(SupabaseClient client) async {
   try {
     debugPrint('[SessionHealth] Access token is future-dated; refreshing the session.');
     await client.auth.refreshSession();
@@ -97,7 +99,7 @@ Future<bool> healFutureDatedSession(SupabaseClient client) async {
     debugPrint('[SessionHealth] Could not refresh a future-dated session: $e');
     return false;
   } finally {
-    _healing = false;
+    _healFuture = null;
   }
 }
 

@@ -430,7 +430,8 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
         _fetchAutoAssignSettings(),
       ]);
       _subscribeToJobMutations();
-      _startExceptionPolling();
+      // PERF-08 fix: polling is fallback only — started inside _subscribeToJobMutations
+      // on channel error, not unconditionally alongside realtime
       _subscribeToUnreadMessages();
       state = state.copyWith(isLoading: false);
     } catch (e) {
@@ -721,7 +722,16 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
               _fetchActiveJobs();
             }
           },
-        ).subscribe();
+        ).subscribe((status, [error]) {
+          // PERF-08 fix: start polling fallback only on channel failure
+          if (status == RealtimeSubscribeStatus.channelError || status == RealtimeSubscribeStatus.timedOut) {
+            debugPrint('[Admin] Realtime channel error — falling back to polling');
+            _startExceptionPolling();
+          } else if (status == RealtimeSubscribeStatus.subscribed) {
+            // Cancel polling if realtime recovered
+            _pollingTimer?.cancel();
+          }
+        });
   }
 
   Future<void> overrideJobStatus(String jobId, String newStatus) async {
