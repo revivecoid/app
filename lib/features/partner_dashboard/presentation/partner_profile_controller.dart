@@ -505,10 +505,12 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
     }
   }
 
-  // ── Public URL helper ─────────────────────────────────────────────────────
-
-  String getPublicUrl(String fileKey) =>
-      _sb.storage.from(_bucket).getPublicUrl(fileKey);
+  // ── URL helper (SEC-04: bucket kini private) ───────────────────────────────
+  // Gunakan signedPhotoUrl() dari core/utils/storage_url.dart untuk async signed URL.
+  // Method ini dipertahankan untuk kompatibilitas — mengembalikan fileKey untuk
+  // digunakan sebagai parameter ke signedPhotoUrl().
+  String getPublicUrl(String fileKey) => fileKey;
+  // TODO: Migrasi semua caller ke: await signedPhotoUrl(fileKey)
 
   // ── Document format helpers ───────────────────────────────────────────────
 

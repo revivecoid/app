@@ -72,8 +72,11 @@ class JobStreamController extends StateNotifier<JobStreamState> {
   StreamSubscription? _photoSubscription;
   Timer? _reconnectTimer;
   
-  // REL-04 FIX: Use unified 'revive-photos' bucket (same name used by upload paths)
-  final String _cdnBucketPath = Supabase.instance.client.storage.from('revive-photos').getPublicUrl('');
+  // SEC-04/PRIV-01: Bucket revive-photos kini private.
+  // URL foto job dihasilkan per-foto via createSignedUrl di job photo loading.
+  // Variabel ini dipertahankan untuk kompatibilitas — nilainya diabaikan.
+  // TODO: Hapus setelah semua caller beralih ke signedPhotoUrl() helper.
+  final String _cdnBucketPath = '';
 
   // REL-06 FIX: Exponential backoff state
   int _retryCount = 0;
