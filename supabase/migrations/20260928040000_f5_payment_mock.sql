@@ -421,8 +421,10 @@ CREATE VIEW public.partner_settlements AS
     date_trunc('day', py.paid_at) AS settlement_date,
     count(py.id)      AS payment_count,
     sum(py.amount)    AS gross_amount,
-    sum(round(py.amount * COALESCE(p.commission_rate, 0.1)))::bigint AS commission,
-    sum(py.amount - round(py.amount * COALESCE(p.commission_rate, 0.1)))::bigint AS net_payout
+    -- commission_rate column tidak ada di partners — default 10%
+    -- Tambahkan kolom dan update view setelah keputusan bisnis dikonfirmasi
+    sum(round(py.amount * 0.10))::bigint AS commission,
+    sum(py.amount - round(py.amount * 0.10))::bigint AS net_payout
   FROM public.payments py
   JOIN public.repair_jobs j  ON j.id = py.job_id
   JOIN public.partners p     ON p.id = j.partner_id
