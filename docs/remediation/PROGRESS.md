@@ -16,7 +16,7 @@
 | 6 | F06-status-clients | **SELESAI** | 2026-09-28 |
 | 7 | F07-booking-capacity | **SELESAI** | 2026-09-28 |
 | 8 | F08-partner-app | **SELESAI** | 2026-09-28 |
-| 9 | F09-estimation | Belum dimulai | — |
+| 9 | F09-estimation | **SELESAI** | 2026-09-28 |
 | 10 | F10-tracking | Belum dimulai | — |
 | 11 | F11-admin-cms | Belum dimulai | — |
 | 12 | F12-privacy-platform | **SELESAI** | 2026-09-28 |
