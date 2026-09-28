@@ -366,6 +366,14 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
                 p['is_active'] == true ? Colors.green : Colors.orange),
             if (p['created_at'] != null)
               _detailRow('Joined', DateFormat.yMMMd().format(DateTime.parse(p['created_at'].toString())), textColor),
+            const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: 8),
+            // Commission rate input
+            _CommissionRateEditor(
+              partnerId: p['id']?.toString() ?? '',
+              currentRate: ((p['commission_rate'] as num?) ?? 0.10).toDouble(),
+            ),
           ],
         ),
       ),
@@ -628,5 +636,91 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
         }
       }
     }
+  }
+}
+
+// ── Commission rate editor widget ─────────────────────────────────────────────
+
+class _CommissionRateEditor extends StatefulWidget {
+  final String partnerId;
+  final double currentRate;
+  const _CommissionRateEditor({required this.partnerId, required this.currentRate});
+
+  @override
+  State<_CommissionRateEditor> createState() => _CommissionRateEditorState();
+}
+
+class _CommissionRateEditorState extends State<_CommissionRateEditor> {
+  late TextEditingController _ctrl;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // Display as percentage, e.g. 0.10 → "10"
+    _ctrl = TextEditingController(
+      text: (widget.currentRate * 100).toStringAsFixed(0),
+    );
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  Future<void> _save() async {
+    final pct = double.tryParse(_ctrl.text.trim());
+    if (pct == null || pct < 0 || pct > 100) {
+      setState(() => _error = 'Masukkan angka 0–100');
+      return;
+    }
+    setState(() { _saving = true; _error = null; });
+    try {
+      await Supabase.instance.client.rpc('admin_set_commission_rate', params: {
+        'p_partner_id': widget.partnerId,
+        'p_rate':       pct / 100,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Komisi diset ke ${pct.toStringAsFixed(0)}%'),
+              backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      setState(() => _error = e.toString().replaceAll('Exception:', '').trim());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Komisi Re-V (%)',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 6),
+        Row(children: [
+          SizedBox(
+            width: 100,
+            child: TextField(
+              controller: _ctrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                suffixText: '%',
+                isDense: true,
+                border: const OutlineInputBorder(),
+                errorText: _error,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          _saving
+              ? const SizedBox(width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : ElevatedButton(onPressed: _save, child: const Text('Simpan')),
+        ]),
+      ],
+    );
   }
 }

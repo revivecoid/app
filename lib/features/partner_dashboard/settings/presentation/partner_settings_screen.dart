@@ -175,6 +175,13 @@ class PartnerSettingsScreen extends ConsumerWidget {
                   const Divider(),
                   const SizedBox(height: 12),
 
+                  // Valet fee info (read-only for partner — set by admin)
+                  _ValetFeeDisplay(),
+
+                  const SizedBox(height: 20),
+                  const Divider(),
+                  const SizedBox(height: 12),
+
                   // Sign out
                   SizedBox(
                     width: double.infinity,
@@ -543,5 +550,51 @@ class _OpsAccessModeCardState extends ConsumerState<_OpsAccessModeCard> {
         ),
       ],
     );
+  }
+}
+
+// ── Valet fee display (partner sees current rate, cannot edit) ────────────────
+
+class _ValetFeeDisplay extends StatefulWidget {
+  @override
+  State<_ValetFeeDisplay> createState() => _ValetFeeDisplayState();
+}
+
+class _ValetFeeDisplayState extends State<_ValetFeeDisplay> {
+  int? _fee;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final res = await Supabase.instance.client
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'valet_fee_base')
+          .maybeSingle();
+      if (res != null && mounted) {
+        setState(() => _fee = (res['value'] as num?)?.toInt());
+      }
+    } catch (e) {
+      debugPrint('[ValetFee] load error: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final feeText = _fee == null ? '...' : 'Rp ${_fee.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+    return Row(children: [
+      Icon(Icons.local_taxi_outlined, size: 18, color: cs.onSurfaceVariant),
+      const SizedBox(width: 8),
+      Text('Biaya jemput (valet): ', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+      Text(feeText, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface)),
+      const SizedBox(width: 4),
+      Text('(ditetapkan admin)', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+    ]);
   }
 }
