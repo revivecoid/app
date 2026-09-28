@@ -1946,13 +1946,13 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) throw Exception('Not authenticated');
-      await Supabase.instance.client.from('profiles').upsert({
-        'id':        user.id,
+      // C-02: 'role' dan 'partner_id' dikunci oleh trigger profiles_lock_sensitive.
+      // Tidak boleh dikirim dalam upsert agar trigger tidak perlu melawan nilai yang salah.
+      await Supabase.instance.client.from('profiles').update({
         'full_name': name,
         'phone':     _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
         'email':     user.email ?? '',
-        'role':      (user.appMetadata['role'] as String?) ?? 'customer',
-      });
+      }).eq('id', user.id);
       widget.onSaved();
       if (mounted) {
         Navigator.of(context).pop();

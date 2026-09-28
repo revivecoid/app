@@ -711,7 +711,7 @@ class _AssetTab extends StatelessWidget {
               Text('No assets in bucket', style: TextStyle(color: cs.onSurfaceVariant))]))
           : ListView.builder(itemCount: filtered.length, itemBuilder: (ctx, i) {
               final f = filtered[i];
-              final url = sup.storage.from('revive-photos').getPublicUrl(f.name);
+              final url = f.name;  // SEC-04: file_key sementara — TODO: await signedPhotoUrl(f.name)
               return Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: cs.surfaceContainerLowest,
                   borderRadius: BorderRadius.circular(10),

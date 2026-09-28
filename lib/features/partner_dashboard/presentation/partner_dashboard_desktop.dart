@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/signed_image.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/customer_contact_line.dart';
 import 'partner_dashboard_controller.dart';
@@ -780,15 +781,13 @@ class _JobCard extends StatelessWidget {
                 ),
                 if (job.latestPhotoUrl != null) ...[
                   SizedBox(height: 12),
-                  ClipRRect(
+                  SignedImage(
+                    fileKey: job.latestPhotoUrl,
+                    width: double.infinity,
+                    height: 100,
+                    fit: BoxFit.cover,
                     borderRadius: BorderRadius.circular(6),
-                    child: Image.network(
-                      job.latestPhotoUrl!,
-                      width: double.infinity,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
+                    errorWidget: const SizedBox.shrink(),
                   ),
                 ],
                 SizedBox(height: 10),

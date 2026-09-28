@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/widgets/signed_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
@@ -1165,7 +1166,9 @@ class _AdminPhotoSlotState extends State<_AdminPhotoSlot> {
     String? publicUrl;
     if (hasPhoto) {
       final key = current['file_key']?.toString() ?? '';
-      publicUrl = widget.sb.storage.from('revive-photos').getPublicUrl(key);
+      // SEC-04: Bucket private — simpan file_key, bukan public URL
+      // TODO: Load signed URL async: await signedPhotoUrl(key)
+      publicUrl = key.isNotEmpty ? key : null;
     }
 
     return Container(
@@ -1184,10 +1187,9 @@ class _AdminPhotoSlotState extends State<_AdminPhotoSlot> {
             child: SizedBox(
               width: 160, height: 110,
               child: hasPhoto
-                  ? Image.network(publicUrl!, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          Icon(Icons.image_not_supported_outlined,
-                              color: cs.onSurfaceVariant, size: 36))
+                  ? SignedImage(fileKey: publicUrl, fit: BoxFit.cover,
+                      errorWidget: Icon(Icons.image_not_supported_outlined,
+                          color: cs.onSurfaceVariant, size: 36))
                   : Container(
                       color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
                       child: Icon(Icons.add_photo_alternate_outlined,
@@ -1239,17 +1241,16 @@ class _AdminPhotoSlotState extends State<_AdminPhotoSlot> {
               itemBuilder: (ctx, i) {
                 final p = widget.slotPhotos[i];
                 final key = p['file_key']?.toString() ?? '';
-                final url = widget.sb.storage
-                    .from('revive-photos')
-                    .getPublicUrl(key);
+                // SEC-04: Bucket private — simpan file_key, UI request signed URL on-demand
+                // TODO: FutureBuilder dengan await signedPhotoUrl(key)
+                final url = key;  // file_key sementara
                 final isCurrent = p['is_current'] == true;
                 return Stack(children: [
-                  ClipRRect(
+                  SignedImage(
+                    fileKey: url,
+                    width: 80, height: 80, fit: BoxFit.cover,
                     borderRadius: BorderRadius.circular(6),
-                    child: Image.network(url,
-                        width: 80, height: 80, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            Container(width: 80, height: 80, color: cs.surfaceContainerHighest)),
+                    errorWidget: Container(width: 80, height: 80, color: cs.surfaceContainerHighest),
                   ),
                   if (isCurrent)
                     Positioned(top: 4, right: 4,

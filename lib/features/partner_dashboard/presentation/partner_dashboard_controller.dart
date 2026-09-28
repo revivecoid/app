@@ -225,8 +225,10 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
         final photos = job['repair_photos'] as List?;
         if (photos != null && photos.isNotEmpty) {
           photos.sort((a, b) => DateTime.parse(b['uploaded_at'].toString()).compareTo(DateTime.parse(a['uploaded_at'].toString())));
-          // REL-04 FIX: Use unified 'revive-photos' bucket (same as customer upload)
-          latestPhotoUrl = _supabase.storage.from('revive-photos').getPublicUrl(photos.first['r2_file_key'].toString());
+          // SEC-04: Bucket private — signed URL diperlukan.
+          // TODO: Ganti dengan await signedPhotoUrl(photos.first['r2_file_key'].toString())
+          // Sementara: simpan file_key, biarkan UI request signed URL on-demand.
+          latestPhotoUrl = photos.first['r2_file_key'].toString();
         }
 
         return PartnerJobNode(
@@ -377,8 +379,8 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
         'uploaded_at': DateTime.now().toIso8601String(),
       });
 
-      // 5. Immediately update the job card thumbnail in local state
-      final publicUrl = _supabase.storage.from('revive-photos').getPublicUrl(fileName);
+      // SEC-04: Bucket private — simpan file_key, UI akan request signed URL on-demand.
+      final publicUrl = fileName;  // TODO: await signedPhotoUrl(fileName)
       final jobIndex = state.activeJobs.indexWhere((j) => j.id == jobId);
       if (jobIndex != -1) {
         final updated = List<PartnerJobNode>.from(state.activeJobs);

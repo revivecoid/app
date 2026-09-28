@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/signed_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -724,9 +725,8 @@ class _PhotoSlot extends StatelessWidget {
             ? Center(child: CircularProgressIndicator(color: _red, strokeWidth: 2))
             : publicUrl != null
                 ? Stack(fit: StackFit.expand, children: [
-                    Image.network(publicUrl!, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            Icon(Icons.image_outlined, color: cs.onSurfaceVariant, size: 36)),
+                    SignedImage(fileKey: publicUrl, fit: BoxFit.cover,
+                        errorWidget: Icon(Icons.image_outlined, color: cs.onSurfaceVariant, size: 36)),
                     // Version count badge
                     if (versionCount > 1)
                       Positioned(top: 6, right: 6,

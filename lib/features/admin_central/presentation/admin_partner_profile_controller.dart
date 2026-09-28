@@ -143,7 +143,9 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
         final objects = await _supabase.storage.from('revive-photos').list(path: 'facility/$partnerId/');
         for (final o in objects) {
           if (o.name.isNotEmpty) {
-            photoUrls.add(_supabase.storage.from('revive-photos').getPublicUrl('facility/$partnerId/${o.name}'));
+            // SEC-04: Bucket private — simpan file_key, UI akan request signed URL on-demand.
+            // TODO: await signedPhotoUrl('facility/$partnerId/${o.name}')
+            photoUrls.add('facility/$partnerId/${o.name}');
           }
         }
       } catch (e) { debugPrint('[AdminPartner] facility photos error: $e'); }

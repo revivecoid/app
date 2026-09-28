@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/widgets/signed_image.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/rev_app_bar.dart';
 import 'admin_dashboard_controller.dart';
@@ -482,14 +483,13 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
                   scrollDirection: Axis.horizontal,
                   itemCount: state.facilityPhotoUrls.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 10),
-                  itemBuilder: (context, i) => ClipRRect(
+                  itemBuilder: (context, i) => SignedImage(
+                    fileKey: state.facilityPhotoUrls[i],
+                    width: 150, height: 110,
+                    fit: BoxFit.cover,
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      state.facilityPhotoUrls[i],
+                    errorWidget: Container(
                       width: 150, height: 110,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 150, height: 110,
                         color: Colors.grey[200],
                         child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
                       ),
