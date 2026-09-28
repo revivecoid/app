@@ -140,6 +140,17 @@ class PartnerCrmNode {
     this.autoAssignPriority = 999,
     this.autoAssignCapacity = 10,
   });
+
+  // C-21 fix: copyWith so stream can update only unreadMessageCount
+  PartnerCrmNode copyWith({int? unreadMessageCount}) => PartnerCrmNode(
+    id: id, shopName: shopName, tier: tier, isActive: isActive,
+    activeVolume: activeVolume, avgVelocityDays: avgVelocityDays,
+    disputeCount: disputeCount,
+    unreadMessageCount: unreadMessageCount ?? this.unreadMessageCount,
+    serviceArea: serviceArea, bayCapacity: bayCapacity,
+    autoAssignActive: autoAssignActive, autoAssignPriority: autoAssignPriority,
+    autoAssignCapacity: autoAssignCapacity,
+  );
 }
 
 class AiConfigNode {
@@ -198,6 +209,9 @@ enum AssignStatusFilter { all, unassigned, assigned, inProgress }
 enum PaymentStatusFilter { all, pending, paid, overdue }
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
+
+// C-22 fix: sentinel object for nullable clear in copyWith
+const _adminSentinel = Object();
 
 class AdminDashboardState {
   final int currentViewIndex;
@@ -271,8 +285,8 @@ class AdminDashboardState {
     List<BreachAlert>? breaches,
     List<String>? toastQueue,
     bool? isLoading,
-    String? errorMessage,
-    String? successMessage,
+    Object? errorMessage = _adminSentinel,    // C-22: sentinel allows null clear
+    Object? successMessage = _adminSentinel,  // C-22: sentinel allows null clear
     String? searchQuery,
     String? adminName,
     String? adminRole,
@@ -284,8 +298,8 @@ class AdminDashboardState {
     bool? assignSortAsc,
     AssignStatusFilter? assignStatusFilter,
     PaymentStatusFilter? assignPaymentFilter,
-    DateTime? assignDateFrom,
-    DateTime? assignDateTo,
+    Object? assignDateFrom = _adminSentinel,  // C-22: sentinel allows null clear
+    Object? assignDateTo = _adminSentinel,    // C-22: sentinel allows null clear
     Map<String, dynamic>? autoAssignSettings,
   }) {
     return AdminDashboardState(
@@ -298,8 +312,8 @@ class AdminDashboardState {
       breaches: breaches ?? this.breaches,
       toastQueue: toastQueue ?? this.toastQueue,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage ?? this.errorMessage,
-      successMessage: successMessage ?? this.successMessage,
+      errorMessage: identical(errorMessage, _adminSentinel) ? this.errorMessage : errorMessage as String?,
+      successMessage: identical(successMessage, _adminSentinel) ? this.successMessage : successMessage as String?,
       searchQuery: searchQuery ?? this.searchQuery,
       adminName: adminName ?? this.adminName,
       adminRole: adminRole ?? this.adminRole,
@@ -311,8 +325,8 @@ class AdminDashboardState {
       assignSortAsc: assignSortAsc ?? this.assignSortAsc,
       assignStatusFilter: assignStatusFilter ?? this.assignStatusFilter,
       assignPaymentFilter: assignPaymentFilter ?? this.assignPaymentFilter,
-      assignDateFrom: assignDateFrom ?? this.assignDateFrom,
-      assignDateTo: assignDateTo ?? this.assignDateTo,
+      assignDateFrom: identical(assignDateFrom, _adminSentinel) ? this.assignDateFrom : assignDateFrom as DateTime?,
+      assignDateTo: identical(assignDateTo, _adminSentinel) ? this.assignDateTo : assignDateTo as DateTime?,
       autoAssignSettings: autoAssignSettings ?? this.autoAssignSettings,
     );
   }
@@ -580,20 +594,10 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
         }
       }
       if (!mounted) return;
+      // C-21 fix: only update unreadMessageCount — preserve autoAssign/quota fields
       final updatedPartners = state.partners.map((p) {
         final count = counts[p.id] ?? 0;
-        return PartnerCrmNode(
-          id: p.id,
-          shopName: p.shopName,
-          tier: p.tier,
-          isActive: p.isActive,
-          activeVolume: p.activeVolume,
-          avgVelocityDays: p.avgVelocityDays,
-          disputeCount: p.disputeCount,
-          unreadMessageCount: count,
-          serviceArea: p.serviceArea,
-          bayCapacity: p.bayCapacity,
-        );
+        return p.copyWith(unreadMessageCount: count);
       }).toList();
       state = state.copyWith(partners: updatedPartners);
     });
@@ -700,26 +704,23 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
             final newStatus = payload.newRecord['status'].toString();
             final existingJobIndex =
                 state.activeJobs.indexWhere((j) => j.id == jobId);
-            if (existingJobIndex != -1) {
-              final job = state.activeJobs[existingJobIndex];
-              final updatedJobs =
-                  List<AdminJobNode>.from(state.activeJobs);
-              updatedJobs[existingJobIndex] = job.copyWith(
-                status: newStatus,
-                lastUpdatedAt: DateTime.now(),
-              );
-              List<String> newToasts = List.from(state.toastQueue);
-              if (newStatus == '7_finished') {
-                newToasts.add(
-                    'CRITICAL CHECKOUT: Job $jobId (${job.customerName}) finished. Needs validation.');
-              } else if (newStatus == '8_awaiting_delivery') {
-                newToasts.add(
-                    'DISPATCH READY: Job $jobId awaiting delivery protocol.');
+
+            // C-23 fix: terminal states → remove from board immediately
+            if (newStatus == '9_done' || newStatus == '0_cancelled') {
+              if (existingJobIndex != -1) {
+                final updatedJobs = List<AdminJobNode>.from(state.activeJobs)
+                  ..removeAt(existingJobIndex);
+                state = state.copyWith(activeJobs: updatedJobs);
               }
-              state = state.copyWith(
-                  activeJobs: updatedJobs, toastQueue: newToasts);
-            } else {
+              return;
+            }
+
+            if (existingJobIndex != -1) {
+              // C-23 fix: refetch the full row to capture partner_id changes
+              // (auto-assign sets partner_id without changing status)
               _fetchActiveJobs();
+            } else {
+              _fetchActiveJobs(); // New job in our scope
             }
           },
         ).subscribe((status, [error]) {

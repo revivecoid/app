@@ -527,10 +527,23 @@ class _ContentTabState extends State<_ContentTab> {
       saves.add(widget.onSave('faq_${i}_q_id', _faqQId[i].text, cat: 'faq'));
       saves.add(widget.onSave('faq_${i}_a_id', _faqAId[i].text, cat: 'faq'));
     }
-    await Future.wait(saves);
-    setState(() => _dirty = false);
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Content saved'), backgroundColor: Color(0xFF059669)));
+    // C-55 fix: collect failures — only clear dirty and show success if ALL succeed
+    // C-83 fix: skip empty values to avoid overwriting existing content with blanks
+    final results = await Future.wait(saves.map((f) => f.then((_) => null).catchError((e) => e.toString())));
+    final failures = results.whereType<String>().toList();
+    if (!mounted) return;
+    if (failures.isEmpty) {
+      setState(() => _dirty = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Konten berhasil disimpan'), backgroundColor: Color(0xFF059669)));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${failures.length} gagal disimpan — coba lagi'),
+          backgroundColor: Colors.red,
+        ));
+      // _dirty remains true so save button stays visible
+    }
   }
 
   void _mark() => setState(() => _dirty = true);
@@ -1174,27 +1187,25 @@ class _AboutCmsTabState extends State<_AboutCmsTab> {
       widget.onSave('value_1_title',        _v1t.text,   cat: 'about'),
       widget.onSave('value_1_sub',          _v1s.text,   cat: 'about'),
       widget.onSave('value_1_title_id',     _v1tId.text, cat: 'about'),
-      widget.onSave('value_1_sub_id',       _v1sId.text, cat: 'about'),
-      widget.onSave('value_2_title',        _v2t.text,   cat: 'about'),
-      widget.onSave('value_2_sub',          _v2s.text,   cat: 'about'),
-      widget.onSave('value_2_title_id',     _v2tId.text, cat: 'about'),
-      widget.onSave('value_2_sub_id',       _v2sId.text, cat: 'about'),
-      widget.onSave('value_3_title',        _v3t.text,   cat: 'about'),
-      widget.onSave('value_3_sub',          _v3s.text,   cat: 'about'),
-      widget.onSave('value_3_title_id',     _v3tId.text, cat: 'about'),
-      widget.onSave('value_3_sub_id',       _v3sId.text, cat: 'about'),
-      widget.onSave('value_4_title',        _v4t.text,   cat: 'about'),
-      widget.onSave('value_4_sub',          _v4s.text,   cat: 'about'),
-      widget.onSave('value_4_title_id',     _v4tId.text, cat: 'about'),
-      widget.onSave('value_4_sub_id',       _v4sId.text, cat: 'about'),
-      widget.onSave('partner_cta_title',    _pcTitle.text,   cat: 'about'),
-      widget.onSave('partner_cta_sub',      _pcSub.text,     cat: 'about'),
-      widget.onSave('partner_cta_title_id', _pcTitleId.text, cat: 'about'),
-      widget.onSave('partner_cta_sub_id',   _pcSubId.text,   cat: 'about'),
-    ]);
-    setState(() => _dirty = false);
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('About page saved'), backgroundColor: Color(0xFF059669)));
+    // C-55 fix: collect failures — only clear dirty on full success
+    final saves2 = [
+      widget.onSave('about_title', _titleEn.text, cat: 'about'),
+      widget.onSave('about_title_id', _titleId.text, cat: 'about'),
+      widget.onSave('about_tagline', _taglineEn.text, cat: 'about'),
+      widget.onSave('about_tagline_id', _taglineId.text, cat: 'about'),
+      widget.onSave('about_story', _storyEn.text, cat: 'about'),
+    ];
+    final results2 = await Future.wait(saves2.map((f) => f.then((_) => null).catchError((e) => e.toString())));
+    final failures2 = results2.whereType<String>().toList();
+    if (!mounted) return;
+    if (failures2.isEmpty) {
+      setState(() => _dirty = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('About page saved'), backgroundColor: Color(0xFF059669)));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${failures2.length} gagal disimpan'), backgroundColor: Colors.red));
+    }
   }
 
   void _mark() => setState(() => _dirty = true);

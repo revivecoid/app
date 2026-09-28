@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // C-28: Clipboard
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/widgets/signed_image.dart';
@@ -1492,27 +1493,17 @@ class _DownloadButton extends StatelessWidget {
           ? null
           : () async {
               try {
-                // Generate a 60-minute signed URL for download
                 final url = await Supabase.instance.client.storage
                     .from('revive-photos')
                     .createSignedUrl(fileKey, 3600);
-                // Open URL in browser
-                // ignore: deprecated_member_use
-                if (context.mounted) {
+                // C-28 fix: open URL directly with launchUrl
+                final uri = Uri.parse(url);
+                final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                if (!launched && context.mounted) {
+                  // Fallback: copy to clipboard
+                  await Clipboard.setData(ClipboardData(text: url));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(children: [
-                        const Icon(Icons.link, color: Colors.white, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text('Signed URL generated — copy from here: $url',
-                            overflow: TextOverflow.ellipsis)),
-                      ]),
-                      duration: const Duration(seconds: 10),
-                      action: SnackBarAction(
-                          label: 'Copy',
-                          textColor: Colors.white,
-                          onPressed: () {}),
-                    ),
+                    const SnackBar(content: Text('URL disalin ke clipboard')),
                   );
                 }
               } catch (e) {

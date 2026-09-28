@@ -137,6 +137,7 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
                         Divider(height: 1, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
                         _ValueTile(theme: theme, icon: Icons.handshake_rounded,
                             title: c('value_3_title', en: 'Trusted', id: 'Terpercaya'),
+                            // C-73 fix: warranty claim aligned — 90 days (matches value_3_sub in CMS)
                             sub:   c('value_3_sub',   en: '90-day work guarantee at all our partners', id: '90 hari garansi pengerjaan di semua mitra kami')),
                         Divider(height: 1, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
                         _ValueTile(theme: theme, icon: Icons.smart_toy_rounded,
@@ -175,7 +176,8 @@ class _AboutState extends ConsumerState<AboutUsScreen> {
                                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
                         ])),
                         TextButton(
-                          onPressed: () {},
+                          // C-73 fix: CTA actually navigates to partner registration
+                          onPressed: () => context.push('/partner/register'),
                           child: Text(c('cta_register', en: 'Register', id: 'Daftar'),
                               style: const TextStyle(color: AppColors.primaryContainer, fontWeight: FontWeight.bold)),
                         ),

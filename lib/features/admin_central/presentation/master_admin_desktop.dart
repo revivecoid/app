@@ -704,7 +704,18 @@ class _OpsMatrixContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pendingJobs = state.activeJobs
+    // C-70 fix: apply searchQuery to Ops Matrix (license plate, job ID, customer name)
+    final query = state.searchQuery.toLowerCase();
+    final filteredJobs = query.isEmpty
+        ? state.activeJobs
+        : state.activeJobs.where((j) =>
+            j.id.toLowerCase().contains(query) ||
+            (j.customerName.toLowerCase().contains(query)) ||
+            (j.licensePlate?.toLowerCase().contains(query) ?? false) ||
+            (j.partnerName?.toLowerCase().contains(query) ?? false)
+          ).toList();
+
+    final pendingJobs = filteredJobs
         .where((j) =>
             j.status == '3_booked' ||
             j.status == '3_inspected')
@@ -878,7 +889,7 @@ class _OpsMatrixContent extends StatelessWidget {
               ),
             )
               else
-                ...state.activeJobs.map((j) => _JobRow(
+                ...filteredJobs.map((j) => _JobRow(
                       cs: cs,
                       job: j,
                       partners: state.partners,
@@ -1321,7 +1332,9 @@ class _WorkshopSettingsContentState extends State<_WorkshopSettingsContent> {
             fgColor: cs.primary),
         const Spacer(),
         ElevatedButton.icon(
-          onPressed: () => context.push('/admin-central/partner/new'),
+          // C-27 fix: 'partner/new' doesn't exist — redirect to pending applications
+          // which is the real onboarding entry point
+          onPressed: () => context.push('/admin-central/applications'),
           icon: Icon(Icons.add, size: 16, color: cs.onPrimary),
           label: Text('Register Workshop', style: TextStyle(color: cs.onPrimary)),
           style: ElevatedButton.styleFrom(
@@ -2537,6 +2550,24 @@ class _CustomerCrmContent extends StatelessWidget {
             return list.cast<Map<String, dynamic>>();
           }),
           builder: (ctx, snap) {
+            // C-30 fix: show error separately from empty state
+            if (snap.hasError) {
+              return Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 32),
+                  const SizedBox(height: 8),
+                  Text('Gagal memuat riwayat: ${snap.error}',
+                      style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+                ]),
+              );
+            }
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const Center(child: Padding(
+                padding: EdgeInsets.all(40),
+                child: CircularProgressIndicator(),
+              ));
+            }
             final jobs = snap.data ?? [];
             return ListView(
               controller: scrollCtrl,

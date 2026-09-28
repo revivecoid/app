@@ -65,38 +65,12 @@ class BookingSchedulingController extends StateNotifier<BookingSchedulingState> 
     _fetchWorkshops();
   }
 
+  // BIZ-12 fix: dummy workshops removed from production bundle
+  // This screen/controller is not connected to any route or real data source.
+  // Replace _fetchWorkshops with a real Supabase query when the feature is built.
   Future<void> _fetchWorkshops() async {
-    state = state.copyWith(isLoading: true);
-    await Future.delayed(const Duration(milliseconds: 800)); // Simulate network
-    
-    final dummyWorkshops = [
-      WorkshopNode(
-        id: 'ws_1',
-        name: 'Revive HQ Workshop',
-        address: 'Jl. Sudirman No. 12, Jakarta',
-        distanceKm: 2.4,
-        rating: 4.8,
-      ),
-      WorkshopNode(
-        id: 'ws_2',
-        name: 'Auto Fix Elite',
-        address: 'Jl. Gatot Subroto No. 45, Jakarta',
-        distanceKm: 4.1,
-        rating: 4.5,
-      ),
-      WorkshopNode(
-        id: 'ws_3',
-        name: 'Bengkel Cepat Pratama',
-        address: 'Jl. Rasuna Said No. 9, Jakarta',
-        distanceKm: 5.8,
-        rating: 4.2,
-      ),
-    ];
-
-    state = state.copyWith(
-      isLoading: false,
-      workshops: dummyWorkshops,
-    );
+    state = state.copyWith(isLoading: false, workshops: []);
+    // TODO: query public.partners when booking-by-workshop feature is implemented
   }
 
   void selectWorkshop(WorkshopNode workshop) {
