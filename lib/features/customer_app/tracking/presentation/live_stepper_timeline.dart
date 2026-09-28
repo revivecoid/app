@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/signed_image.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import 'job_stream_controller.dart';
 
@@ -358,13 +359,9 @@ class _TrackerBody extends StatelessWidget {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            Image.network(
-                              photo.publicUrl,
+                            SignedImage(
+                              fileKey: photo.r2FileKey,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: Theme.of(context).colorScheme.outlineVariant,
-                                child: Icon(Icons.broken_image, color: Theme.of(context).colorScheme.outline),
-                              ),
                             ),
                             Positioned(
                               bottom: 4, left: 4,

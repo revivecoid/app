@@ -24,8 +24,8 @@ class RepairPhoto {
       id: map['id'] as String,
       context: map['step_context'] as String,
       r2FileKey: key,
-      // Maps the internal R2 key to the public CDN endpoint dynamically
-      publicUrl: '$bucketUrlPath/$key',
+      // SEC-04: bucket private — store file key, SignedImage resolves URL
+      publicUrl: key,
     );
   }
 }
