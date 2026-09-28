@@ -130,6 +130,15 @@ class Supabase:
             f"&attempts=lt.5&order=created_at.asc&limit={limit}",
         )
 
+    def one(self, path: str) -> dict | None:
+        """Fetch a single row, or None. Used to re-check a row's status before
+        sending it: Realtime can deliver the same INSERT the catch-up sweep also
+        picked up, and sending twice is worse than sending late."""
+        rows = self._call("GET", path)
+        if isinstance(rows, list) and rows:
+            return rows[0]
+        return None
+
     def mark(self, outbox_id: str, status: str, error: str | None, provider: str):
         self._call(
             "POST",

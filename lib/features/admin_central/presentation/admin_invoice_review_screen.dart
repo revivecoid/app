@@ -380,6 +380,45 @@ class _AdminInvoiceReviewScreenState
             ),
           ),
         ]),
+        
+        if ((inv['line_items'] as List?) != null && (inv['line_items'] as List).isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text('Detail Panel:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cs.onSurface)),
+          const SizedBox(height: 4),
+          for (final item in (inv['line_items'] as List)) 
+            if (item is Map<String, dynamic> && item['panel'] != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        '${item['panel']}${item['added_by_workshop'] == true ? ' (Tambahan)' : ''}',
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        (item['initial_cost'] as num?) != null && (item['initial_cost'] as num) > 0 ? _idr((item['initial_cost'] as num).toDouble()) : '—',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        (item['final_cost'] as num?) != null && (item['final_cost'] as num) > 0 ? _idr((item['final_cost'] as num).toDouble()) : '—',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(fontSize: 11, color: cs.onSurface),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+        ],
 
         if (inv['admin_note'] != null) ...[
           const SizedBox(height: 8),

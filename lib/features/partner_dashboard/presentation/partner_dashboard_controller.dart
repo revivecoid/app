@@ -293,7 +293,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
   /// Advances the vehicle to the next pipeline stage safely.
   /// Follows the redesigned order: 3_booked -> 5_admitted -> 3_inspected ->
   /// 4_paid -> 6_in_progress. 3_inspected is reached through
-  /// partner_issue_invoice (never a workshop button) and 4_paid is the customer
+  /// partner_submit_final_estimation (never a workshop button) and 4_paid is the customer
   /// paying that invoice. 4_paid IS a workshop action, though: it is the gate
   /// that starts the repair.
   Future<void> advanceJobStage(String jobId, String currentStage) async {

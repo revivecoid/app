@@ -340,8 +340,8 @@ class _PartnerFinalEstimationDialogState
                             ),
                           ),
                           if (r.addedByWorkshop)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4),
+                            const Padding(
+                              padding: EdgeInsets.only(left: 4),
                               child: Tooltip(
                                 message:
                                     'Ditemukan saat pemeriksaan fisik, tidak ada di estimasi awal',
