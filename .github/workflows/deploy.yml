@@ -1,5 +1,8 @@
 name: Deploy to GitHub Pages (revive.co.id)
 
+# Quality gates (analyze, test, migration lint, deno check) run in ci.yml.
+# This workflow only handles build + publish to gh-pages.
+
 on:
   push:
     branches: [main]
@@ -13,25 +16,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Secret scanning — runs before build to catch committed credentials early
-  secret-scan:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # full history for gitleaks scan
-
-      - name: Run Gitleaks secret scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}  # optional, for org repos
-
   build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: secret-scan
 
     steps:
       - name: Checkout repository

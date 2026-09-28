@@ -10,7 +10,7 @@
 | 0 | F00-setup | **SELESAI** | 2026-09-28 |
 | 1 | F01-identity | **SELESAI** | 2026-09-28 |
 | 2 | F02-write-paths | Belum dimulai | — |
-| 3 | F03-migrations-ci | Belum dimulai | — |
+| 3 | F03-migrations-ci | **SEBAGIAN** | 2026-09-28 |
 | 4 | F04-state-machine | Belum dimulai | — |
 | 5 | F05-payment-mock | Belum dimulai | — |
 | 6 | F06-status-clients | Belum dimulai | — |

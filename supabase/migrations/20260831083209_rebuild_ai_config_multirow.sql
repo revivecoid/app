@@ -1,4 +1,4 @@
-﻿-- CORRECTIVE MIGRATION: Rebuild ai_config as multi-row model registry
+-- CORRECTIVE MIGRATION: Rebuild ai_config as multi-row model registry
 -- per System Design Specification Section 3.
 -- The original migration incorrectly used a single-row (id=1) design.
 

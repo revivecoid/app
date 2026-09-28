@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Dart / Flutter ──────────────────────────────────────────────────────────
+  app:
+    name: Flutter analyze & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze (errors fatal)
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
+
+      - name: Test
+        run: |
+          if [ -n "$(find test -name '*_test.dart' 2>/dev/null | head -1)" ]; then
+            flutter test
+          else
+            echo "No test files found, skipping."
+          fi
+
+  # ── Edge Functions ──────────────────────────────────────────────────────────
+  functions:
+    name: Deno check & lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Check Edge Functions
+        run: |
+          for fn in supabase/functions/*/index.ts; do
+            echo "Checking $fn..."
+            deno check "$fn"
+          done
+
+      - name: Lint Edge Functions
+        run: |
+          for fn in supabase/functions/*/index.ts; do
+            deno lint "$fn"
+          done
+
+  # ── Migrations lint ─────────────────────────────────────────────────────────
+  migrations:
+    name: Migration hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check migration files
+        run: bash scripts/ci/check_migrations.sh
+
+  # ── Deploy (main only, after all checks pass) ───────────────────────────────
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [app, functions, migrations]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          cat > .env << 'EOF'
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          EOF
+          mkdir -p assets
+          cp .env assets/.env
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Build Flutter Web
+        run: flutter build web --release --base-href "/"
+
+      - name: Copy CNAME and assets
+        run: |
+          cp CNAME build/web/CNAME
+          mkdir -p build/web/assets
+          cp assets/.env build/web/assets/.env
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          cname: revive.co.id
