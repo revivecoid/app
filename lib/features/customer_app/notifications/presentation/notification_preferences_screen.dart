@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
-import '../../../../core/l10n/app_localizations.dart';
+import 'package:revive/l10n/app_localizations.dart';
 import '../application/notifications_provider.dart';
 import '../../../../core/l10n/app_localizations_extension.dart';
 

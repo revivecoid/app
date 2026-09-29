@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/l10n/app_localizations.dart';
+import 'package:revive/l10n/app_localizations.dart';
 import '../../../../core/jobs/job_status.dart'; // S-08 fix
 import 'partner_dashboard_controller.dart';
 import 'widgets/partner_job_action.dart';

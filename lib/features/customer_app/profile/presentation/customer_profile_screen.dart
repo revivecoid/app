@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../notifications/application/notifications_provider.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/l10n/app_localizations.dart';
+import 'package:revive/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_settings_sheet.dart';
 import 'vehicle_registration_modal.dart';
 import '../../../../core/l10n/app_localizations_extension.dart';

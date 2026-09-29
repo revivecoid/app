@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/l10n/app_localizations.dart';
+import 'package:revive/l10n/app_localizations.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../presentation/partner_shell_screen.dart';
 import '../../../ops_mobile/ops_access.dart';
