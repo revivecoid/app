@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -64,7 +65,7 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading config: $e')),
+          SnackBar(content: Text(mapRawErrorToUserMessage(e))),
         );
       }
     } finally {
@@ -97,7 +98,7 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving config: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(mapRawErrorToUserMessage(e)), backgroundColor: Colors.red),
         );
       }
     } finally {

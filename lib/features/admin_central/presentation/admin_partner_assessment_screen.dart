@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // C-28: Clipboard
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -355,7 +356,7 @@ class _AdminPartnerAssessmentScreenState
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not open $label: $e')));
+          .showSnackBar(SnackBar(content: Text(mapRawErrorToUserMessage(e))));
     }
   }
 
@@ -673,7 +674,7 @@ class _PartnerDetailPanelState extends ConsumerState<_PartnerDetailPanel>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error: $e'), backgroundColor: _red,
+          content: Text(mapRawErrorToUserMessage(e)), backgroundColor: _red,
         ));
       }
     }
@@ -696,7 +697,7 @@ class _PartnerDetailPanelState extends ConsumerState<_PartnerDetailPanel>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Send failed: $e'), backgroundColor: _red,
+          content: Text(mapRawErrorToUserMessage(e)), backgroundColor: _red,
         ));
       }
     }
@@ -1507,7 +1508,7 @@ class _DownloadButton extends StatelessWidget {
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e'), backgroundColor: _red),
+                    SnackBar(content: Text(mapRawErrorToUserMessage(e)), backgroundColor: _red),
                   );
                 }
               }

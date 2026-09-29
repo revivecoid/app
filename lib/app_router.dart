@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -611,6 +612,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
   bool _isLoading = false;
   bool _isRegistering = false;
   bool _isResettingPassword = false;
+  bool _obscurePassword = true;
   bool _registrationSuccess = false;
   bool _resetSuccess = false;
   String? _errorMessage;
@@ -629,7 +631,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
     } on AuthException catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (e) {
-      setState(() => _errorMessage = 'Failed to send reset link: $e');
+      setState(() => _errorMessage = mapRawErrorToUserMessage(e));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -711,9 +713,9 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
         body: Center(
           child: SingleChildScrollView(
             child: Container(
-              width: 400,
+              constraints: const BoxConstraints(maxWidth: 400),
               padding: const EdgeInsets.all(32),
-              margin: const EdgeInsets.symmetric(vertical: 24),
+              margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
               decoration: BoxDecoration(
                 color: surfaceColor,
                 borderRadius: BorderRadius.circular(16),
@@ -732,7 +734,6 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                         Image.asset(
                           'assets/images/revive_logo.png',
                           height: 40,
-                          color: theme.colorScheme.primary,
                         ),
                         const SizedBox(width: 12),
                         Text(
@@ -775,8 +776,10 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                   TextField(
                     controller: _emailController,
                     style: TextStyle(color: textColor),
+                    autofillHints: const [AutofillHints.email],
+                    textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
-                      labelText: 'Email Address', 
+                      labelText: 'Email Address',
                       labelStyle: const TextStyle(color: AppColors.daysGray),
                       border: const OutlineInputBorder(),
                       enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.daysGray.withValues(alpha: 0.5)))
@@ -788,13 +791,24 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                     TextField(
                       controller: _passwordController,
                       style: TextStyle(color: textColor),
+                      autofillHints: const [AutofillHints.password],
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) {
+                        if (!_isLoading) _executeAuth();
+                      },
                       decoration: InputDecoration(
                         labelText: 'Password', 
                         labelStyle: const TextStyle(color: AppColors.daysGray),
                         border: const OutlineInputBorder(),
-                        enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.daysGray.withValues(alpha: 0.5)))
+                        enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.daysGray.withValues(alpha: 0.5))),
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppColors.daysGray),
+                          onPressed: () {
+                            setState(() => _obscurePassword = !_obscurePassword);
+                          },
+                        ),
                       ),
-                      obscureText: true,
+                      obscureText: _obscurePassword,
                     ),
                   ],
                   const SizedBox(height: 24),

@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -103,7 +104,7 @@ class _AdminUserAccountsState extends ConsumerState<AdminUserAccountsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           duration: const Duration(seconds: 6),
           backgroundColor: const Color(0xFFDC2626),
-          content: Text('Role update failed: $e'),
+          content: Text(mapRawErrorToUserMessage(e)),
         ));
       }
     }

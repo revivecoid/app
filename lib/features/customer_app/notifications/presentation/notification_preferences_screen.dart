@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -89,7 +90,7 @@ class _NotificationPreferencesScreenState
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.fireRed),
         ),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text(mapRawErrorToUserMessage(e))),
         data: (prefs) {
           // Sync controllers once prefs are loaded
           if (_emailController.text.isEmpty &&

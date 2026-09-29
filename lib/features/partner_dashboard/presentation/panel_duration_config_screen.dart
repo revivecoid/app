@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,7 +67,7 @@ class _PanelDurationConfigScreenState extends ConsumerState<PanelDurationConfigS
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading durations: $e')),
+          SnackBar(content: Text(mapRawErrorToUserMessage(e))),
         );
       }
     } finally {
@@ -103,7 +104,7 @@ class _PanelDurationConfigScreenState extends ConsumerState<PanelDurationConfigS
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving durations: $e')),
+          SnackBar(content: Text(mapRawErrorToUserMessage(e))),
         );
       }
     } finally {

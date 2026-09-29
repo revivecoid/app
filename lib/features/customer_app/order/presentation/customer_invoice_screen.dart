@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -198,7 +199,7 @@ class _CustomerInvoiceScreenState
       debugPrint('[CustomerInvoice] respond error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: _red),
+          SnackBar(content: Text(mapRawErrorToUserMessage(e)), backgroundColor: _red),
         );
       }
     } finally {

@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -115,7 +116,7 @@ class PartnerSettingsController extends StateNotifier<PartnerSettingsState> {
         state = state.copyWith(messages: msgs, isLoading: false);
         // REL-07 fix: mark-read via explicit RPC call, not here
       }, onError: (err) {
-        state = state.copyWith(errorMessage: 'Message sync error: $err', isLoading: false);
+        state = state.copyWith(errorMessage: mapRawErrorToUserMessage(err), isLoading: false);
       });
       
       state = state.copyWith(isLoading: false);
@@ -156,7 +157,7 @@ class PartnerSettingsController extends StateNotifier<PartnerSettingsState> {
         'content': content.trim(),
       });
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to send message: $e');
+      state = state.copyWith(errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 
@@ -182,7 +183,7 @@ class PartnerSettingsController extends StateNotifier<PartnerSettingsState> {
       
       state = state.copyWith(isSaving: false, scheduleData: res);
     } catch (e) {
-      state = state.copyWith(isSaving: false, errorMessage: 'Failed to update schedule: $e');
+      state = state.copyWith(isSaving: false, errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 

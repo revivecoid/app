@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -263,7 +264,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
 
       state = state.copyWith(activeJobs: jobs, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Failed to fetch workshop data: $e');
+      state = state.copyWith(isLoading: false, errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 
@@ -412,7 +413,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
           .trim();
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Upload failed: $errText',
+        errorMessage: mapRawErrorToUserMessage(e),
       );
     }
   }

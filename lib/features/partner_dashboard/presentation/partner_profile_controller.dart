@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -320,7 +321,7 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
         successMessage: 'Details saved successfully.',
       );
     } catch (e) {
-      state = state.copyWith(isSaving: false, errorMessage: 'Save failed: $e');
+      state = state.copyWith(isSaving: false, errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 
@@ -339,7 +340,7 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
       updated['is_active'] = isActive;
       state = state.copyWith(partnerData: updated);
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to update status: $e');
+      state = state.copyWith(errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 
@@ -419,7 +420,7 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
     } catch (e) {
       state = state.copyWith(
         uploading: state.uploading.difference({uploadKey}),
-        errorMessage: 'Upload failed: $e',
+        errorMessage: mapRawErrorToUserMessage(e),
       );
     }
   }
@@ -481,7 +482,7 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
     } catch (e) {
       state = state.copyWith(
         uploading: state.uploading.difference({uploadKey}),
-        errorMessage: 'Photo upload failed: $e',
+        errorMessage: mapRawErrorToUserMessage(e),
       );
     }
   }

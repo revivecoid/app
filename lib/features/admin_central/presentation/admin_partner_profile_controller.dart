@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -216,7 +217,7 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
         // from_admin intentionally omitted — set by set_partner_message_from_admin trigger
       });
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Send failed: $e');
+      state = state.copyWith(errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 

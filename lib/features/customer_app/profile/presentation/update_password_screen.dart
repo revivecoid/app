@@ -20,6 +20,9 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
   String? _errorMessage;
   String? _successMessage;
 
@@ -119,9 +122,9 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            width: 400,
+            constraints: const BoxConstraints(maxWidth: 400),
             padding: const EdgeInsets.all(32),
-            margin: const EdgeInsets.symmetric(vertical: 24),
+            margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
@@ -146,11 +149,17 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                 if (!_isRecoveryFlow) ...[
                   TextField(
                     controller: _currentPasswordController,
-                    obscureText: true,
+                    obscureText: _obscureCurrent,
+                    autofillHints: const [AutofillHints.password],
+                    textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       labelText: 'Password saat ini',
                       prefixIcon: const Icon(Icons.lock_outline),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureCurrent ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setState(() => _obscureCurrent = !_obscureCurrent),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -175,25 +184,40 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                 TextField(
                   controller: _passwordController,
                   style: TextStyle(color: cs.onSurface),
+                  autofillHints: const [AutofillHints.newPassword],
+                  textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     labelText: context.l10n.passwordNew, 
                     labelStyle: TextStyle(color: cs.onSurfaceVariant),
                     border: const OutlineInputBorder(),
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: cs.outlineVariant))
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: cs.outlineVariant)),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                    ),
                   ),
-                  obscureText: true,
+                  obscureText: _obscureNew,
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _confirmPasswordController,
                   style: TextStyle(color: cs.onSurface),
+                  autofillHints: const [AutofillHints.newPassword],
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) {
+                    if (!_isLoading) _updatePassword();
+                  },
                   decoration: InputDecoration(
                     labelText: context.l10n.passwordConfirm, 
                     labelStyle: TextStyle(color: cs.onSurfaceVariant),
                     border: const OutlineInputBorder(),
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: cs.outlineVariant))
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: cs.outlineVariant)),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                    ),
                   ),
-                  obscureText: true,
+                  obscureText: _obscureConfirm,
                 ),
                 const SizedBox(height: 24),
                 SizedBox(

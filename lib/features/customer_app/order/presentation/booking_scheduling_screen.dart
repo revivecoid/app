@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -214,7 +215,7 @@ class _BookingSchedulingScreenState
         body: jobAsync.when(
           loading: () => const Center(
               child: CircularProgressIndicator(color: AppColors.fireRed)),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (e, _) => Center(child: Text(mapRawErrorToUserMessage(e))),
           data: (job) {
             if (job == null) {
               return const Center(child: Text('Estimation not found.'));

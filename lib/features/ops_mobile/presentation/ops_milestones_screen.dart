@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -110,7 +111,7 @@ class OpsMilestonesScreen extends ConsumerWidget {
       ),
       body: jobAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text(mapRawErrorToUserMessage(e))),
         data: (job) {
           if (job == null) {
             return const Center(child: Text('Job not found.'));
@@ -120,7 +121,7 @@ class OpsMilestonesScreen extends ConsumerWidget {
 
           return milestonesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            error: (e, _) => Center(child: Text(mapRawErrorToUserMessage(e))),
             data: (completedStages) {
               return Column(
                 children: [

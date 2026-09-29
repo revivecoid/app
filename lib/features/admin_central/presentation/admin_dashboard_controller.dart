@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -451,7 +452,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Failed to initialize master command center: $e',
+        errorMessage: mapRawErrorToUserMessage(e),
       );
     }
   }
@@ -475,7 +476,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       await _fetchAutoAssignSettings();
       state = state.copyWith(successMessage: 'Auto-assign settings updated');
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to update auto-assign settings: $e');
+      state = state.copyWith(errorMessage: mapRawErrorToUserMessage(e));
     }
   }
   
@@ -485,7 +486,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       await _fetchCrmData(); // Refresh partners
       state = state.copyWith(successMessage: 'Partner quota updated');
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to update partner quota: $e');
+      state = state.copyWith(errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 
@@ -742,7 +743,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
           .update({'status': newStatus}).eq('id', jobId);
     } catch (e) {
       state =
-          state.copyWith(errorMessage: 'Manual override failed: $e');
+          state.copyWith(errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 
@@ -949,7 +950,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       }
     } catch (e) {
       state = state.copyWith(
-          errorMessage: 'Failed to approve application: $e');
+          errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 
@@ -964,7 +965,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       state = state.copyWith(pendingApplications: updatedApps);
     } catch (e) {
       state = state.copyWith(
-          errorMessage: 'Failed to decline application: $e');
+          errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 
@@ -995,7 +996,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       }
     } catch (e) {
       state = state.copyWith(
-          errorMessage: 'Failed to toggle partner status: $e');
+          errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 
@@ -1095,7 +1096,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       state = state.copyWith(aiConfigs: updatedConfigs);
     } catch (e) {
       debugPrint('🚨 AI hot-swap failure: $e');
-      state = state.copyWith(errorMessage: 'Failed to hot-swap AI engine: $e');
+      state = state.copyWith(errorMessage: mapRawErrorToUserMessage(e));
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -332,7 +333,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       } catch (e) {
         if (context.mounted) {
           Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${context.l10n.estimatorBookingError}: $e'), backgroundColor: Theme.of(context).colorScheme.error));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mapRawErrorToUserMessage(e)), backgroundColor: Theme.of(context).colorScheme.error));
         }
       }
     }
@@ -1539,16 +1540,17 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
+            padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100 + MediaQuery.paddingOf(context).bottom),
             child: _buildContent(),
           ),
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              decoration: BoxDecoration(
+            child: SafeArea(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                decoration: BoxDecoration(
                 color: (isDark ? AppColors.surface : Theme.of(context).colorScheme.surface),
                 boxShadow: [
                   BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))
@@ -1588,21 +1590,20 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(ctaTitle.toUpperCase(), style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.70), fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                              Text(ctaTitle.toUpperCase(), style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.70), fontWeight: FontWeight.bold, letterSpacing: 1.0)),
                               const SizedBox(height: 2),
-                              _isAnalyzing 
-                                  ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.surface, strokeWidth: 2))
-                                  : Text(ctaSubtitle, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold)),
+                              _isAnalyzing
+                                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                  : Text(ctaSubtitle, style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           Container(
-                            width: 32,
-                            height: 32,
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.15),
+                              color: Colors.white.withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(Icons.arrow_forward, color: Theme.of(context).colorScheme.surface, size: 18),
+                            child: const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
                           ),
                         ],
                       ),

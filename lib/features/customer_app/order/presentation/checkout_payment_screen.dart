@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -72,7 +73,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
       });
       _submitLocationDetails();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error fetching location: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mapRawErrorToUserMessage(e))));
     } finally {
       if (mounted) setState(() => _isFetchingLocation = false);
     }
@@ -206,46 +207,25 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: TextFormField(
-                            controller: _latController,
-                            decoration: InputDecoration(labelText: AppL.of(ctx)!.checkoutLatitude, border: const OutlineInputBorder()),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) return null;
-                              if (double.tryParse(value) == null) return 'Invalid';
-                              return null;
-                            },
-                            onChanged: (_) => _submitLocationDetails(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _lngController,
-                            decoration: InputDecoration(labelText: AppL.of(ctx)!.checkoutLongitude, border: const OutlineInputBorder()),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) return null;
-                              if (double.tryParse(value) == null) return 'Invalid';
-                              return null;
-                            },
-                            onChanged: (_) => _submitLocationDetails(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.fireRed.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: _isFetchingLocation 
-                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.fireRed)) 
-                                : const Icon(Icons.my_location, color: AppColors.fireRed),
+                          child: ElevatedButton.icon(
                             onPressed: _isFetchingLocation ? null : _fetchDeviceLocation,
-                            tooltip: 'Get Device Location',
+                            icon: _isFetchingLocation 
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Icon(Icons.my_location),
+                            label: const Text('Gunakan Lokasi Saya'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.fireRed,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
                           ),
-                        )
+                        ),
+                        if (_latController.text.isNotEmpty && _lngController.text.isNotEmpty) ...[
+                          const SizedBox(width: 12),
+                          const Icon(Icons.check_circle, color: Colors.green),
+                          const SizedBox(width: 4),
+                          Text('Koordinat tersimpan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(ctx).colorScheme.onSurface)),
+                        ]
                       ],
                     ),
                   ],

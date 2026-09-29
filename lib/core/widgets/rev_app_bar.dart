@@ -196,7 +196,6 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
           'assets/images/revive_logo.png',
           height: 28,
           fit: BoxFit.contain,
-          color: isDark ? Colors.white : AppColors.fireRed,
         ),
         const SizedBox(width: 8),
         Text(

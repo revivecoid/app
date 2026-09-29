@@ -1,3 +1,4 @@
+import 'package:re_v/core/utils/error_mapper.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:re_v/core/format/rupiah.dart';
@@ -208,7 +209,7 @@ class _PricingRulesScreenState extends State<PricingRulesScreen>
       if (mounted) {
         final errCs = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Gagal menyimpan: $e'),
+          content: Text(mapRawErrorToUserMessage(e)),
           backgroundColor: errCs.error,
           behavior: SnackBarBehavior.floating,
         ));
