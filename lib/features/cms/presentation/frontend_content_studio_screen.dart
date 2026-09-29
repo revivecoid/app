@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:revive/core/providers/theme_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
@@ -189,7 +190,7 @@ class _Header extends StatelessWidget {
             IconButton(icon: Icon(Icons.refresh_rounded, size: 18, color: cs.onSurfaceVariant), onPressed: onRefresh),
             IconButton(
               icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, size: 18, color: cs.onSurfaceVariant),
-              onPressed: () => ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark),
+              onPressed: () => ref.read(themeModeProvider.notifier).setTheme(isDark ? ThemeMode.light : ThemeMode.dark)),
           ])),
         SizedBox(height: 44, child: ListView.builder(
           scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 12),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/widgets/signed_image.dart';
 import 'package:revive/l10n/app_localizations.dart';
 import '../../../../core/widgets/customer_contact_line.dart';
@@ -500,7 +501,7 @@ class _Header extends ConsumerWidget {
                 icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: cs.onSurfaceVariant),
                 tooltip: 'Toggle Theme',
                 onPressed: () {
-                  ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
+                  ref.read(themeModeProvider.notifier).setTheme(isDark ? ThemeMode.light : ThemeMode.dark);
                 },
               ),
               const SizedBox(width: 16),

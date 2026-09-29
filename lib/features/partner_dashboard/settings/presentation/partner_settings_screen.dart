@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/providers/theme_provider.dart';
 import 'package:revive/l10n/app_localizations.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../presentation/partner_shell_screen.dart';
@@ -55,7 +56,7 @@ class PartnerSettingsScreen extends ConsumerWidget {
                     ],
                     selected: {currentTheme},
                     onSelectionChanged: (val) {
-                      ref.read(themeModeProvider.notifier).state = val.first;
+                      ref.read(themeModeProvider.notifier).setTheme(val.first);
                     },
                     style: ButtonStyle(
                       backgroundColor: WidgetStateProperty.resolveWith((states) {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:revive/l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
 import '../theme/app_theme.dart';
+import '../providers/theme_provider.dart';
 import '../../core/l10n/app_localizations_extension.dart';
 
 /// Call [AppSettingsSheet.show] from anywhere to open the language + theme panel.
@@ -84,19 +85,19 @@ class _SettingsPanelBody extends ConsumerWidget {
               label: l.lightMode,
               icon: Icons.light_mode_outlined,
               selected: currentTheme == ThemeMode.light,
-              onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.light,
+              onTap: () => ref.read(themeModeProvider.notifier).setTheme(ThemeMode.light),
             ),
             _ThemeChip(
               label: l.darkMode,
               icon: Icons.dark_mode_outlined,
               selected: currentTheme == ThemeMode.dark,
-              onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.dark,
+              onTap: () => ref.read(themeModeProvider.notifier).setTheme(ThemeMode.dark),
             ),
             _ThemeChip(
               label: l.systemDefault,
               icon: Icons.brightness_auto_outlined,
               selected: currentTheme == ThemeMode.system,
-              onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.system,
+              onTap: () => ref.read(themeModeProvider.notifier).setTheme(ThemeMode.system),
             ),
           ]),
           const SizedBox(height: 32),

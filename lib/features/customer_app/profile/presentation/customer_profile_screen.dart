@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../notifications/application/notifications_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/providers/theme_provider.dart';
 import 'package:revive/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_settings_sheet.dart';
 import 'vehicle_registration_modal.dart';
@@ -465,8 +466,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                 ),
                 tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
                 onPressed: () {
-                  ref.read(themeModeProvider.notifier).state =
-                      isDark ? ThemeMode.light : ThemeMode.dark;
+                  ref.read(themeModeProvider.notifier).setTheme(isDark ? ThemeMode.light : ThemeMode.dark);
                 },
               ),
               // Profile avatar → PopupMenuButton

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.dark);
+import 'package:revive/core/providers/theme_provider.dart';
 
 class AppColors {
   // Brand Colors from Design Guidelines
@@ -79,8 +78,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      fontFamily: 'Inter',
-      scaffoldBackgroundColor: AppColors.background,
+            scaffoldBackgroundColor: AppColors.background,
       primaryColor: AppColors.primaryContainer,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primary,
@@ -115,8 +113,7 @@ class AppTheme {
           color: AppColors.onSurface,
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          fontFamily: 'Plus Jakarta Sans',
-        ),
+                  ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -145,8 +142,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      fontFamily: 'Inter',
-      scaffoldBackgroundColor: AppColors.workspaceLight,
+            scaffoldBackgroundColor: AppColors.workspaceLight,
       primaryColor: AppColors.primaryContainer,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primaryContainer,
@@ -172,8 +168,7 @@ class AppTheme {
           color: AppColors.sleekBlack,
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          fontFamily: 'Plus Jakarta Sans',
-        ),
+                  ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

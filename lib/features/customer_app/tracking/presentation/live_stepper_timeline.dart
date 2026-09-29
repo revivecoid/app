@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/widgets/signed_image.dart';
 import 'package:revive/l10n/app_localizations.dart';
 import 'job_stream_controller.dart';
@@ -199,7 +200,7 @@ class _LiveStepperTimelineState extends ConsumerState<LiveStepperTimeline> {
               icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: mutedColor),
               tooltip: 'Toggle Theme',
               onPressed: () {
-                ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
+                ref.read(themeModeProvider.notifier).setTheme(isDark ? ThemeMode.light : ThemeMode.dark);
               },
             ),
             const SizedBox(width: 8),

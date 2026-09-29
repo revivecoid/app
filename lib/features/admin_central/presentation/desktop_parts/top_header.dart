@@ -122,8 +122,7 @@ class _TopHeader extends StatelessWidget {
               color: cs.onSurface),
           tooltip: 'Toggle Theme',
           onPressed: () =>
-              ref.read(themeModeProvider.notifier).state =
-                  isDark ? ThemeMode.light : ThemeMode.dark,
+              ref.read(themeModeProvider.notifier).setTheme(isDark ? ThemeMode.light : ThemeMode.dark,
         ),
         const SizedBox(width: 8),
         // Admin identity — clickable
@@ -179,7 +178,7 @@ class _TopHeader extends StatelessWidget {
           ),
         ),
       ]),
-    );
+    ));
   }
 
   void _showAdminProfileSheet(

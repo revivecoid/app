@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
+import '../providers/theme_provider.dart';
 import 'app_settings_sheet.dart';
 
 class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -32,7 +33,7 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
       icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: theme.colorScheme.onSurfaceVariant),
       tooltip: 'Toggle Theme',
       onPressed: () {
-        ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark;
+        ref.read(themeModeProvider.notifier).setTheme(isDark ? ThemeMode.light : ThemeMode.dark);
       },
     );
 
