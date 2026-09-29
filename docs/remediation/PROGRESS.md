@@ -32,7 +32,8 @@
 - Menyelesaikan 13e Performa (PERF-01, PERF-02, PERF-03, PERF-07).
 - Menyelesaikan 13b (I18N-03) dengan menghapus manual date/number formatter dan memakai `formatRupiah` / `DateFormat` (estimator_screen, checkout_payment_screen, customer_profile_screen).
 - Menyelesaikan 13c (A11Y-02, A11Y-03, A11Y-06): daftar panel FilterChip untuk alternatif diagram mobil, ChoiceChip untuk jenis kendaraan & tema, serta target sentuh 48px untuk tombol hapus foto (IconButton). A11Y-04 dikonfirmasi sudah memiliki ikon.
-- Sisa 13b (I18N-01), sisa 13d (UX-05...UX-19), dan 13f (SEO) ditunda menunggu tinjauan / manual owner.
+- Menyelesaikan 13d (UX-05, UX-07, UX-09, UX-13, UX-14, UX-16, UX-19): warna teks CTA, margin responsif layar lebar, pemetaan *error* ramah ke pengguna (error_mapper.dart), tombol *Gunakan Lokasi Saya* pengantaran, fungsi *show password*, *autofill*, warna logo App Bar multi-warna.
+- Sisa 13b (I18N-01), 13f (SEO) ditunda menunggu tinjauan / manual owner.
 
 ## Fase 0 — Persiapan, pagar darurat, dan lingkungan uji
 
