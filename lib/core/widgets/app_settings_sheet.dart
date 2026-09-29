@@ -152,26 +152,24 @@ class _LocaleChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: selected ? cs.primaryContainer : cs.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected ? cs.primary : cs.outlineVariant,
-              width: selected ? 2 : 1,
-            ),
-          ),
-          child: Center(
-            child: Text(label,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w500)),
-          ),
+      child: ChoiceChip(
+        label: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(label),
         ),
+        selected: selected,
+        onSelected: (_) => onTap(),
+        selectedColor: cs.primaryContainer,
+        backgroundColor: cs.surfaceContainerLow,
+        side: BorderSide(
+          color: selected ? cs.primary : cs.outlineVariant,
+          width: selected ? 2 : 1,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w500),
       ),
     );
   }
@@ -187,29 +185,28 @@ class _ThemeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? cs.primaryContainer : cs.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: selected ? cs.primary : cs.outlineVariant,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 16,
-              color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant),
+    return ChoiceChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant),
           const SizedBox(width: 6),
-          Text(label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
-        ]),
+          Text(label),
+        ],
       ),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      selectedColor: cs.primaryContainer,
+      backgroundColor: cs.surfaceContainerLow,
+      side: BorderSide(
+        color: selected ? cs.primary : cs.outlineVariant,
+        width: selected ? 1.5 : 1,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      labelStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+          fontWeight: selected ? FontWeight.w800 : FontWeight.w500),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
     );
   }
 }

@@ -570,15 +570,16 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                         ),
                       ),
                       Positioned(
-                        top: -6,
-                        right: -6,
-                        child: GestureDetector(
-                          onTap: () => _removeImage(index),
-                          child: Container(
-                            width: 22,
-                            height: 22,
+                        top: -14,
+                        right: -14,
+                        child: IconButton(
+                          onPressed: () => _removeImage(index),
+                          tooltip: context.l10n.delete,
+                          icon: Container(
+                            width: 24,
+                            height: 24,
                             decoration: BoxDecoration(color: cs.error, shape: BoxShape.circle, border: Border.all(color: cs.surface, width: 1.5)),
-                            child: Icon(Icons.close, color: cs.onError, size: 12),
+                            child: Icon(Icons.close, color: cs.onError, size: 14),
                           ),
                         ),
                       ),
@@ -720,14 +721,39 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             padding: const EdgeInsets.all(12),
-            child: AspectRatio(
-              aspectRatio: 938.0 / 610.0,
-              child: InteractiveCarDiagram(
-                selectedPanels: ref.watch(selectedPanelsProvider),
-                onToggle: (panel) {
-                  ref.read(selectedPanelsProvider.notifier).togglePanel(panel);
-                },
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AspectRatio(
+                  aspectRatio: 938.0 / 610.0,
+                  child: InteractiveCarDiagram(
+                    selectedPanels: ref.watch(selectedPanelsProvider),
+                    onToggle: (panel) {
+                      ref.read(selectedPanelsProvider.notifier).togglePanel(panel);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('Atau pilih dari daftar:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: CarPanel.values.map((panel) {
+                    final isSelected = ref.watch(selectedPanelsProvider).contains(panel);
+                    return FilterChip(
+                      label: Text(panel.label, style: const TextStyle(fontSize: 12)),
+                      selected: isSelected,
+                      onSelected: (_) {
+                        ref.read(selectedPanelsProvider.notifier).togglePanel(panel);
+                      },
+                      selectedColor: AppColors.primaryContainer,
+                      checkmarkColor: AppColors.onPrimaryContainer,
+                      backgroundColor: isDark ? AppColors.surfaceContainerHigh : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),

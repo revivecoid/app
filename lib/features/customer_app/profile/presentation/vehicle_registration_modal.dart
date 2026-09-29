@@ -199,32 +199,14 @@ class _VehicleRegistrationModalState
                             final selected = _vehicleType == t;
                             return Padding(
                               padding: const EdgeInsets.only(right: 8),
-                              child: GestureDetector(
-                                onTap: () =>
-                                    setState(() => _vehicleType = t),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: selected
-                                        ? AppColors.primaryContainer
-                                        // UX-02 FIX: Theme-aware chip background
-                                        : Theme.of(context).colorScheme.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: selected
-                                          ? AppColors.primaryContainer
-                                          : Theme.of(context).colorScheme.outlineVariant,
-                                    ),
-                                  ),
-                                  child: Text(t,
-                                      style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                          color: selected
-                                              ? Colors.white
-                                              : Theme.of(context).colorScheme.onSurfaceVariant)),
-                                ),
+                              child: ChoiceChip(
+                                label: Text(t, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: selected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant)),
+                                selected: selected,
+                                onSelected: (bool isSelected) {
+                                  if (isSelected) setState(() => _vehicleType = t);
+                                },
+                                selectedColor: AppColors.primaryContainer,
+                                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                               ),
                             );
                           }).toList(),
