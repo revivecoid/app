@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:re_v/l10n/app_localizations.dart';
+import 'package:re_v/core/format/rupiah.dart';
 import '../../../../core/utils/guest_session.dart';
 import '../../../../core/utils/image_compressor.dart';
 import '../providers/panel_selection_provider.dart';
@@ -60,6 +61,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
   bool _consentGiven = false; // PRIV-06: explicit consent required before booking
   String? _aiResult;
   Map<String, dynamic>? _structuredData;
+  String? _estimationId;
 
   @override
   void initState() {
@@ -172,6 +174,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       setState(() {
         _aiResult = res.data['estimation'] ?? 'AI categorization complete.';
         _structuredData = res.data['structuredData'];
+        _estimationId = res.data['estimationId']?.toString();
         if (_structuredData != null) {
           final cost = _structuredData!['financial_estimation']?['calculated_base_cost'] ?? 0;
           ref.read(customerIntakeProvider.notifier).updateEstimatedCost((cost as num).toDouble());
@@ -189,18 +192,6 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     }
   }
 
-  String _formatCurrency(dynamic amount) {
-    if (amount == null) return '0';
-    final str = amount.toString().split('.')[0];
-    String res = '';
-    for (int i = 0; i < str.length; i++) {
-      if (i > 0 && i % 3 == 0) {
-        res = '.$res';
-      }
-      res = str[str.length - 1 - i] + res;
-    }
-    return res;
-  }
 
   void _onNextStep() async {
     if (_currentStep == 0) {
@@ -301,7 +292,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         }, onConflict: 'customer_id,license_plate').select('id').single(); // B-08/DAT-08 fix: upsert
 
         // B-11 fix: price from server via create_job_from_estimation — not client-written
-        final estimationId = res.data?['estimationId']?.toString();
+        final estimationId = _estimationId;
         late String jobId;
         if (estimationId != null) {
           final jobRes = await Supabase.instance.client.rpc('create_job_from_estimation', params: {
@@ -943,7 +934,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(panel['panel_name']?.toString() ?? '-', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
-                            Text('Rp ${_formatCurrency(panel['calculated_cost'] ?? 0)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
+                            Text(formatRupiah(panel['calculated_cost']), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
                           ],
                         ),
                         const SizedBox(height: 6),
@@ -1004,7 +995,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                           Text(context.l10n.estimatorIncludesCoat, style: TextStyle(fontSize: 11, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
                         ],
                       ),
-                      Text('Rp ${_formatCurrency(totalCost)}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
+                      Text(formatRupiah(totalCost), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
                     ],
                   ),
                 ),
@@ -1297,7 +1288,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  'Rp ${_formatCurrency(cost)}',
+                                  formatRupiah(cost),
                                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface)),
                                 ),
                                 const SizedBox(height: 2),
@@ -1337,7 +1328,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                             ],
                           ),
                           Text(
-                            'Rp ${_formatCurrency(totalCost)}',
+                            formatRupiah(totalCost),
                             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.fireRed),
                           ),
                         ],

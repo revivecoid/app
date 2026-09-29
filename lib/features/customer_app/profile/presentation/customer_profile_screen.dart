@@ -6,6 +6,7 @@ import '../../notifications/application/notifications_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import 'package:re_v/l10n/app_localizations.dart';
+import 'package:re_v/core/format/rupiah.dart';
 import '../../../../core/widgets/app_settings_sheet.dart';
 import 'vehicle_registration_modal.dart';
 import '../../../../core/l10n/app_localizations_extension.dart';
@@ -96,21 +97,6 @@ class CustomerProfileScreen extends ConsumerWidget {
         : parts[0][0].toUpperCase();
   }
 
-  String _formatCurrency(dynamic raw) {
-    if (raw == null) return '—';
-    try {
-      final num = double.parse(raw.toString()).toStringAsFixed(0);
-      final chars = num.split('').reversed.toList();
-      final buf = StringBuffer();
-      for (int i = 0; i < chars.length; i++) {
-        if (i > 0 && i % 3 == 0) buf.write('.');
-        buf.write(chars[i]);
-      }
-      return 'Rp ${buf.toString().split('').reversed.join('')}';
-    } catch (_) {
-      return 'Rp $raw';
-    }
-  }
 
   String _humanStatus(String raw) {
     return raw
@@ -1274,7 +1260,7 @@ class CustomerProfileScreen extends ConsumerWidget {
     final model = vehicleData?['model']?.toString() ?? '';
     final jobTitle =
         [make, model].where((s) => s.isNotEmpty).join(' ');
-    final cost = _formatCurrency(job['final_cost']);
+    final cost = formatRupiah(job['final_cost']);
     final partnerName = job['partner_name']?.toString() ?? '';
     final payMethod = job['payment_method']?.toString() ?? '';
     final estimatedServices = job['services_requested']?.toString() ?? '';
@@ -1426,7 +1412,7 @@ class CustomerProfileScreen extends ConsumerWidget {
     final dateStr = completedAt.length >= 10
         ? completedAt.substring(0, 10)
         : '';
-    final cost = _formatCurrency(job['final_cost']);
+    final cost = formatRupiah(job['final_cost']);
     final payMethod =
         job['payment_method']?.toString() ?? 'Personal Pay';
 

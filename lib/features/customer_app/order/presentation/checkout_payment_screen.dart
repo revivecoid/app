@@ -7,6 +7,7 @@ import '../../../../core/format/rupiah.dart';
 import '../../../../core/widgets/responsive_layout_guard.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'package:intl/intl.dart';
 import 'package:re_v/l10n/app_localizations.dart';
 import 'checkout_payment_controller.dart';
 
@@ -277,7 +278,7 @@ class _CheckoutPaymentScreenState extends ConsumerState<CheckoutPaymentScreen> {
               Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Text(
-                '${AppL.of(ctx)!.checkoutVerifiedDate}: ${state.scheduledDate!.toLocal().toString().split(' ')[0]}',
+                '${AppL.of(ctx)!.checkoutVerifiedDate}: ${DateFormat.yMMMd().format(state.scheduledDate!.toLocal())}',
                 style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold),
               ),
             ),

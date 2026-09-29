@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:re_v/core/format/rupiah.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/widgets/rev_app_bar.dart';
@@ -86,17 +87,7 @@ List<_Section> _defaultSections() => [
 
 // ─── Formatter ────────────────────────────────────────────────────────────────
 
-String _fmtRp(double v) {
-  final s = v.toStringAsFixed(0);
-  final buf = StringBuffer();
-  int count = 0;
-  for (int i = s.length - 1; i >= 0; i--) {
-    if (count > 0 && count % 3 == 0) buf.write(',');
-    buf.write(s[i]);
-    count++;
-  }
-  return 'Rp ${buf.toString().split('').reversed.join()}';
-}
+
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -714,7 +705,7 @@ class _PriceCell extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          _fmtRp(value),
+          formatRupiah(value),
           style: t.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: color,
@@ -863,7 +854,7 @@ class _MultiplierFieldState extends State<_MultiplierField> {
           ),
         ]),
         const SizedBox(height: 2),
-        Text(_fmtRp(_computed),
+        Text(formatRupiah(_computed),
             style: t.textTheme.labelSmall?.copyWith(
                 color: widget.color.withValues(alpha: 0.7), fontSize: 10)),
       ],
