@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -209,11 +208,8 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ],
     );
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          color: (backgroundColor ?? theme.colorScheme.surface).withValues(alpha: 0.8),
+    return Container(
+          color: (backgroundColor ?? theme.colorScheme.surface).withValues(alpha: 0.95),
           child: SafeArea(
             bottom: false,
             child: Container(
@@ -262,8 +258,6 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 

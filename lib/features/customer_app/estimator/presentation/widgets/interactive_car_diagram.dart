@@ -29,7 +29,7 @@ class InteractiveCarDiagram extends StatelessWidget {
               final tapY = details.localPosition.dy * (imgH / height);
               final tapPosition = Offset(tapX, tapY);
               
-              final carPaths = CarPathData.getPaths();
+              final carPaths = CarPathData.paths;
               for (final entry in carPaths.entries) {
                 if (entry.value.contains(tapPosition)) {
                   onToggle(entry.key);
@@ -61,7 +61,7 @@ class InteractiveCarDiagram extends StatelessWidget {
                     child: CustomPaint(
                       painter: CarDiagramPainter(
                         selectedPanels: selectedPanels,
-                        carPaths: CarPathData.getPaths(),
+                        carPaths: CarPathData.paths,
                         scaleX: width / imgW,
                         scaleY: height / imgH,
                       ),
@@ -123,11 +123,15 @@ class CarDiagramPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CarDiagramPainter old) =>
-      old.selectedPanels != selectedPanels;
+      old.selectedPanels != selectedPanels ||
+      old.scaleX != scaleX ||
+      old.scaleY != scaleY;
 }
 
 class CarPathData {
-  static Map<CarPanel, Path> getPaths() {
+  static final Map<CarPanel, Path> paths = _initPaths();
+
+  static Map<CarPanel, Path> _initPaths() {
     Path poly(List<double> coords) {
       final path = Path();
       for (int i = 0; i < coords.length; i += 2) {
