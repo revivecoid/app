@@ -26,8 +26,11 @@
 
 ### Fase 13: Backlog
 - Menyelesaikan kelompok 13a Kualitas Kode (CODE-01 memecah `master_admin_desktop.dart` menjadi 10 part, CODE-02 menghapus AppColors ganda, CODE-05 menghapus kode mati, CODE-07 menghapus unwrap lokalisasi, CODE-08 migrasi MaterialState ke WidgetState, CODE-10 merapikan komentar, REL-09, REL-12, REL-15, G-04).
-- Menyelesaikan beberapa perbaikan 13d UX (UX-12 teks penjelasan foto, UX-18 menghapus `customer_support_screen.dart` yang sudah tidak dipakai).
-- Kelompok 13b (Bahasa), 13c (Aksesibilitas), 13e (Performa), dan 13f (SEO) ditunda untuk sesi berikutnya agar tidak terlalu besar dalam satu PR.
+- Menyelesaikan 13b (Bahasa) I18N-02 generate l10n via synthetic-package.
+- Menyelesaikan 13c (Aksesibilitas) A11Y-05 dengan menghapus deklarasi fontFamily di app_theme.dart.
+- Menyelesaikan beberapa perbaikan 13d UX (UX-12 teks penjelasan foto, UX-15 persistensi tema lokal, UX-18 menghapus `customer_support_screen.dart` yang sudah tidak dipakai).
+- Menyelesaikan 13e Performa (PERF-01, PERF-02, PERF-03, PERF-07).
+- Sisa 13b (I18N-01, I18N-03), 13c (A11Y-01...A11Y-04, A11Y-06), sisa 13d (UX-05...UX-19), dan 13f (SEO) ditunda menunggu tinjauan / manual owner.
 
 ## Fase 0 — Persiapan, pagar darurat, dan lingkungan uji
 
