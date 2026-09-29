@@ -6,7 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/theme_provider.dart';
-import 'package:revive/l10n/app_localizations.dart';
+import 'package:re_v/l10n/app_localizations.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/utils/session_health.dart';
 // G-03: PricingMatrix import removed — preload() deleted

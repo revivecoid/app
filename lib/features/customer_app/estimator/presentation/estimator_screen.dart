@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:revive/l10n/app_localizations.dart';
+import 'package:re_v/l10n/app_localizations.dart';
 import '../../../../core/utils/guest_session.dart';
 import '../../../../core/utils/image_compressor.dart';
 import '../providers/panel_selection_provider.dart';

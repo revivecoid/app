@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/widgets/signed_image.dart';
-import 'package:revive/l10n/app_localizations.dart';
+import 'package:re_v/l10n/app_localizations.dart';
 import '../../../../core/widgets/customer_contact_line.dart';
 import '../../../../core/jobs/job_status.dart'; // S-08 fix
 import 'partner_dashboard_controller.dart';

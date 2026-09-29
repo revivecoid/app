@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
-import 'package:revive/l10n/app_localizations.dart';
+import 'package:re_v/l10n/app_localizations.dart';
 import 'customer_profile_screen.dart';
 import '../../../../core/l10n/app_localizations_extension.dart';
 

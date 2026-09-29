@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:revive/core/providers/theme_provider.dart';
+import 'package:re_v/core/providers/theme_provider.dart';
 
 class AppColors {
   // Brand Colors from Design Guidelines

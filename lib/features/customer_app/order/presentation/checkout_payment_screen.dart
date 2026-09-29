@@ -7,7 +7,7 @@ import '../../../../core/format/rupiah.dart';
 import '../../../../core/widgets/responsive_layout_guard.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/theme/app_theme.dart';
-import 'package:revive/l10n/app_localizations.dart';
+import 'package:re_v/l10n/app_localizations.dart';
 import 'checkout_payment_controller.dart';
 
 class CheckoutPaymentScreen extends ConsumerStatefulWidget {
