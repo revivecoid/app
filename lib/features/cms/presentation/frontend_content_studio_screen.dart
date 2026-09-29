@@ -1177,7 +1177,8 @@ class _AboutCmsTabState extends State<_AboutCmsTab> {
   }
 
   Future<void> _saveAll() async {
-    await Future.wait([
+    // C-55 fix: collect failures — only clear dirty on full success
+    final saves2 = [
       widget.onSave('about_title',          _titleEn.text,    cat: 'about'),
       widget.onSave('about_title_id',       _titleId.text,    cat: 'about'),
       widget.onSave('about_tagline',        _taglineEn.text,  cat: 'about'),
@@ -1194,13 +1195,6 @@ class _AboutCmsTabState extends State<_AboutCmsTab> {
       widget.onSave('value_1_title',        _v1t.text,   cat: 'about'),
       widget.onSave('value_1_sub',          _v1s.text,   cat: 'about'),
       widget.onSave('value_1_title_id',     _v1tId.text, cat: 'about'),
-    // C-55 fix: collect failures — only clear dirty on full success
-    final saves2 = [
-      widget.onSave('about_title', _titleEn.text, cat: 'about'),
-      widget.onSave('about_title_id', _titleId.text, cat: 'about'),
-      widget.onSave('about_tagline', _taglineEn.text, cat: 'about'),
-      widget.onSave('about_tagline_id', _taglineId.text, cat: 'about'),
-      widget.onSave('about_story', _storyEn.text, cat: 'about'),
     ];
     final results2 = await Future.wait(saves2.map((f) => f.then((_) => null).catchError((e) => e.toString())));
     final failures2 = results2.whereType<String>().toList();

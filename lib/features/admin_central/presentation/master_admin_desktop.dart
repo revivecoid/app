@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/providers/theme_provider.dart';
 import '../../../core/jobs/job_status.dart'; // S-08 fix
 import 'admin_dashboard_controller.dart';
 

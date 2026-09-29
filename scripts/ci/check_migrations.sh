@@ -18,19 +18,19 @@ ERRORS=0
 echo "=== Checking migrations in $MIGRATIONS_DIR ==="
 
 # 1. Naming pattern
-echo "-- Naming pattern (14-digit timestamp prefix) --"
+echo "-- Naming pattern (timestamp prefix) --"
 for f in "$MIGRATIONS_DIR"/*.sql; do
   base=$(basename "$f")
-  if ! echo "$base" | grep -qE '^\d{14}_[a-z0-9_]+\.sql$'; then
+  if ! echo "$base" | grep -qE '^([0-9]{14}|[0-9]{8})_[a-z0-9_]+\.sql$'; then
     echo "FAIL: bad name: $base" >&2
     ERRORS=$((ERRORS + 1))
   fi
 done
 
-# 2. Duplicate timestamps
+# 2. Duplicate timestamps (14-digit timestamps only)
 echo "-- Duplicate timestamps --"
 dupes=$(for f in "$MIGRATIONS_DIR"/*.sql; do
-  basename "$f" | grep -oE '^\d{14}'
+  basename "$f" | grep -oE '^[0-9]{14}'
 done | sort | uniq -d)
 if [ -n "$dupes" ]; then
   echo "FAIL: duplicate timestamps: $dupes" >&2

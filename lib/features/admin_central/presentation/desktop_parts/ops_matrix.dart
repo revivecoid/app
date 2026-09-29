@@ -28,8 +28,8 @@ class _OpsMatrixContent extends StatelessWidget {
         : state.activeJobs.where((j) =>
             j.id.toLowerCase().contains(query) ||
             (j.customerName.toLowerCase().contains(query)) ||
-            (j.licensePlate?.toLowerCase().contains(query) ?? false) ||
-            (j.partnerName.toLowerCase().contains(query) ?? false)
+            (j.carIdentity.toLowerCase().contains(query)) ||
+            (j.partnerName.toLowerCase().contains(query))
           ).toList();
 
     final pendingJobs = filteredJobs

@@ -505,8 +505,7 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
                   ),
                 ),
               ),
-      ),
-    )
+      );
   }
 
   Widget _buildJobCard(Map<String, dynamic> job, Color surfaceColor, Color textColor) {

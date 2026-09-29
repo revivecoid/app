@@ -309,7 +309,7 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
       });
 
       // Reload to get fresh data
-      await _loadPartnerData();
+      await _init();
 
       final resolved = shopName?.trim().isNotEmpty == true
           ? shopName!

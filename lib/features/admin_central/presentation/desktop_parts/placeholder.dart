@@ -7,8 +7,12 @@ class _PlaceholderContent extends StatelessWidget {
   final String label;
   final String? subtitle;
   final IconData? icon;
-  const _PlaceholderContent(
-      {required this.cs, required this.label}) : subtitle = null : icon;
+  const _PlaceholderContent({
+    required this.cs,
+    required this.label,
+    this.subtitle,
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {

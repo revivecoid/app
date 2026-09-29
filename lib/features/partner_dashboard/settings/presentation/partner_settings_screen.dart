@@ -7,6 +7,9 @@ import '../../../../core/providers/theme_provider.dart';
 import 'package:re_v/l10n/app_localizations.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../presentation/partner_shell_screen.dart';
+import '../../presentation/partner_dashboard_controller.dart';
+import '../../presentation/partner_profile_controller.dart';
+import 'partner_settings_controller.dart';
 import '../../../ops_mobile/ops_access.dart';
 import '../../../../core/l10n/app_localizations_extension.dart';
 

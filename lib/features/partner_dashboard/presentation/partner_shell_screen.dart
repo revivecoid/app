@@ -69,7 +69,7 @@ class PartnerShellScreen extends ConsumerWidget {
                 : null,
             title: Flexible(
               child: Text(
-                pageTitle,
+                pageTitle ?? 're-V Partner',
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),

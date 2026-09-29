@@ -1610,12 +1610,13 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+              ), // Row
+            ), // Container
+          ), // SafeArea
+        ), // Positioned
+      ], // Stack children
+    ), // Stack
+  ); // Scaffold
       return isDesktop ? Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: inner)) : inner;
     });
   }

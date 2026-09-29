@@ -16,7 +16,9 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
   bool _isSaving = false;
   List<int> _standardWorkingDays = [1, 2, 3, 4, 5, 6];
   int _guaranteedSlotsPerDay = 5;
-  // fast_track_enabled removed — column does not exist (C-10)
+  int _simultaneousPanelCapacity = 10;
+  bool _fastTrackEnabled = false;
+  // fast_track_enabled removed from DB — local UI state (C-10)
   List<DateTime> _blacklistedDates = [];
 
   String? _partnerId; // C-10: loaded from get_my_partner_id(), not auth.uid()

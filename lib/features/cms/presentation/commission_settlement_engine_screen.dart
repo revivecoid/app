@@ -52,7 +52,7 @@ class _CommissionSettlementEngineScreenState extends State<CommissionSettlementE
     // BIZ-11: show error state explicitly
     if (!_isLoading && _error != null) {
       return Scaffold(
-        appBar: const RevAppBar(title: 'Settlement & Komisi'),
+        appBar: const ReVAppBar(title: Text('Settlement & Komisi')),
         body: Center(child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
