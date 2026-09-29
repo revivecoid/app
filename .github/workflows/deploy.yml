@@ -64,20 +64,26 @@ jobs:
         run: |
           flutter build web \
             --release \
-            --base-href "/"
+            --base-href "/app/"
 
-      - name: Copy CNAME to build/web
-        run: cp CNAME build/web/CNAME
+      - name: Assemble Static Site
+        run: |
+          mkdir -p build/public/app
+          cp -R build/web/* build/public/app/
+          cp -R website/* build/public/
+
+      - name: Copy CNAME to build/public
+        run: cp CNAME build/public/CNAME
 
       - name: Copy .env asset into build
         run: |
-          mkdir -p build/web/assets
-          cp assets/.env build/web/assets/.env
+          mkdir -p build/public/app/assets
+          cp assets/.env build/public/app/assets/.env
 
       # Deploy to gh-pages branch
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web
+          publish_dir: ./build/public
           cname: revive.co.id

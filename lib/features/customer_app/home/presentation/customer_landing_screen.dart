@@ -725,7 +725,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
             height: 144,
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuD6_i0-JevFbsWeSnSO-l4IiY1GyUK7WV8CKi3uoVHz3hbyZvdc9AjQf28OLUud3jPKYG3nJqCx453hc1_drevXy14QhHxmO1J31oVAFFW9t0n_DFjBq83jjXHNjCcvugxkPP4SJKyCim_FG1XQFvvx3hRzreVpwfziy22BMKVxMeX1GaMZ_bcd8S-duhC43IxiXpwE12m-t3AVup9TPAlQGgk-M_Hmp38P27rvWsy6r0XRXjdYKkbnxw'),
+                image: AssetImage('assets/images/hero.webp'),
                 fit: BoxFit.cover,
               ),
             ),
@@ -879,7 +879,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     image: const DecorationImage(
-                      image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuCE6uwD7ofjFSiCWhMiFGQD3Y0UrKl8Y3YkAb5-O4Gi_FEIqMalS-4jdQXRW3Zjx5JELKha7HI-FBhuxXWs1wEPRQxhc1CJTArcb5HqJSgtGvznaKJoIkbHLnkp_hTQZ3LTYj1gwxlzuAZ1NKxa8l97kWBOvYL6JwL2MncDJdAsIbbAMbRKXMe47PKRa3Iu1QTGnCdbcaF9EMVCJHoONkKT2DMKKiiLi8jMSO3bZCliuQDyTTBIaHZQww'),
+                      image: AssetImage('assets/images/process1.webp'),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -904,7 +904,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     image: const DecorationImage(
-                      image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuB0Vm52V0Oiw2niui1LP_P5o0HD_NstOTd58mvawvQm66g_yE7X1Z5no1FWGtJ7vhWrPkuWIEW5upsuL6ya7f5RoSMizLmetbHrHztG9NrUl5NpURzmrttwBAA-PDHNgrYLUJkQ_r7ouXfnZkNX6fMdQvf3ZJY_oqrcGTrIV9Q0XH9XrxMdfoznTa1UKhG7y1NvqykaIcRmK_f4dx6HQbziRpHqUlXLTHT-Iz8a2lg2eEBth0HFopUKYg'),
+                      image: AssetImage('assets/images/process2.webp'),
                       fit: BoxFit.cover,
                     ),
                   ),
