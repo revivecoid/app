@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/utils/auth_url.dart';
@@ -151,15 +150,15 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primaryContainer.withValues(alpha: 0.1),
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.verified, size: 16, color: AppColors.primary),
+                Icon(Icons.verified, size: 16, color: theme.colorScheme.primary),
                 const SizedBox(width: 4),
-                Text('AUTOMOTIVE AI CARE', style: theme.textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                Text(isId ? 'PERAWATAN AI OTOMOTIF' : 'AUTOMOTIVE AI CARE', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -173,7 +172,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
             icon: const Icon(Icons.auto_awesome, size: 18),
             label: Text(heroCta, style: const TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryContainer,
+              backgroundColor: theme.colorScheme.primaryContainer,
               foregroundColor: Theme.of(context).colorScheme.surface,
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -200,7 +199,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('CONTACT US', style: theme.textTheme.labelSmall?.copyWith(
+          Text(isId ? 'HUBUNGI KAMI' : 'CONTACT US', style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           if (phone != null && phone.isNotEmpty)
@@ -216,13 +215,14 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
 
   Widget _buildContactRow(ThemeData theme, IconData icon, String text) {
     return Row(children: [
-      Icon(icon, size: 16, color: AppColors.primary),
+      Icon(icon, size: 16, color: theme.colorScheme.primary),
       const SizedBox(width: 10),
       Expanded(child: Text(text, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface))),
     ]);
   }
 
   Widget _buildActiveRepairWidget(ThemeData theme, Map<String, dynamic> job) {
+    final isId = ref.watch(localeProvider).languageCode == 'id';
     final statusStr = job['status'] as String? ?? 'Unknown';
     final jobId = job['id'].toString();
 
@@ -246,7 +246,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         borderRadius: BorderRadius.circular(12),
         // Highlight pre-payment jobs that need attention
         border: needsAction
-            ? Border.all(color: AppColors.primaryContainer.withValues(alpha: 0.5), width: 1.5)
+            ? Border.all(color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5), width: 1.5)
             : null,
         boxShadow: [
           BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
@@ -261,10 +261,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               Container(
                 width: 40, height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryContainer.withValues(alpha: 0.1),
+                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.directions_car, color: AppColors.primary),
+                child: Icon(Icons.directions_car, color: theme.colorScheme.primary),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -272,9 +272,9 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      needsAction ? 'ACTION REQUIRED' : 'ACTIVE REPAIR',
+                      needsAction ? (isId ? 'TINDAKAN DIPERLUKAN' : 'ACTION REQUIRED') : (isId ? 'PERBAIKAN AKTIF' : 'ACTIVE REPAIR'),
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: needsAction ? AppColors.primaryContainer : theme.colorScheme.onSurfaceVariant,
+                        color: needsAction ? theme.colorScheme.primaryContainer : theme.colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -291,11 +291,11 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: needsAction
-                      ? AppColors.primaryContainer.withValues(alpha: 0.12)
+                      ? theme.colorScheme.primaryContainer.withValues(alpha: 0.12)
                       : theme.colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(16),
                   border: needsAction
-                      ? Border.all(color: AppColors.primaryContainer.withValues(alpha: 0.4))
+                      ? Border.all(color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4))
                       : null,
                 ),
                 child: Row(
@@ -304,7 +304,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                     Container(
                       width: 8, height: 8,
                       decoration: BoxDecoration(
-                        color: needsAction ? AppColors.primaryContainer : theme.colorScheme.secondary,
+                        color: needsAction ? theme.colorScheme.primaryContainer : theme.colorScheme.secondary,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -313,7 +313,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                       statusLabel,
                       style: theme.textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: needsAction ? AppColors.primaryContainer : null,
+                        color: needsAction ? theme.colorScheme.primaryContainer : null,
                       ),
                     ),
                   ],
@@ -330,13 +330,13 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: AppColors.primaryContainer.withValues(alpha: 0.08),
+                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.primaryContainer.withValues(alpha: 0.25)),
+                border: Border.all(color: theme.colorScheme.primaryContainer.withValues(alpha: 0.25)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, size: 16, color: AppColors.primaryContainer),
+                  Icon(Icons.info_outline, size: 16, color: theme.colorScheme.primaryContainer),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -346,7 +346,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                               ? 'Your AI estimate is ready. Continue to complete your booking.'
                               : 'Booking confirmed. Our team is performing the final inspection — you will be notified when the invoice is ready.',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.primaryContainer,
+                        color: theme.colorScheme.primaryContainer,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -370,14 +370,14 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   children: [
                     Row(
                       children: [
-                        Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppColors.primaryContainer, shape: BoxShape.circle)),
+                        Container(width: 6, height: 6, decoration: BoxDecoration(color: theme.colorScheme.primaryContainer, shape: BoxShape.circle)),
                         const SizedBox(width: 4),
-                        Text('Repair Progress', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                        Text(isId ? 'Progres Perbaikan' : 'Repair Progress', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                       ],
                     ),
                     Text(
-                      isActive ? 'In Progress' : (needsAction ? 'Awaiting Confirmation' : 'Pending'),
-                      style: theme.textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                      isActive ? (isId ? 'Sedang Diproses' : 'In Progress') : (needsAction ? (isId ? 'Menunggu Konfirmasi' : 'Awaiting Confirmation') : (isId ? 'Tertunda' : 'Pending')),
+                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -385,7 +385,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                 LinearProgressIndicator(
                   value: progressFraction,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  color: AppColors.primaryContainer,
+                  color: theme.colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(4),
                   minHeight: 6,
                 ),
@@ -433,8 +433,8 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryContainer,
-                      foregroundColor: Colors.white,
+                      backgroundColor: theme.colorScheme.primaryContainer,
+                      foregroundColor: theme.colorScheme.surface,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
@@ -453,27 +453,27 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.07),
+                    color: theme.colorScheme.secondary.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.withValues(alpha: 0.25)),
+                    border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.25)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.schedule_outlined, size: 16, color: Colors.blue),
+                      Icon(Icons.schedule_outlined, size: 16, color: theme.colorScheme.secondary),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('Waiting for Vehicle Intake',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue.shade700)),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary)),
                             const SizedBox(height: 3),
                             Text(
                               'Your booking is confirmed. Once your vehicle is received, '
                               'our workshop will perform a final inspection and Re-V will issue your invoice. '
                               'You will be notified by email and WhatsApp.',
-                              style: TextStyle(fontSize: 11, color: Colors.blue.shade700, height: 1.4),
+                              style: TextStyle(fontSize: 11, color: theme.colorScheme.secondary, height: 1.4),
                             ),
                           ],
                         ),
@@ -487,7 +487,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () => _confirmAndCancelJob(context, jobId),
                         icon: const Icon(Icons.cancel_outlined, size: 15),
-                        label: const Text('Cancel Booking', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        label: Text(isId ? 'Batalkan Pesanan' : 'Cancel Booking', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: theme.colorScheme.error,
                           side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.5)),
@@ -501,10 +501,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                       child: ElevatedButton.icon(
                         onPressed: () => context.go('/track/$jobId'),
                         icon: const Icon(Icons.sensors, size: 15),
-                        label: const Text('Track Live', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        label: Text(isId ? 'Lacak Langsung' : 'Track Live', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryContainer,
-                          foregroundColor: Colors.white,
+                          backgroundColor: theme.colorScheme.primaryContainer,
+                          foregroundColor: theme.colorScheme.surface,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                         ),
@@ -532,9 +532,9 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                 ElevatedButton.icon(
                   onPressed: () => context.go('/track/$jobId'),
                   icon: const Icon(Icons.sensors, size: 16),
-                  label: const Text('Track Live', style: TextStyle(fontWeight: FontWeight.bold)),
+                  label: Text(isId ? 'Lacak Langsung' : 'Track Live', style: TextStyle(fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryContainer,
+                    backgroundColor: theme.colorScheme.primaryContainer,
                     foregroundColor: Theme.of(context).colorScheme.surface,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -551,14 +551,15 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
 
   /// Shows a confirmation dialog then calls the customer_cancel_job RPC.
   Future<void> _confirmAndCancelJob(BuildContext context, String jobId) async {
+    final isId = ref.read(localeProvider).languageCode == 'id';
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange),
+            Icon(Icons.warning_amber_rounded, color: Theme.of(context).colorScheme.error),
             SizedBox(width: 10),
-            Text('Cancel Repair Job?'),
+            Text(isId ? 'Batalkan Perbaikan?' : 'Cancel Repair Job?'),
           ],
         ),
         content: const Text(
@@ -569,12 +570,12 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep Job'),
+            child: Text(isId ? 'Pertahankan' : 'Keep Job'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            child: Text(isId ? 'Ya, Batal' : 'Yes, Cancel', style: TextStyle(color: Theme.of(context).colorScheme.surface)),
           ),
         ],
       ),
@@ -592,9 +593,9 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
 
       if (response['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Job cancelled. You can start a new estimate anytime.'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(isId ? 'Perbaikan dibatalkan. Anda dapat memulai estimasi baru kapan saja.' : 'Job cancelled. You can start a new estimate anytime.'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
             duration: Duration(seconds: 4),
           ),
         );
@@ -604,7 +605,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['error']?.toString() ?? 'Could not cancel job. Please try again.'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -614,12 +615,13 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString().replaceAll('PostgrestException', '').trim()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
   }
   Widget _buildQuickActions(ThemeData theme) {
+    final isId = ref.watch(localeProvider).languageCode == 'id';
     return Row(
       children: [
         Expanded(
@@ -628,7 +630,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.primaryContainer,
+                color: theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
@@ -646,12 +648,12 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                     child: Icon(Icons.photo_camera, color: Theme.of(context).colorScheme.surface),
                   ),
                   const SizedBox(height: 12),
-                  Text('New Claim', style: theme.textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold)),
-                  Text('Scan car damage with AI', style: theme.textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8))),
+                  Text(isId ? 'Klaim Baru' : 'New Claim', style: theme.textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold)),
+                  Text(isId ? 'Pindai kerusakan mobil dengan AI' : 'Scan car damage with AI', style: theme.textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8))),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text('Start Scan', style: theme.textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold)),
+                      Text(isId ? 'Mulai Pindai' : 'Start Scan', style: theme.textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold)),
                       const SizedBox(width: 4),
                       Icon(Icons.arrow_forward, size: 14, color: Theme.of(context).colorScheme.surface),
                     ],
@@ -686,14 +688,14 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                     child: Icon(Icons.query_stats, color: theme.colorScheme.onSurface),
                   ),
                   const SizedBox(height: 12),
-                  Text('Track Status', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  Text('Live workshop cameras', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  Text(isId ? 'Lacak Status' : 'Track Status', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(isId ? 'Kamera bengkel langsung' : 'Live workshop cameras', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text('View Queue', style: theme.textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      Text(isId ? 'Lihat Antrean' : 'View Queue', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
                       const SizedBox(width: 4),
-                      const Icon(Icons.arrow_forward, size: 14, color: AppColors.primary),
+                      Icon(Icons.arrow_forward, size: 14, color: theme.colorScheme.primary),
                     ],
                   ),
                 ],
@@ -788,8 +790,8 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('SEAMLESS PROCESS', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
-                  Text('How It Works', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(isId ? 'PROSES MULUS' : 'SEAMLESS PROCESS', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
+                  Text(isId ? 'Cara Kerja' : 'How It Works', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 ],
               ),
               Container(
@@ -822,11 +824,11 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
           Container(
             width: 32, height: 32,
             decoration: BoxDecoration(
-              color: AppColors.primaryContainer.withValues(alpha: 0.1),
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
-            child: Text(number, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+            child: Text(number, style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -851,6 +853,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
   }
 
   Widget _buildRecentInspections(ThemeData theme) {
+    final isId = ref.watch(localeProvider).languageCode == 'id';
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -866,8 +869,8 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Recent Inspections', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              Text('100% Guaranteed', style: theme.textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+              Text(isId ? 'Inspeksi Terbaru' : 'Recent Inspections', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(isId ? '100% Dijamin' : '100% Guaranteed', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 12),
@@ -892,7 +895,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text('Bumper Repair', style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 10)),
+                      child: Text(isId ? 'Perbaikan Bumper' : 'Bumper Repair', style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 10)),
                     ),
                   ),
                 ),
@@ -917,7 +920,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text('Color Matching', style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 10)),
+                      child: Text(isId ? 'Pencocokan Warna' : 'Color Matching', style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 10)),
                     ),
                   ),
                 ),
@@ -946,14 +949,14 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
       ),
       child: Column(
         children: [
-          Text('VERIFIED STANDARDS', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
+          Text(isId ? 'STANDAR TERVERIFIKASI' : 'VERIFIED STANDARDS', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text(isId ? 'Terpercaya oleh Ribuan Pengemudi di Jabodetabek dan Bandung' : 'Trusted by Thousands Across Jabodetabek and Bandung',
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          _buildBadgeItem(theme, '$b1v $b1l', isId ? 'Pusat di Jakarta Bogor Depok Tangerang Bekasi dan Bandung' : '38+ Centers in Jakarta Bogor Depok Tangerang Bekasi and Bandung', Icons.hub, AppColors.primary),
+          _buildBadgeItem(theme, '$b1v $b1l', isId ? 'Pusat di Jakarta Bogor Depok Tangerang Bekasi dan Bandung' : '38+ Centers in Jakarta Bogor Depok Tangerang Bekasi and Bandung', Icons.hub, theme.colorScheme.primary),
           const SizedBox(height: 8),
-          _buildBadgeItem(theme, 'Garda Oto & Astra SLA Compliant', isId ? 'Integrasi langsung asuransi & garansi' : 'Direct insurance paperwork integration & warranty', Icons.shield, AppColors.primary),
+          _buildBadgeItem(theme, 'Garda Oto & Astra SLA Compliant', isId ? 'Integrasi langsung asuransi & garansi' : 'Direct insurance paperwork integration & warranty', Icons.shield, theme.colorScheme.primary),
           const SizedBox(height: 8),
           _buildBadgeItem(theme, '$b2v $b2l ($b3v+ ${isId ? "Pengemudi" : "Drivers"})', isId ? '98,7% metrik pengiriman tepat waktu terverifikasi telemetri' : '98.7% on-time delivery metric verified by telemetry', Icons.star, theme.colorScheme.secondary),
           const SizedBox(height: 16),
@@ -962,7 +965,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               onPressed: () => context.go('/partner/register'),
               icon: const Icon(Icons.handshake),
               label: Text(isId ? 'Bergabung sebagai Bengkel Mitra Tersertifikasi' : 'Become a Certified Partner Workshop'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.fireRed),
+              style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
             ),
           ),
         ],
@@ -1051,6 +1054,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
   }
 
   Widget _buildFooterWidget(ThemeData theme) {
+    final isId = ref.watch(localeProvider).languageCode == 'id';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1064,15 +1068,15 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('NEED QUICK HELP?', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
+              Text(isId ? 'BUTUH BANTUAN CEPAT?' : 'NEED QUICK HELP?', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
-              Text('Talk with an on-duty master estimator', style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
+              Text(isId ? 'Bicara dengan estimator ahli kami' : 'Talk with an on-duty master estimator', style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
             ],
           ),
           ElevatedButton.icon(
             onPressed: () => context.go('/support'),
             icon: const Icon(Icons.chat, size: 16),
-            label: const Text('Consult', style: TextStyle(fontWeight: FontWeight.bold)),
+            label: Text(isId ? 'Konsultasi' : 'Consult', style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.surfaceContainerLowest,
               foregroundColor: theme.colorScheme.onSurface,
