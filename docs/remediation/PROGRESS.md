@@ -35,6 +35,7 @@
 - Menyelesaikan 13d (UX-05, UX-07, UX-09, UX-13, UX-14, UX-16, UX-19): warna teks CTA, margin responsif layar lebar, pemetaan *error* ramah ke pengguna (error_mapper.dart), tombol *Gunakan Lokasi Saya* pengantaran, fungsi *show password*, *autofill*, warna logo App Bar multi-warna.
 - Menyelesaikan 13f (SEO): memindahkan *landing page* dan konten publik (FAQ, Tentang Kami, Privasi) ke file HTML statis (direktori `website/`) dengan *tag* Canonical, Open Graph, meta deskripsi, `sitemap.xml`, dan `robots.txt`. CI/CD di `.github/workflows/deploy.yml` disesuaikan untuk *build* aplikasi Flutter ke dalam `/app/` sementara halaman statis disajikan di *root*. Gambar Google CDN kini di-host sendiri.
 - Sisa 13b (I18N-01): 394 string bahasa Inggris yang masih berada langsung di *widget* belum dipindahkan karena pengerjaan sangat luas; ditunda.
+- Menyelesaikan penyelarasan tema landing page HTML statis dengan aplikasi Flutter, serta menambahkan tombol toggle tema *light/dark*.
 
 ## Fase 0 — Persiapan, pagar darurat, dan lingkungan uji
 
