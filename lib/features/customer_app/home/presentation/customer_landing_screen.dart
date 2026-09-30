@@ -86,15 +86,6 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
       Widget inner = Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: const ReVAppBar(),
-
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          final isDark = theme.brightness == Brightness.dark;
-          ref.read(themeModeProvider.notifier).setTheme(isDark ? ThemeMode.light : ThemeMode.dark);
-        },
-        icon: Icon(theme.brightness == Brightness.dark ? Icons.light_mode : Icons.dark_mode),
-        label: Text(theme.brightness == Brightness.dark ? 'Light Mode' : 'Dark Mode'),
-      ),
       body: SingleChildScrollView(
 
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
