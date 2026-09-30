@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>re-V | Bengkel Bodi & Cat Mobil Modern</title>
+    <meta name="description" content="re-V: Platform perbaikan bodi mobil dengan estimasi AI pintar. Booking mudah, transparan, dan terpercaya.">
+    <meta property="og:title" content="re-V | Bengkel Bodi & Cat Mobil Modern">
+    <meta property="og:description" content="Estimasi perbaikan bodi mobil secara instan dengan AI. Transparan, cepat, dan terpercaya.">
+    <meta property="og:image" content="https://revive.co.id/assets/images/hero.webp">
+    <meta property="og:url" content="https://revive.co.id/">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://revive.co.id/">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#FF3B30',
+                        darkBg: '#121212',
+                        darkCard: '#1E1E1E'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; }
+    </style>
+</head>
+<body class="bg-darkBg text-white min-h-screen flex flex-col">
+    <header class="border-b border-gray-800 bg-black/50 backdrop-blur fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <a href="/" class="flex items-center space-x-3">
+                <img src="/assets/images/revive_logo.png" alt="re-V Logo" class="h-8">
+                <span class="text-xl font-bold">re-V</span>
+            </a>
+            <nav class="hidden md:flex space-x-8">
+                <a href="/faq.html" class="text-gray-300 hover:text-white">FAQ</a>
+                <a href="/about.html" class="text-gray-300 hover:text-white">Tentang Kami</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <a href="/app/#/login" class="text-gray-300 hover:text-white font-medium">Login</a>
+                <a href="/app/#/" class="bg-brand text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition">Mulai Estimasi</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow pt-24 pb-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col lg:flex-row items-center gap-12 py-16">
+                <div class="flex-1 space-y-8">
+                    <h1 class="text-5xl font-extrabold leading-tight">Revive Your Ride<br><span class="text-brand">Powered by AI</span></h1>
+                    <p class="text-xl text-gray-400">Dapatkan estimasi perbaikan bodi mobil secara instan hanya dari foto. Transparan, terpercaya, tanpa biaya tersembunyi.</p>
+                    <a href="/app/#/" class="inline-block bg-brand text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-red-600 transition shadow-lg shadow-red-500/30">Dapatkan Estimasi Sekarang</a>
+                </div>
+                <div class="flex-1">
+                    <img src="/assets/images/hero.webp" alt="AI Body Repair" class="rounded-2xl shadow-2xl border border-gray-800">
+                </div>
+            </div>
+
+            <div class="py-16">
+                <h2 class="text-3xl font-bold text-center mb-12">Cara Kerja</h2>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="bg-darkCard p-8 rounded-2xl border border-gray-800">
+                        <div class="w-12 h-12 bg-brand/20 text-brand rounded-full flex items-center justify-center text-xl font-bold mb-6">1</div>
+                        <h3 class="text-xl font-bold mb-4">Foto Kerusakan</h3>
+                        <p class="text-gray-400">Ambil foto bagian mobil yang penyok atau tergores menggunakan kamera HP Anda.</p>
+                        <img src="/assets/images/process1.webp" class="mt-6 rounded-lg opacity-80" alt="Foto">
+                    </div>
+                    <div class="bg-darkCard p-8 rounded-2xl border border-gray-800">
+                        <div class="w-12 h-12 bg-brand/20 text-brand rounded-full flex items-center justify-center text-xl font-bold mb-6">2</div>
+                        <h3 class="text-xl font-bold mb-4">Estimasi AI Instan</h3>
+                        <p class="text-gray-400">Sistem AI kami akan mengenali panel yang rusak dan menghitung estimasi biaya seketika.</p>
+                    </div>
+                    <div class="bg-darkCard p-8 rounded-2xl border border-gray-800">
+                        <div class="w-12 h-12 bg-brand/20 text-brand rounded-full flex items-center justify-center text-xl font-bold mb-6">3</div>
+                        <h3 class="text-xl font-bold mb-4">Booking Bengkel</h3>
+                        <p class="text-gray-400">Pilih jadwal di bengkel terdekat dan bawa mobil Anda untuk diperbaiki.</p>
+                        <img src="/assets/images/process2.webp" class="mt-6 rounded-lg opacity-80" alt="Booking">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="border-t border-gray-800 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-4 md:mb-0">
+                <span class="text-xl font-bold">re-V</span>
+                <p class="text-gray-500 mt-2">© 2026 re-V. All rights reserved.</p>
+            </div>
+            <div class="flex space-x-6 text-sm text-gray-400">
+                <a href="/faq.html" class="hover:text-white">FAQ</a>
+                <a href="/about.html" class="hover:text-white">Tentang Kami</a>
+                <a href="/privacy.html" class="hover:text-white">Kebijakan Privasi</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

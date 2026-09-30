@@ -39,8 +39,8 @@ flutter_service_worker.js
 flutter_service_worker.js.md5
 manifest.json
 version.json
-index.html
-404.html
+/index.html
+/404.html
 canvaskit/
 icons/
 
