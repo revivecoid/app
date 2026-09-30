@@ -71,6 +71,7 @@ jobs:
           mkdir -p build/public/app
           cp -R build/web/* build/public/app/
           cp -R website/* build/public/
+          if [ -f build/public/app/404.html ]; then cp build/public/app/404.html build/public/404.html; fi
 
       - name: Copy CNAME to build/public
         run: cp CNAME build/public/CNAME
