@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/utils/auth_url.dart';
 import '../../../../core/jobs/job_status.dart'; // L-08/S-08 fix
@@ -85,7 +86,17 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
       Widget inner = Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: const ReVAppBar(),
+
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          final isDark = theme.brightness == Brightness.dark;
+          ref.read(themeModeProvider.notifier).setTheme(isDark ? ThemeMode.light : ThemeMode.dark);
+        },
+        icon: Icon(theme.brightness == Brightness.dark ? Icons.light_mode : Icons.dark_mode),
+        label: Text(theme.brightness == Brightness.dark ? 'Light Mode' : 'Dark Mode'),
+      ),
       body: SingleChildScrollView(
+
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
