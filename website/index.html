@@ -30,19 +30,24 @@
         body { font-family: system-ui, -apple-system, sans-serif; }
     </style>
 </head>
-<body class="bg-darkBg text-white min-h-screen flex flex-col">
-    <header class="border-b border-gray-800 bg-black/50 backdrop-blur fixed w-full top-0 z-50">
+<body class="bg-gray-50 dark:bg-darkBg text-gray-900 dark:text-white min-h-screen flex flex-col">
+    <header class="border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-black/50 backdrop-blur fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <a href="/" class="flex items-center space-x-3">
                 <img src="/assets/images/revive_logo.png" alt="re-V Logo" class="h-8">
                 <span class="text-xl font-bold">re-V</span>
             </a>
             <nav class="hidden md:flex space-x-8">
-                <a href="/faq.html" class="text-gray-300 hover:text-white">FAQ</a>
-                <a href="/about.html" class="text-gray-300 hover:text-white">Tentang Kami</a>
+                <a href="/faq.html" class="text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-white">FAQ</a>
+                <a href="/about.html" class="text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-white">Tentang Kami</a>
             </nav>
+            
             <div class="flex items-center space-x-4">
-                <a href="/app/#/login" class="text-gray-300 hover:text-white font-medium">Login</a>
+                <button id="themeToggle" class="text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-white mr-2 focus:outline-none" aria-label="Toggle Theme">
+                    <svg id="themeIconDark" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <svg id="themeIconLight" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </button>
+                <a href="/app/#/login" class="text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-white font-medium">Login</a>
                 <a href="/app/#/" class="bg-brand text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition">Mulai Estimasi</a>
             </div>
         </div>
@@ -53,32 +58,32 @@
             <div class="flex flex-col lg:flex-row items-center gap-12 py-16">
                 <div class="flex-1 space-y-8">
                     <h1 class="text-5xl font-extrabold leading-tight">Revive Your Ride<br><span class="text-brand">Powered by AI</span></h1>
-                    <p class="text-xl text-gray-400">Dapatkan estimasi perbaikan bodi mobil secara instan hanya dari foto. Transparan, terpercaya, tanpa biaya tersembunyi.</p>
+                    <p class="text-xl text-gray-600 dark:text-gray-400">Dapatkan estimasi perbaikan bodi mobil secara instan hanya dari foto. Transparan, terpercaya, tanpa biaya tersembunyi.</p>
                     <a href="/app/#/" class="inline-block bg-brand text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-red-600 transition shadow-lg shadow-red-500/30">Dapatkan Estimasi Sekarang</a>
                 </div>
                 <div class="flex-1">
-                    <img src="/assets/images/hero.webp" alt="AI Body Repair" class="rounded-2xl shadow-2xl border border-gray-800">
+                    <img src="/assets/images/hero.webp" alt="AI Body Repair" class="rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
                 </div>
             </div>
 
             <div class="py-16">
                 <h2 class="text-3xl font-bold text-center mb-12">Cara Kerja</h2>
                 <div class="grid md:grid-cols-3 gap-8">
-                    <div class="bg-darkCard p-8 rounded-2xl border border-gray-800">
+                    <div class="bg-white dark:bg-darkCard p-8 rounded-2xl border border-gray-200 dark:border-gray-800">
                         <div class="w-12 h-12 bg-brand/20 text-brand rounded-full flex items-center justify-center text-xl font-bold mb-6">1</div>
                         <h3 class="text-xl font-bold mb-4">Foto Kerusakan</h3>
-                        <p class="text-gray-400">Ambil foto bagian mobil yang penyok atau tergores menggunakan kamera HP Anda.</p>
+                        <p class="text-gray-600 dark:text-gray-400">Ambil foto bagian mobil yang penyok atau tergores menggunakan kamera HP Anda.</p>
                         <img src="/assets/images/process1.webp" class="mt-6 rounded-lg opacity-80" alt="Foto">
                     </div>
-                    <div class="bg-darkCard p-8 rounded-2xl border border-gray-800">
+                    <div class="bg-white dark:bg-darkCard p-8 rounded-2xl border border-gray-200 dark:border-gray-800">
                         <div class="w-12 h-12 bg-brand/20 text-brand rounded-full flex items-center justify-center text-xl font-bold mb-6">2</div>
                         <h3 class="text-xl font-bold mb-4">Estimasi AI Instan</h3>
-                        <p class="text-gray-400">Sistem AI kami akan mengenali panel yang rusak dan menghitung estimasi biaya seketika.</p>
+                        <p class="text-gray-600 dark:text-gray-400">Sistem AI kami akan mengenali panel yang rusak dan menghitung estimasi biaya seketika.</p>
                     </div>
-                    <div class="bg-darkCard p-8 rounded-2xl border border-gray-800">
+                    <div class="bg-white dark:bg-darkCard p-8 rounded-2xl border border-gray-200 dark:border-gray-800">
                         <div class="w-12 h-12 bg-brand/20 text-brand rounded-full flex items-center justify-center text-xl font-bold mb-6">3</div>
                         <h3 class="text-xl font-bold mb-4">Booking Bengkel</h3>
-                        <p class="text-gray-400">Pilih jadwal di bengkel terdekat dan bawa mobil Anda untuk diperbaiki.</p>
+                        <p class="text-gray-600 dark:text-gray-400">Pilih jadwal di bengkel terdekat dan bawa mobil Anda untuk diperbaiki.</p>
                         <img src="/assets/images/process2.webp" class="mt-6 rounded-lg opacity-80" alt="Booking">
                     </div>
                 </div>
@@ -86,18 +91,48 @@
         </div>
     </main>
 
-    <footer class="border-t border-gray-800 py-12">
+    <footer class="border-t border-gray-200 dark:border-gray-800 py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
             <div class="mb-4 md:mb-0">
                 <span class="text-xl font-bold">re-V</span>
-                <p class="text-gray-500 mt-2">© 2026 re-V. All rights reserved.</p>
+                <p class="text-gray-500 dark:text-gray-500 mt-2">© 2026 re-V. All rights reserved.</p>
             </div>
-            <div class="flex space-x-6 text-sm text-gray-400">
-                <a href="/faq.html" class="hover:text-white">FAQ</a>
-                <a href="/about.html" class="hover:text-white">Tentang Kami</a>
-                <a href="/privacy.html" class="hover:text-white">Kebijakan Privasi</a>
+            <div class="flex space-x-6 text-sm text-gray-600 dark:text-gray-400">
+                <a href="/faq.html" class="hover:text-brand dark:hover:text-white">FAQ</a>
+                <a href="/about.html" class="hover:text-brand dark:hover:text-white">Tentang Kami</a>
+                <a href="/privacy.html" class="hover:text-brand dark:hover:text-white">Kebijakan Privasi</a>
             </div>
         </div>
     </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIconDark = document.getElementById('themeIconDark');
+        const themeIconLight = document.getElementById('themeIconLight');
+
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            if (themeIconLight) themeIconLight.classList.remove('hidden');
+        } else {
+            document.documentElement.classList.remove('dark');
+            if (themeIconDark) themeIconDark.classList.remove('hidden');
+        }
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                if (document.documentElement.classList.contains('dark')) {
+                    localStorage.theme = 'dark';
+                    themeIconLight.classList.remove('hidden');
+                    themeIconDark.classList.add('hidden');
+                } else {
+                    localStorage.theme = 'light';
+                    themeIconLight.classList.add('hidden');
+                    themeIconDark.classList.remove('hidden');
+                }
+            });
+        }
+    </script>
 </body>
+
 </html>
