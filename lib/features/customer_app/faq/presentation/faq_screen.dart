@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // C-74: Clipboard
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
-import 'package:re_v/l10n/app_localizations.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/l10n/app_localizations_extension.dart';
+import 'package:re_v/core/services/cms_l10n_service.dart';
 
 class FaqScreen extends ConsumerStatefulWidget {
   const FaqScreen({super.key});
@@ -15,19 +14,12 @@ class FaqScreen extends ConsumerStatefulWidget {
 }
 
 class _FaqScreenState extends ConsumerState<FaqScreen> {
-  bool _loading = true;
   // Dual-language FAQ items: each map has 'q', 'a', 'q_id', 'a_id'
   List<Map<String, String>> _faqItems = [];
 
-  String _phone     = '+62 800-123-456';
-  String _email     = 'support@re-v.co.id';
-  String _emergency = '+62 800-TOW-REVIVE';
-  // EN content
-  String _pageTitleEn  = '';
-  String _pageSubEn    = '';
-  // ID content
-  String _pageTitleId  = '';
-  String _pageSubId    = '';
+  static const _defaultPhone     = '+62 800-123-456';
+  static const _defaultEmail     = 'support@re-v.co.id';
+  static const _defaultEmergency = '+62 800-TOW-REVIVE';
 
   static const _defaultFaqEn = [
     {'q': 'How does the AI estimation work?',
@@ -60,42 +52,27 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
   ];
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() { super.initState(); }
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
-    try {
-      final res = await Supabase.instance.client.rpc('get_cms_settings');
-      if (res is Map) {
-        final s = res.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
-        if ((s['support_phone']         ?? '').isNotEmpty) _phone     = s['support_phone']!;
-        if ((s['support_email']         ?? '').isNotEmpty) _email     = s['support_email']!;
-        if ((s['support_emergency']     ?? '').isNotEmpty) _emergency = s['support_emergency']!;
-        _pageTitleEn = s['support_page_title']    ?? '';
-        _pageSubEn   = s['support_page_subtitle'] ?? '';
-        _pageTitleId = s['support_page_title_id'] ?? '';
-        _pageSubId   = s['support_page_subtitle_id'] ?? '';
-
-        final items = <Map<String, String>>[];
-        int i = 0;
-        while (s.containsKey('faq_${i}_q') || s.containsKey('faq_${i}_a')) {
-          final q    = s['faq_${i}_q']    ?? '';
-          final a    = s['faq_${i}_a']    ?? '';
-          final qId  = s['faq_${i}_q_id'] ?? '';
-          final aId  = s['faq_${i}_a_id'] ?? '';
-          if (q.isNotEmpty || a.isNotEmpty) items.add({'q': q, 'a': a, 'q_id': qId, 'a_id': aId});
-          i++;
-        }
-        if (items.isNotEmpty) _faqItems = items;
-      }
-    } catch (e) { debugPrint('[FAQ] load error: $e'); }
-    if (_faqItems.isEmpty) {
+  void _buildFaqItems(CmsL10n cms) {
+    final items = <Map<String, String>>[];
+    int i = 0;
+    while (cms.raw.containsKey('faq_${i}_q') || cms.raw.containsKey('faq_${i}_a')) {
+      final q    = cms.raw['faq_${i}_q']    ?? '';
+      final a    = cms.raw['faq_${i}_a']    ?? '';
+      final qId  = cms.raw['faq_${i}_q_id'] ?? '';
+      final aId  = cms.raw['faq_${i}_a_id'] ?? '';
+      if (q.isNotEmpty || a.isNotEmpty) items.add({'q': q, 'a': a, 'q_id': qId, 'a_id': aId});
+      i++;
+    }
+    if (items.isNotEmpty) {
+      _faqItems = items;
+    } else {
       _faqItems = List.generate(_defaultFaqEn.length, (i) => {
         'q': _defaultFaqEn[i]['q']!, 'a': _defaultFaqEn[i]['a']!,
         'q_id': _defaultFaqId[i]['q']!, 'a_id': _defaultFaqId[i]['a']!,
       });
     }
-    if (mounted) setState(() => _loading = false);
   }
 
   void _copy(String text, String label) {
@@ -117,18 +94,32 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
     final locale = ref.watch(localeProvider).languageCode;
     final isId = locale == 'id';
 
-    final pageTitle = isId
-        ? (_pageTitleId.isNotEmpty ? _pageTitleId : l.faqTitle)
-        : (_pageTitleEn.isNotEmpty ? _pageTitleEn : l.faqTitle);
-    final pageSub = isId
-        ? (_pageSubId.isNotEmpty ? _pageSubId : l.faqSubtitle)
-        : (_pageSubEn.isNotEmpty ? _pageSubEn : l.faqSubtitle);
+    final cmsAsync = ref.watch(cmsL10nProvider);
+    final cms = cmsAsync.orEmpty;
+
+    final phone     = (cms.raw['support_phone']     ?? '').isNotEmpty ? cms.raw['support_phone']!     : _defaultPhone;
+    final email     = (cms.raw['support_email']     ?? '').isNotEmpty ? cms.raw['support_email']!     : _defaultEmail;
+    final emergency = (cms.raw['support_emergency'] ?? '').isNotEmpty ? cms.raw['support_emergency']! : _defaultEmergency;
+
+    final pageTitle = cms.t('support_page_title',    en: l.faqTitle,    id: l.faqTitle);
+    final pageSub   = cms.t('support_page_subtitle', en: l.faqSubtitle, id: l.faqSubtitle);
+
+    // Build FAQ items from CMS on every rebuild (provider caches the data)
+    _buildFaqItems(cms);
 
     return Scaffold(
       appBar: ReVAppBar(title: Text(pageTitle), showBackButton: true),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+      body: cmsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => _buildBody(context, theme, isDark, cs, l, isId, phone, email, emergency, pageTitle, pageSub),
+          data: (_) => _buildBody(context, theme, isDark, cs, l, isId, phone, email, emergency, pageTitle, pageSub),
+        ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, ThemeData theme, bool isDark, ColorScheme cs, dynamic l, bool isId,
+      String phone, String email, String emergency, String pageTitle, String pageSub) {
+    return SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Center(
                 child: Container(
@@ -157,16 +148,16 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
                         const SizedBox(width: 12),
                         Expanded(child: _ContactCard(
                           icon: Icons.phone_outlined,
-                          title: l.supportCallUs, subtitle: _phone,
+                          title: l.supportCallUs, subtitle: phone,
                           actionLabel: l.supportCopyNumber,
-                          onTap: () => _copy(_phone, l.supportPhone),
+                          onTap: () => _copy(phone, l.supportPhone),
                           isDark: isDark)),
                         const SizedBox(width: 12),
                         Expanded(child: _ContactCard(
                           icon: Icons.email_outlined,
-                          title: 'Email', subtitle: _email,
+                          title: 'Email', subtitle: email,
                           actionLabel: l.supportCopyEmail,
-                          onTap: () => _copy(_email, 'Email'),
+                          onTap: () => _copy(email, 'Email'),
                           isDark: isDark)),
                       ]),
                     ),
@@ -192,11 +183,11 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(l.supportEmergencyTitle,
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: cs.onSurface)),
-                          Text('$_emergency  ·  WhatsApp',
+                          Text('$emergency  ·  WhatsApp',
                               style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                         ])),
                         TextButton(
-                          onPressed: () => _copy(_emergency, l.supportPhone),
+                          onPressed: () => _copy(emergency, l.supportPhone),
                           child: Text(l.supportCopy, style: const TextStyle(color: AppColors.primaryContainer))),
                       ]),
                     ),
@@ -221,7 +212,6 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
                   ]),
                 ),
               ),
-            ),
     );
   }
 }

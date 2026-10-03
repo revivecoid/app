@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
 import '../providers/theme_provider.dart';
+import '../l10n/app_localizations_extension.dart';
 import 'app_settings_sheet.dart';
 
 class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -36,6 +37,8 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ref.read(themeModeProvider.notifier).setTheme(isDark ? ThemeMode.light : ThemeMode.dark);
       },
     );
+
+    final l = context.l10n;
 
     final finalActions = <Widget>[];
     if (actions != null) {
@@ -107,54 +110,54 @@ class ReVAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
           // Role-based dashboard shortcut
           if (isAdmin)
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'dashboard',
               child: Row(children: [
-                Icon(Icons.admin_panel_settings_outlined,
+                const Icon(Icons.admin_panel_settings_outlined,
                     size: 18, color: AppColors.fireRed),
-                SizedBox(width: 10),
-                Text('Admin Central',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(width: 10),
+                Text(l.navAdminCentral,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ]),
             ),
           if (isPartner)
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'dashboard',
               child: Row(children: [
-                Icon(Icons.storefront_outlined,
+                const Icon(Icons.storefront_outlined,
                     size: 18, color: AppColors.primaryContainer),
-                SizedBox(width: 10),
-                Text('Partner Dashboard',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(width: 10),
+                Text(l.navPartnerDashboard,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ]),
             ),
           if (isAdmin || isPartner) const PopupMenuDivider(),
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'profile',
             child: Row(children: [
-              Icon(Icons.person_outline,
+              const Icon(Icons.person_outline,
                   size: 18, color: AppColors.daysGray),
-              SizedBox(width: 10),
-              Text('My Profile'),
+              const SizedBox(width: 10),
+              Text(l.navMyProfile),
             ]),
           ),
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'settings',
             child: Row(children: [
-              Icon(Icons.tune_rounded,
+              const Icon(Icons.tune_rounded,
                   size: 18, color: AppColors.daysGray),
-              SizedBox(width: 10),
-              Text('Language & Appearance'),
+              const SizedBox(width: 10),
+              Text(l.navLanguageAppearance),
             ]),
           ),
           const PopupMenuDivider(),
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'logout',
             child: Row(children: [
-              Icon(Icons.logout, size: 18, color: AppColors.primaryContainer),
-              SizedBox(width: 10),
-              Text('Log Out',
-                  style: TextStyle(
+              const Icon(Icons.logout, size: 18, color: AppColors.primaryContainer),
+              const SizedBox(width: 10),
+              Text(l.navLogOut,
+                  style: const TextStyle(
                       color: AppColors.primaryContainer,
                       fontWeight: FontWeight.bold)),
             ]),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
+import 'package:re_v/core/services/cms_l10n_service.dart';
 
 class PrivacyPolicyScreen extends ConsumerStatefulWidget {
   const PrivacyPolicyScreen({super.key});
@@ -11,17 +11,6 @@ class PrivacyPolicyScreen extends ConsumerStatefulWidget {
 }
 
 class _PrivacyState extends ConsumerState<PrivacyPolicyScreen> {
-  bool _loading = true;
-  Map<String, String> _s = {};
-
-  String _cmsL(String k, {required bool isId, required String fb}) {
-    if (isId) {
-      final idVal = _s['${k}_id'];
-      if (idVal != null && idVal.isNotEmpty) return idVal;
-    }
-    return (_s[k] != null && _s[k]!.isNotEmpty) ? _s[k]! : fb;
-  }
-
   static const _defaultSectionsEn = [
     ('1. Data We Collect',
      'We collect information you provide when registering (name, email, phone number), vehicle data (make, model, license plate), damage photos you upload, and anonymous app usage data to improve the service.'),
@@ -61,16 +50,7 @@ class _PrivacyState extends ConsumerState<PrivacyPolicyScreen> {
   ];
 
   @override
-  void initState() { super.initState(); _load(); }
-
-  Future<void> _load() async {
-    setState(() => _loading = true);
-    try {
-      final res = await Supabase.instance.client.rpc('get_cms_settings');
-      if (res is Map) _s = res.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
-    } catch (e) { debugPrint('[PrivacyPolicy] load error: $e'); }
-    if (mounted) setState(() => _loading = false);
-  }
+  void initState() { super.initState(); }
 
   @override
   Widget build(BuildContext context) {
@@ -78,26 +58,32 @@ class _PrivacyState extends ConsumerState<PrivacyPolicyScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final cs = theme.colorScheme;
     final isId = ref.watch(localeProvider).languageCode == 'id';
-    final defaults = isId ? _defaultSectionsId : _defaultSectionsEn;
-
+    final cmsAsync = ref.watch(cmsL10nProvider);
+    final cms = cmsAsync.orEmpty;
     final sections = <(String, String)>[];
-    for (int i = 0; i < defaults.length; i++) {
-      final title = _cmsL('privacy_${i}_title', isId: isId, fb: defaults[i].$1);
-      final body  = _cmsL('privacy_${i}_body',  isId: isId, fb: defaults[i].$2);
+    for (int i = 0; i < _defaultSectionsEn.length; i++) {
+      final title = cms.t('privacy_${i}_title', en: _defaultSectionsEn[i].$1, id: _defaultSectionsId[i].$1);
+      final body  = cms.t('privacy_${i}_body',  en: _defaultSectionsEn[i].$2, id: _defaultSectionsId[i].$2);
       sections.add((title, body));
     }
 
-    final pageTitle   = _cmsL('privacy_page_title', isId: isId, fb: isId ? 'Kebijakan Privasi' : 'Privacy Policy');
-    final pageUpdated = _cmsL('privacy_updated',     isId: isId, fb: isId ? 'Terakhir diperbarui: September 2026' : 'Last updated: September 2026');
-    final pageIntro   = _cmsL('privacy_intro',       isId: isId, fb: isId
-        ? 'Kami berkomitmen untuk melindungi privasi dan keamanan data pribadi Anda.'
-        : 'We are committed to protecting the privacy and security of your personal data.');
+    final pageTitle   = cms.t('privacy_page_title', en: 'Privacy Policy', id: 'Kebijakan Privasi');
+    final pageUpdated = cms.t('privacy_updated',     en: 'Last updated: September 2026', id: 'Terakhir diperbarui: September 2026');
+    final pageIntro   = cms.t('privacy_intro',       en: 'We are committed to protecting the privacy and security of your personal data.', id: 'Kami berkomitmen untuk melindungi privasi dan keamanan data pribadi Anda.');
 
     return Scaffold(
       appBar: ReVAppBar(title: Text(pageTitle), showBackButton: true),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+      body: cmsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => _buildScrollBody(context, theme, isDark, cs, isId, pageTitle, pageIntro, pageUpdated, sections),
+          data: (_) => _buildScrollBody(context, theme, isDark, cs, isId, pageTitle, pageIntro, pageUpdated, sections),
+        ),
+    );
+  }
+
+  Widget _buildScrollBody(BuildContext context, ThemeData theme, bool isDark, ColorScheme cs, bool isId,
+      String pageTitle, String pageIntro, String pageUpdated, List<(String, String)> sections) {
+    return SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Center(
                 child: Container(
@@ -164,7 +150,6 @@ class _PrivacyState extends ConsumerState<PrivacyPolicyScreen> {
                   ]),
                 ),
               ),
-            ),
     );
   }
 }

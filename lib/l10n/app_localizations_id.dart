@@ -945,4 +945,78 @@ class AppLId extends AppL {
 
   @override
   String get estimatorEstimatedTotal => 'TOTAL ESTIMASI';
+
+  @override
+  String get loginPlatformTagline => 'Platform Digital Otomotif Terintegrasi';
+
+  @override
+  String get loginHeadingLogin => 'Login Aman';
+
+  @override
+  String get loginHeadingRegister => 'Buat Akun';
+
+  @override
+  String get loginEmailLabel => 'Alamat Email';
+
+  @override
+  String get loginPasswordLabel => 'Kata Sandi';
+
+  @override
+  String get loginSendResetLink => 'KIRIM LINK RESET';
+
+  @override
+  String get loginRegisterButton => 'DAFTAR';
+
+  @override
+  String get loginButton => 'MASUK';
+
+  @override
+  String get loginForgotPassword => 'Lupa Kata Sandi?';
+
+  @override
+  String get loginSwitchToLogin => 'Login sebagai gantinya';
+
+  @override
+  String get loginSwitchToRegister => 'Daftar';
+
+  @override
+  String get loginBackToLogin => 'Kembali ke Login';
+
+  @override
+  String get loginOr => 'ATAU';
+
+  @override
+  String get loginContinueGoogle => 'Lanjutkan dengan Google';
+
+  @override
+  String get loginRegistrationSuccess =>
+      'Pendaftaran berhasil! Periksa email Anda untuk memverifikasi akun sebelum login.';
+
+  @override
+  String get loginResetSent =>
+      'Link reset kata sandi telah dikirim! Periksa email Anda untuk mereset kata sandi dengan aman.';
+
+  @override
+  String get loginAuthenticating => 'Mengautentikasi...';
+
+  @override
+  String get error404Title => '404 - SEKTOR TIDAK DITEMUKAN';
+
+  @override
+  String get error404ReturnButton => 'KEMBALI KE BERANDA';
+
+  @override
+  String get navAdminCentral => 'Admin Pusat';
+
+  @override
+  String get navPartnerDashboard => 'Dashboard Mitra';
+
+  @override
+  String get navMyProfile => 'Profil Saya';
+
+  @override
+  String get navLanguageAppearance => 'Bahasa & Tampilan';
+
+  @override
+  String get navLogOut => 'Keluar';
 }

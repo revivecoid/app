@@ -4,6 +4,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../application/notifications_provider.dart';
 import '../domain/app_notification.dart';
+import '../../../../core/l10n/app_localizations_extension.dart';
 
 class CustomerNotificationsScreen extends ConsumerWidget {
   const CustomerNotificationsScreen({super.key});
@@ -18,7 +19,7 @@ class CustomerNotificationsScreen extends ConsumerWidget {
       final isDesktop = constraints.maxWidth > 900;
       Widget inner = Scaffold(
       appBar: ReVAppBar(
-        title: const Text('Notifikasi'),
+        title: Text(context.l10n.notificationsTitle),
         showBackButton: true,
         actions: [
           TextButton(
@@ -53,7 +54,7 @@ class CustomerNotificationsScreen extends ConsumerWidget {
                   TextButton(
                     onPressed: () =>
                         ref.invalidate(notificationsProvider),
-                    child: const Text('Coba lagi'),
+                    child: Text(context.l10n.retry),
                   ),
                 ],
               ),

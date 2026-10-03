@@ -941,4 +941,78 @@ class AppLEn extends AppL {
 
   @override
   String get estimatorEstimatedTotal => 'ESTIMATED TOTAL';
+
+  @override
+  String get loginPlatformTagline => 'Integrated Automotive Digital Platform';
+
+  @override
+  String get loginHeadingLogin => 'Secure Login';
+
+  @override
+  String get loginHeadingRegister => 'Create Account';
+
+  @override
+  String get loginEmailLabel => 'Email Address';
+
+  @override
+  String get loginPasswordLabel => 'Password';
+
+  @override
+  String get loginSendResetLink => 'SEND RESET LINK';
+
+  @override
+  String get loginRegisterButton => 'REGISTER';
+
+  @override
+  String get loginButton => 'LOGIN';
+
+  @override
+  String get loginForgotPassword => 'Forgot Password?';
+
+  @override
+  String get loginSwitchToLogin => 'Login instead';
+
+  @override
+  String get loginSwitchToRegister => 'Sign Up';
+
+  @override
+  String get loginBackToLogin => 'Back to Login';
+
+  @override
+  String get loginOr => 'OR';
+
+  @override
+  String get loginContinueGoogle => 'Continue with Google';
+
+  @override
+  String get loginRegistrationSuccess =>
+      'Registration successful! Please check your email to verify your account before logging in.';
+
+  @override
+  String get loginResetSent =>
+      'Password reset link sent! Check your email to securely reset your password.';
+
+  @override
+  String get loginAuthenticating => 'Authenticating...';
+
+  @override
+  String get error404Title => '404 - SECTOR NOT FOUND';
+
+  @override
+  String get error404ReturnButton => 'RETURN TO BASE';
+
+  @override
+  String get navAdminCentral => 'Admin Central';
+
+  @override
+  String get navPartnerDashboard => 'Partner Dashboard';
+
+  @override
+  String get navMyProfile => 'My Profile';
+
+  @override
+  String get navLanguageAppearance => 'Language & Appearance';
+
+  @override
+  String get navLogOut => 'Log Out';
 }

@@ -7,27 +7,7 @@ import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 import '../../../../core/utils/auth_url.dart';
 import '../../../../core/jobs/job_status.dart'; // L-08/S-08 fix
-
-// ── CMS settings provider ──────────────────────────────────────────────────────
-final cmsSettingsProvider = FutureProvider.autoDispose<Map<String, String>>((ref) async {
-  try {
-    final res = await Supabase.instance.client.rpc('get_cms_settings');
-    if (res is Map) {
-      return res.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
-    }
-  } catch (e) { debugPrint('[Landing] CMS settings error: $e'); }
-  return {};
-});
-
-// Locale-aware CMS lookup: checks _id suffixed key when locale is 'id'.
-String _cmsL(Map<String, String> s, String key, {required String fallback, bool isId = false}) {
-  if (isId) {
-    final v = s['${key}_id'];
-    if (v != null && v.isNotEmpty) return v;
-  }
-  final v = s[key];
-  return (v != null && v.isNotEmpty) ? v : fallback;
-}
+import 'package:re_v/core/services/cms_l10n_service.dart';
 
 class CustomerLandingScreen extends ConsumerStatefulWidget {
   const CustomerLandingScreen({super.key});
@@ -77,8 +57,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     final bool isLoggedIn = user != null;
     final activeJobAsync = ref.watch(activeJobProvider);
-    final cmsAsync = ref.watch(cmsSettingsProvider);
-    final cms = cmsAsync.valueOrNull ?? {};
+    final cmsAsync = ref.watch(cmsL10nProvider);
     final isId = ref.watch(localeProvider).languageCode == 'id';
 
     return LayoutBuilder(builder: (context, constraints) {
@@ -92,7 +71,7 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeroSection(theme, cms, isId),
+            _buildHeroSection(theme, cmsAsync, isId),
             const SizedBox(height: 16),
             if (isLoggedIn)
               activeJobAsync.when(
@@ -109,17 +88,17 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
               ),
             _buildQuickActions(theme),
             const SizedBox(height: 16),
-            _buildFeatureHighlight(theme, cms, isId),
+            _buildFeatureHighlight(theme, cmsAsync, isId),
             const SizedBox(height: 16),
-            _buildHowItWorks(theme, cms, isId),
+            _buildHowItWorks(theme, cmsAsync, isId),
             const SizedBox(height: 16),
             _buildRecentInspections(theme),
             const SizedBox(height: 16),
-            _buildTrustBadges(theme, cms, isId),
+            _buildTrustBadges(theme, cmsAsync, isId),
             const SizedBox(height: 16),
-            if (cms['contact_phone'] != null || cms['contact_email'] != null || cms['contact_address'] != null)
-              _buildContactSection(theme, cms, isId),
-            if (cms['contact_phone'] != null || cms['contact_email'] != null || cms['contact_address'] != null)
+            if (cmsAsync.orEmpty.raw['contact_phone'] != null || cmsAsync.orEmpty.raw['contact_email'] != null || cmsAsync.orEmpty.raw['contact_address'] != null)
+              _buildContactSection(theme, cmsAsync, isId),
+            if (cmsAsync.orEmpty.raw['contact_phone'] != null || cmsAsync.orEmpty.raw['contact_email'] != null || cmsAsync.orEmpty.raw['contact_address'] != null)
               const SizedBox(height: 16),
             _buildQuickLinks(theme),
             const SizedBox(height: 16),
@@ -133,10 +112,11 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     });
   }
 
-  Widget _buildHeroSection(ThemeData theme, Map<String, String> cms, bool isId) {
-    final heroTitle = _cmsL(cms, 'hero_title',    fallback: isId ? 'Perbaikan Bodi\nJadi Mudah.'  : 'Body Repair\nMade Simple.',         isId: isId);
-    final heroSub   = _cmsL(cms, 'hero_subtitle', fallback: isId ? 'Estimasi instan berbasis AI & pelacakan real-time. Dapatkan mobil Anda kembali lebih cepat dengan transparansi penuh.' : 'Instant body repair estimation & real-time tracking. Get your car shining faster, with absolute transparency.', isId: isId);
-    final heroCta   = _cmsL(cms, 'hero_cta',      fallback: isId ? 'Estimasi AI Gratis'           : 'Get Free AI Estimate',                isId: isId);
+  Widget _buildHeroSection(ThemeData theme, AsyncValue<CmsL10n> cmsAsync, bool isId) {
+    final cms = cmsAsync.orEmpty;
+    final heroTitle = cms.t('hero_title',    en: 'Body Repair\nMade Simple.',         id: 'Perbaikan Bodi\nJadi Mudah.');
+    final heroSub   = cms.t('hero_subtitle', en: 'Instant body repair estimation & real-time tracking. Get your car shining faster, with absolute transparency.', id: 'Estimasi instan berbasis AI & pelacakan real-time. Dapatkan mobil Anda kembali lebih cepat dengan transparansi penuh.');
+    final heroCta   = cms.t('hero_cta',      en: 'Get Free AI Estimate',              id: 'Estimasi AI Gratis');
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -185,10 +165,11 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     );
   }
 
-  Widget _buildContactSection(ThemeData theme, Map<String, String> cms, bool isId) {
-    final phone = cms['contact_phone'];
-    final email = cms['contact_email'];
-    final address = cms['contact_address'];
+  Widget _buildContactSection(ThemeData theme, AsyncValue<CmsL10n> cmsAsync, bool isId) {
+    final raw = cmsAsync.orEmpty.raw;
+    final phone = raw['contact_phone'];
+    final email = raw['contact_email'];
+    final address = raw['contact_address'];
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -709,10 +690,11 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     );
   }
 
-  Widget _buildFeatureHighlight(ThemeData theme, Map<String, String> cms, bool isId) {
-    final ftTitle = _cmsL(cms, 'feature_title', fallback: isId ? 'Jaringan Tersertifikasi Jabodetabek' : 'Jabodetabek Certified Network', isId: isId);
-    final ftBody  = _cmsL(cms, 'feature_body',  fallback: isId ? 'Lebih dari 38 spray booth OEM-compliant dengan presisi color-matching hingga 99,4% akurasi pabrik.' : 'Over 38 OEM-compliant spray booths with digitized color-matching precision down to 99.4% factory accuracy.', isId: isId);
-    final ftBadge = _cmsL(cms, 'feature_badge', fallback: 'SLA < 48 Hrs', isId: isId);
+  Widget _buildFeatureHighlight(ThemeData theme, AsyncValue<CmsL10n> cmsAsync, bool isId) {
+    final cms = cmsAsync.orEmpty;
+    final ftTitle = cms.t('feature_title', en: 'Jabodetabek Certified Network', id: 'Jaringan Tersertifikasi Jabodetabek');
+    final ftBody  = cms.t('feature_body',  en: 'Over 38 OEM-compliant spray booths with digitized color-matching precision down to 99.4% factory accuracy.', id: 'Lebih dari 38 spray booth OEM-compliant dengan presisi color-matching hingga 99,4% akurasi pabrik.');
+    final ftBadge = cms.t('feature_badge', en: 'SLA < 48 Hrs', id: 'SLA < 48 Jam');
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLowest,
@@ -758,20 +740,21 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     );
   }
 
-  Widget _buildHowItWorks(ThemeData theme, Map<String, String> cms, bool isId) {
+  Widget _buildHowItWorks(ThemeData theme, AsyncValue<CmsL10n> cmsAsync, bool isId) {
+    final cms = cmsAsync.orEmpty;
     // Step fallbacks
     final steps = [
-      (_cmsL(cms, 'step_1_title', fallback: isId ? 'Foto Kerusakan' : 'Snap Damage Photos', isId: isId),
-       _cmsL(cms, 'step_1_desc',  fallback: isId ? 'Ambil 3 foto jelas seputar penyok, goresan, atau celah panel langsung di web scanner.' : 'Take 3 clear photos around your vehicle dents, scratches, or panel gaps directly in the web scanner.', isId: isId),
+      (cms.t('step_1_title', en: 'Snap Damage Photos', id: 'Foto Kerusakan'),
+       cms.t('step_1_desc',  en: 'Take 3 clear photos around your vehicle dents, scratches, or panel gaps directly in the web scanner.', id: 'Ambil 3 foto jelas seputar penyok, goresan, atau celah panel langsung di web scanner.'),
        Icons.photo_camera, '1'),
-      (_cmsL(cms, 'step_2_title', fallback: isId ? 'Penilaian AI Instan' : 'Instant AI Assessment', isId: isId),
-       _cmsL(cms, 'step_2_desc',  fallback: isId ? 'Dapatkan analisis suku cadang sub-milimeter dan estimasi harga tetap yang dijamin.' : 'Get sub-millimeter part analysis and guaranteed fixed-price estimate with parts catalog breakdown.', isId: isId),
+      (cms.t('step_2_title', en: 'Instant AI Assessment', id: 'Penilaian AI Instan'),
+       cms.t('step_2_desc',  en: 'Get sub-millimeter part analysis and guaranteed fixed-price estimate with parts catalog breakdown.', id: 'Dapatkan analisis suku cadang sub-milimeter dan estimasi harga tetap yang dijamin.'),
        Icons.smart_toy, '2'),
-      (_cmsL(cms, 'step_3_title', fallback: isId ? 'Pilih Bengkel & Bay' : 'Select Hub & Bay', isId: isId),
-       _cmsL(cms, 'step_3_desc',  fallback: isId ? 'Pilih bengkel tersertifikasi terdekat dan kunci reservasi slot prioritas dengan layanan towing.' : 'Choose your closest certified workshop and lock priority slot reservation with door-to-door towing.', isId: isId),
+      (cms.t('step_3_title', en: 'Select Hub & Bay', id: 'Pilih Bengkel & Bay'),
+       cms.t('step_3_desc',  en: 'Choose your closest certified workshop and lock priority slot reservation with door-to-door towing.', id: 'Pilih bengkel tersertifikasi terdekat dan kunci reservasi slot prioritas dengan layanan towing.'),
        Icons.garage, '3'),
-      (_cmsL(cms, 'step_4_title', fallback: isId ? 'Lacak Langsung hingga Serah Terima' : 'Live Tracking to Handover', isId: isId),
-       _cmsL(cms, 'step_4_desc',  fallback: isId ? 'Pantau real-time persiapan, pengecatan, dan kontrol kualitas hingga pengiriman ke rumah Anda.' : 'Watch real-time prep, booth painting, and quality control telemetry until delivery back to your driveway.', isId: isId),
+      (cms.t('step_4_title', en: 'Live Tracking to Handover', id: 'Lacak Langsung hingga Serah Terima'),
+       cms.t('step_4_desc',  en: 'Watch real-time prep, booth painting, and quality control telemetry until delivery back to your driveway.', id: 'Pantau real-time persiapan, pengecatan, dan kontrol kualitas hingga pengiriman ke rumah Anda.'),
        Icons.check_circle, '4'),
     ];
     return Container(
@@ -934,12 +917,13 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
     );
   }
 
-  Widget _buildTrustBadges(ThemeData theme, Map<String, String> cms, bool isId) {
-    final b1v = _cmsL(cms, 'badge_1_value', fallback: '38+', isId: isId);
-    final b1l = _cmsL(cms, 'badge_1_label', fallback: isId ? 'Bengkel Mitra' : 'Partner Hubs', isId: isId);
-    final b2v = _cmsL(cms, 'badge_2_value', fallback: '4.9/5', isId: isId);
-    final b2l = _cmsL(cms, 'badge_2_label', fallback: isId ? 'Rating Pelanggan' : 'Customer Rating', isId: isId);
-    final b3v = _cmsL(cms, 'badge_3_value', fallback: '12K+', isId: isId);
+  Widget _buildTrustBadges(ThemeData theme, AsyncValue<CmsL10n> cmsAsync, bool isId) {
+    final cms = cmsAsync.orEmpty;
+    final b1v = cms.t('badge_1_value', en: '38+', id: '38+');
+    final b1l = cms.t('badge_1_label', en: 'Partner Hubs', id: 'Bengkel Mitra');
+    final b2v = cms.t('badge_2_value', en: '4.9/5', id: '4.9/5');
+    final b2l = cms.t('badge_2_label', en: 'Customer Rating', id: 'Rating Pelanggan');
+    final b3v = cms.t('badge_3_value', en: '12K+', id: '12K+');
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

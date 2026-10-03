@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:re_v/core/providers/theme_provider.dart';
+import 'package:re_v/core/services/cms_l10n_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
@@ -139,6 +140,7 @@ class _FrontendCmsState extends ConsumerState<FrontendContentStudioScreen> {
       case 3: return _CommissionTab(cs: cs);
       case 4: return _AboutCmsTab(cs: cs, s: _s, onSave: _save);
       case 5: return _PrivacyCmsTab(cs: cs, s: _s, onSave: _save);
+      case 6: return _LangStringsTab(cs: cs, settings: _settings, onSave: _save, ref: ref);
       default: return const SizedBox();
     }
   }
@@ -152,8 +154,8 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const icons = [Icons.dashboard_customize_outlined, Icons.folder_special_outlined, Icons.smart_toy_outlined, Icons.payments_outlined, Icons.info_outlined, Icons.privacy_tip_outlined];
-    const labels = ['Content Studio', 'Digital Assets', 'NLP Studio', 'Commissions', 'About Us', 'Privacy Policy'];
+    const icons = [Icons.dashboard_customize_outlined, Icons.folder_special_outlined, Icons.smart_toy_outlined, Icons.payments_outlined, Icons.info_outlined, Icons.privacy_tip_outlined, Icons.translate];
+    const labels = ['Content Studio', 'Digital Assets', 'NLP Studio', 'Commissions', 'About Us', 'Privacy Policy', 'Language'];
 
     return Container(
       color: cs.surfaceContainerLowest,
@@ -1272,7 +1274,257 @@ class _AboutCmsTabState extends State<_AboutCmsTab> {
   }
 }
 
-// --- Tab 6: Privacy Policy CMS ---
+// --- Tab 6: Language Strings ---
+class _LangStringsTab extends StatefulWidget {
+  final ColorScheme cs;
+  final Map<String, String> settings;
+  final Future<void> Function(String, String, {String cat}) onSave;
+  final WidgetRef ref;
+  const _LangStringsTab({required this.cs, required this.settings, required this.onSave, required this.ref});
+  @override
+  State<_LangStringsTab> createState() => _LangStringsTabState();
+}
+
+class _LangStringsTabState extends State<_LangStringsTab> {
+  final _search = TextEditingController();
+  String _filter = '';
+
+  /// Groups all _en / _id keys (and bare keys used as CMS content) by base key.
+  Map<String, Map<String, String>> _buildGroups() {
+    final groups = <String, Map<String, String>>{};
+    for (final entry in widget.settings.entries) {
+      final k = entry.key;
+      String base;
+      String lang;
+      if (k.endsWith('_en')) {
+        base = k.substring(0, k.length - 3);
+        lang = 'en';
+      } else if (k.endsWith('_id')) {
+        base = k.substring(0, k.length - 3);
+        lang = 'id';
+      } else {
+        // bare key — treat as EN-only, skip non-string-like values
+        base = k;
+        lang = 'en';
+      }
+      groups.putIfAbsent(base, () => {});
+      groups[base]![lang] = entry.value;
+    }
+    return groups;
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveField(String base, String lang, String value) async {
+    final key = lang == 'en' ? '${base}_en' : '${base}_id';
+    await widget.onSave(key, value, cat: 'lang');
+    // Reload l10n provider after save
+    widget.ref.invalidate(cmsL10nProvider);
+  }
+
+  Future<void> _showNewKeyDialog() async {
+    final baseCtrl = TextEditingController();
+    final enCtrl = TextEditingController();
+    final idCtrl = TextEditingController();
+    final cs = widget.cs;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New Language Key'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(
+            controller: baseCtrl,
+            decoration: const InputDecoration(labelText: 'Base key (e.g. nav_home)', isDense: true),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: enCtrl,
+            decoration: const InputDecoration(labelText: 'English (EN) value', isDense: true),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: idCtrl,
+            decoration: const InputDecoration(labelText: 'Indonesian (ID) value', isDense: true),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && baseCtrl.text.trim().isNotEmpty) {
+      final base = baseCtrl.text.trim();
+      await widget.onSave('${base}_en', enCtrl.text, cat: 'lang');
+      await widget.onSave('${base}_id', idCtrl.text, cat: 'lang');
+      widget.ref.invalidate(cmsL10nProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Key "$base" created'), backgroundColor: const Color(0xFF059669)));
+        setState(() {});
+      }
+    }
+    baseCtrl.dispose(); enCtrl.dispose(); idCtrl.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = widget.cs;
+    final groups = _buildGroups();
+    final keys = groups.keys
+        .where((k) => _filter.isEmpty || k.toLowerCase().contains(_filter.toLowerCase()))
+        .toList()
+      ..sort();
+
+    return Padding(
+      padding: const EdgeInsets.all(28),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Text('Language Strings', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: cs.onSurface)),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            decoration: BoxDecoration(color: cs.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+            child: Text('${keys.length} keys', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cs.primary))),
+          const Spacer(),
+          FilledButton.icon(
+            onPressed: _showNewKeyDialog,
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('New Key')),
+        ]),
+        const SizedBox(height: 4),
+        Text('CMS bilingual string table — _en / _id pairs from cms_settings', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 16),
+        // Search box
+        TextField(
+          controller: _search,
+          onChanged: (v) => setState(() => _filter = v),
+          style: TextStyle(fontSize: 13, color: cs.onSurface),
+          decoration: InputDecoration(
+            hintText: 'Search by key name...',
+            hintStyle: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
+            prefixIcon: Icon(Icons.search, size: 18, color: cs.onSurfaceVariant),
+            suffixIcon: _filter.isNotEmpty
+                ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setState(() { _search.clear(); _filter = ''; }))
+                : null,
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: cs.outlineVariant)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: cs.primary)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Column header
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(color: cs.surfaceContainerHigh, borderRadius: BorderRadius.circular(8)),
+          child: Row(children: [
+            Expanded(flex: 3, child: Text('Base Key', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
+            SizedBox(width: 80, child: Text('Status', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
+            Expanded(flex: 4, child: Text('🇬🇧 EN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
+            const SizedBox(width: 12),
+            Expanded(flex: 4, child: Text('🇮🇩 ID', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
+          ]),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: keys.isEmpty
+              ? Center(child: Text('No keys found', style: TextStyle(color: cs.onSurfaceVariant)))
+              : ListView.builder(
+                  itemCount: keys.length,
+                  itemBuilder: (_, i) {
+                    final base = keys[i];
+                    final pair = groups[base]!;
+                    final hasEn = pair.containsKey('en');
+                    final hasId = pair.containsKey('id');
+                    final enCtrl = TextEditingController(text: pair['en'] ?? '');
+                    final idCtrl = TextEditingController(text: pair['id'] ?? '');
+
+                    // Status chip data
+                    late String chipLabel;
+                    late Color chipColor;
+                    if (hasEn && hasId) {
+                      chipLabel = 'Bilingual'; chipColor = const Color(0xFF059669);
+                    } else if (hasEn) {
+                      chipLabel = 'EN only'; chipColor = const Color(0xFF1565C0);
+                    } else {
+                      chipLabel = 'ID only'; chipColor = const Color(0xFFDC2626);
+                    }
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))),
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                        Expanded(flex: 3, child: Text(base,
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurface, fontFamily: 'monospace'),
+                          overflow: TextOverflow.ellipsis)),
+                        SizedBox(width: 80, child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(color: chipColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+                          child: Text(chipLabel, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: chipColor), textAlign: TextAlign.center))),
+                        Expanded(flex: 4, child: Focus(
+                          onFocusChange: (hasFocus) {
+                            if (!hasFocus) _saveField(base, 'en', enCtrl.text);
+                          },
+                          child: TextField(
+                            controller: enCtrl,
+                            style: TextStyle(fontSize: 12, color: cs.onSurface),
+                            onSubmitted: (v) => _saveField(base, 'en', v),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              hintText: 'EN value...',
+                              hintStyle: TextStyle(fontSize: 11, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6),
+                                borderSide: BorderSide(color: const Color(0xFF1565C0).withValues(alpha: 0.4))),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6),
+                                borderSide: const BorderSide(color: Color(0xFF1565C0)))),
+                          ),
+                        )),
+                        const SizedBox(width: 12),
+                        Expanded(flex: 4, child: Focus(
+                          onFocusChange: (hasFocus) {
+                            if (!hasFocus) _saveField(base, 'id', idCtrl.text);
+                          },
+                          child: TextField(
+                            controller: idCtrl,
+                            style: TextStyle(fontSize: 12, color: cs.onSurface),
+                            onSubmitted: (v) => _saveField(base, 'id', v),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              hintText: 'ID value...',
+                              hintStyle: TextStyle(fontSize: 11, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6),
+                                borderSide: BorderSide(color: const Color(0xFFDC2626).withValues(alpha: 0.4))),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6),
+                                borderSide: const BorderSide(color: Color(0xFFDC2626)))),
+                          ),
+                        )),
+                      ]),
+                    );
+                  }),
+        ),
+      ]),
+    );
+  }
+}
+
+// --- Tab 7: Privacy Policy CMS ---
 class _PrivacyCmsTab extends StatefulWidget {
   final ColorScheme cs;
   final String Function(String, {String fb}) s;

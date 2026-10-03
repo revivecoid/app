@@ -1896,6 +1896,150 @@ abstract class AppL {
   /// In en, this message translates to:
   /// **'ESTIMATED TOTAL'**
   String get estimatorEstimatedTotal;
+
+  /// Platform tagline on login screen
+  ///
+  /// In en, this message translates to:
+  /// **'Integrated Automotive Digital Platform'**
+  String get loginPlatformTagline;
+
+  /// No description provided for @loginHeadingLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure Login'**
+  String get loginHeadingLogin;
+
+  /// No description provided for @loginHeadingRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get loginHeadingRegister;
+
+  /// No description provided for @loginEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Address'**
+  String get loginEmailLabel;
+
+  /// No description provided for @loginPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get loginPasswordLabel;
+
+  /// No description provided for @loginSendResetLink.
+  ///
+  /// In en, this message translates to:
+  /// **'SEND RESET LINK'**
+  String get loginSendResetLink;
+
+  /// No description provided for @loginRegisterButton.
+  ///
+  /// In en, this message translates to:
+  /// **'REGISTER'**
+  String get loginRegisterButton;
+
+  /// No description provided for @loginButton.
+  ///
+  /// In en, this message translates to:
+  /// **'LOGIN'**
+  String get loginButton;
+
+  /// No description provided for @loginForgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot Password?'**
+  String get loginForgotPassword;
+
+  /// No description provided for @loginSwitchToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Login instead'**
+  String get loginSwitchToLogin;
+
+  /// No description provided for @loginSwitchToRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get loginSwitchToRegister;
+
+  /// No description provided for @loginBackToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Login'**
+  String get loginBackToLogin;
+
+  /// No description provided for @loginOr.
+  ///
+  /// In en, this message translates to:
+  /// **'OR'**
+  String get loginOr;
+
+  /// No description provided for @loginContinueGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get loginContinueGoogle;
+
+  /// No description provided for @loginRegistrationSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration successful! Please check your email to verify your account before logging in.'**
+  String get loginRegistrationSuccess;
+
+  /// No description provided for @loginResetSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset link sent! Check your email to securely reset your password.'**
+  String get loginResetSent;
+
+  /// No description provided for @loginAuthenticating.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticating...'**
+  String get loginAuthenticating;
+
+  /// No description provided for @error404Title.
+  ///
+  /// In en, this message translates to:
+  /// **'404 - SECTOR NOT FOUND'**
+  String get error404Title;
+
+  /// No description provided for @error404ReturnButton.
+  ///
+  /// In en, this message translates to:
+  /// **'RETURN TO BASE'**
+  String get error404ReturnButton;
+
+  /// No description provided for @navAdminCentral.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin Central'**
+  String get navAdminCentral;
+
+  /// No description provided for @navPartnerDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner Dashboard'**
+  String get navPartnerDashboard;
+
+  /// No description provided for @navMyProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'My Profile'**
+  String get navMyProfile;
+
+  /// No description provided for @navLanguageAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Language & Appearance'**
+  String get navLanguageAppearance;
+
+  /// No description provided for @navLogOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Log Out'**
+  String get navLogOut;
 }
 
 class _AppLDelegate extends LocalizationsDelegate<AppL> {

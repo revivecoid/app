@@ -9,6 +9,7 @@ import 'core/widgets/rev_app_bar.dart';
 import 'core/utils/auth_url.dart';
 import 'core/utils/guest_session.dart';
 import 'features/ops_mobile/ops_access.dart';
+import 'core/l10n/app_localizations_extension.dart';
 
 // --- IMPORTING ESTABLISHED FEATURE MODULES ---
 import 'features/partner_dashboard/presentation/partner_profile_screen.dart';
@@ -235,6 +236,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // UX-03 FIX: Use theme-aware colors instead of hardcoded dark-on-dark
     errorBuilder: (context, state) {
       final cs = Theme.of(context).colorScheme;
+      final l = context.l10n;
       return Scaffold(
         backgroundColor: cs.surface,
         body: Center(
@@ -243,14 +245,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             children: [
               Icon(Icons.broken_image, size: 80, color: cs.onSurfaceVariant),
               const SizedBox(height: 24),
-              Text('404 - SECTOR NOT FOUND', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: cs.onSurface)),
+              Text(l.error404Title, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: cs.onSurface)),
               const SizedBox(height: 16),
               Text('The route "${state.uri.path}" is unavailable or restricted.', style: TextStyle(color: cs.onSurfaceVariant)),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () => context.go('/'),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed),
-                child: const Text('RETURN TO BASE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text(l.error404ReturnButton, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -707,6 +709,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
     final surfaceColor = theme.colorScheme.surfaceContainerHighest;
 
     return Consumer(builder: (context, ref, child) {
+      final l = context.l10n;
       return Scaffold(
         backgroundColor: bgColor,
         appBar: const ReVAppBar(),
@@ -750,7 +753,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                   const SizedBox(height: 16),
                   Text('Integrated Automotive Digital Platform', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor), textAlign: TextAlign.center),
                   const SizedBox(height: 8),
-                  Text(_isRegistering ? 'Create Account' : 'Secure Login', style: const TextStyle(color: AppColors.daysGray)),
+                  Text(_isRegistering ? l.loginHeadingRegister : l.loginHeadingLogin, style: const TextStyle(color: AppColors.daysGray)),
                   const SizedBox(height: 32),
                   if (_errorMessage != null)
                     Container(
@@ -764,14 +767,14 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                       padding: const EdgeInsets.all(12),
                       margin: const EdgeInsets.only(bottom: 16),
                       color: Colors.green.withValues(alpha: 0.1),
-                      child: const Text('Registration successful! Please check your email to verify your account before logging in.', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                      child: Text(l.loginRegistrationSuccess, style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                     ),
                   if (_resetSuccess)
                     Container(
                       padding: const EdgeInsets.all(12),
                       margin: const EdgeInsets.only(bottom: 16),
                       color: Colors.green.withValues(alpha: 0.1),
-                      child: const Text('Password reset link sent! Check your email to securely reset your password.', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                      child: Text(l.loginResetSent, style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                     ),
                   TextField(
                     controller: _emailController,
@@ -779,7 +782,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                     autofillHints: const [AutofillHints.email],
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
-                      labelText: 'Email Address',
+                      labelText: l.loginEmailLabel,
                       labelStyle: const TextStyle(color: AppColors.daysGray),
                       border: const OutlineInputBorder(),
                       enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.daysGray.withValues(alpha: 0.5)))
@@ -797,7 +800,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                         if (!_isLoading) _executeAuth();
                       },
                       decoration: InputDecoration(
-                        labelText: 'Password', 
+                        labelText: l.loginPasswordLabel, 
                         labelStyle: const TextStyle(color: AppColors.daysGray),
                         border: const OutlineInputBorder(),
                         enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.daysGray.withValues(alpha: 0.5))),
@@ -820,7 +823,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                       style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireRed),
                       child: _isLoading 
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : Text(_isResettingPassword ? 'SEND RESET LINK' : (_isRegistering ? 'REGISTER' : 'LOGIN'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                        : Text(_isResettingPassword ? l.loginSendResetLink : (_isRegistering ? l.loginRegisterButton : l.loginButton), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -837,7 +840,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                               _registrationSuccess = false;
                             });
                           },
-                          child: Text('Forgot Password?', style: TextStyle(color: textColor.withValues(alpha: 0.7))),
+                          child: Text(l.loginForgotPassword, style: TextStyle(color: textColor.withValues(alpha: 0.7))),
                         ),
                         TextButton(
                           onPressed: () {
@@ -848,7 +851,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                             });
                           },
                           child: Text(
-                            _isRegistering ? 'Login instead' : "Sign Up",
+                            _isRegistering ? l.loginSwitchToLogin : l.loginSwitchToRegister,
                             style: TextStyle(color: textColor.withValues(alpha: 0.9), fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -863,18 +866,18 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                           _resetSuccess = false;
                         });
                       },
-                      child: Text('Back to Login', style: TextStyle(color: textColor.withValues(alpha: 0.8))),
+                      child: Text(l.loginBackToLogin, style: TextStyle(color: textColor.withValues(alpha: 0.8))),
                     ),
                   ],
                   const SizedBox(height: 16),
-                  const Row(
+                  Row(
                     children: [
-                      Expanded(child: Divider()),
+                      const Expanded(child: Divider()),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('OR', style: TextStyle(color: AppColors.daysGray, fontWeight: FontWeight.bold)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(l.loginOr, style: const TextStyle(color: AppColors.daysGray, fontWeight: FontWeight.bold)),
                       ),
-                      Expanded(child: Divider()),
+                      const Expanded(child: Divider()),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -884,7 +887,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                     child: OutlinedButton.icon(
                       onPressed: _isLoading ? null : _executeGoogleLogin,
                       icon: Image.asset('assets/images/google_logo.png', height: 24),
-                      label: Text('Continue with Google', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+                      label: Text(l.loginContinueGoogle, style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: theme.colorScheme.outline, width: 1),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
