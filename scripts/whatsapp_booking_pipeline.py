@@ -18,58 +18,107 @@ from urllib.parse import quote
 from datetime import datetime, timedelta
 
 TIMEOUT = 30
-OTP_DB_FILE = os.path.join(os.path.dirname(__file__), "wa_otps.json")
 
-def load_otps():
-    if os.path.exists(OTP_DB_FILE):
-        with open(OTP_DB_FILE, "r") as f:
-            try: return json.load(f)
-            except: return {}
-    return {}
 
-def save_otps(data):
-    with open(OTP_DB_FILE, "w") as f:
-        json.dump(data, f)
+
+def _get_supabase_creds():
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    if not url or not key:
+        print("Error: Missing env SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY", file=sys.stderr)
+        sys.exit(1)
+    return url, key
 
 def generate_otp(phone):
-    otps = load_otps()
+    url, key = _get_supabase_creds()
     code = str(random.randint(100000, 999999))
-    otps[phone] = {
+    expires_at = (datetime.utcnow() + timedelta(minutes=5)).isoformat() + "Z"
+    
+    payload = {
+        "phone": phone,
         "code": code,
-        "expires_at": time.time() + 300, # 5 minutes
-        "verified": False
+        "expires_at": expires_at,
+        "verified": False,
+        "attempts": 0
     }
-    save_otps(otps)
+    
+    # Upsert the OTP
+    req_url = f"{url.rstrip('/')}/rest/v1/wa_otp_verifications"
+    import urllib.request
+    req = urllib.request.Request(
+        req_url,
+        method="POST",
+        headers={
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates"
+        },
+        data=json.dumps(payload).encode()
+    )
+    with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+        pass
+        
     print(f"\n--- OTP GENERATED ---")
     print(f"OTP: {code}")
     print(f"Please send this code to the user and ask them to reply with it.")
     return code
 
 def verify_otp(phone, code):
-    otps = load_otps()
-    record = otps.get(phone)
-    if not record:
+    url, key = _get_supabase_creds()
+    
+    # Get current OTP record
+    import urllib.parse
+    q_phone = urllib.parse.quote(phone)
+    record = _supabase_req(url, key, "GET", f"/wa_otp_verifications?phone=eq.{q_phone}&select=*")
+    
+    if not record or len(record) == 0:
         print(f"Error: No OTP requested for {phone}", file=sys.stderr)
         return False
         
-    if time.time() > record["expires_at"]:
+    record = record[0]
+    
+    if record.get("verified"):
+        print(f"Phone {phone} is already verified.", file=sys.stderr)
+        return True
+        
+    attempts = record.get("attempts", 0)
+    if attempts >= 3:
+        print(f"Error: Max attempts reached for {phone}. Please request a new OTP.", file=sys.stderr)
+        return False
+        
+    # Check expiry
+    # UTC parse
+    # For simplicity, if datetime.utcnow() > expires_at
+    from datetime import datetime
+    # typical format: 2026-10-08T10:00:00+00:00 or Z
+    exp_str = record["expires_at"].replace("Z", "+00:00")
+    exp_dt = datetime.fromisoformat(exp_str)
+    
+    if datetime.now(exp_dt.tzinfo) > exp_dt:
         print(f"Error: OTP for {phone} has expired", file=sys.stderr)
         return False
         
     if record["code"] != code:
-        print(f"Error: Invalid OTP for {phone}", file=sys.stderr)
+        attempts += 1
+        payload = {"attempts": attempts}
+        _supabase_req(url, key, "PATCH", f"/wa_otp_verifications?phone=eq.{q_phone}", payload=payload)
+        print(f"Error: Invalid OTP for {phone}. Attempt {attempts}/3", file=sys.stderr)
         return False
         
-    record["verified"] = True
-    save_otps(otps)
+    # Success
+    payload = {"verified": True}
+    _supabase_req(url, key, "PATCH", f"/wa_otp_verifications?phone=eq.{q_phone}", payload=payload)
     print(f"\n--- OTP VERIFIED ---")
     print(f"Phone {phone} is now authenticated.")
     return True
 
 def is_verified(phone):
-    otps = load_otps()
-    record = otps.get(phone)
-    return record and record.get("verified") is True
+    url, key = _get_supabase_creds()
+    import urllib.parse
+    q_phone = urllib.parse.quote(phone)
+    record = _supabase_req(url, key, "GET", f"/wa_otp_verifications?phone=eq.{q_phone}&select=verified")
+    return record and len(record) > 0 and record[0].get("verified") is True
 
 def _supabase_req(url, key, method, path, payload=None, is_auth=False, is_storage=False, content_type="application/json"):
     base = url.rstrip("/")

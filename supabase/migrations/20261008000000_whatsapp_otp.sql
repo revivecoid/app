@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS public.wa_otp_verifications (
     code text NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
     expires_at timestamptz NOT NULL,
+    attempts int NOT NULL DEFAULT 0,
     verified boolean NOT NULL DEFAULT false
 );
 
