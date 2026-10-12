@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+  -->
+  <base href="/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- SEO-01 FIX: Proper title and description instead of Flutter template defaults -->
+  <meta name="description" content="Revive - Estimasi dan booking perbaikan bodi kendaraan berbasis AI. Layanan cat dan body repair terpercaya di Indonesia.">
+  
+  <!-- SEO-04 FIX: Open Graph tags for rich link previews on WhatsApp, Facebook, Instagram -->
+  <meta property="og:title" content="Revive — Perbaikan Bodi Kendaraan">
+  <meta property="og:description" content="Estimasi biaya perbaikan body mobil dengan AI vision. Booking online, tracking real-time.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://revive.co.id">
+  <meta property="og:site_name" content="Revive">
+  <meta property="og:locale" content="id_ID">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Revive — Perbaikan Bodi Kendaraan">
+  <meta name="twitter:description" content="Estimasi biaya perbaikan body mobil dengan AI vision. Booking online, tracking real-time.">
+
+  <!-- Prevent caching of index.html -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- SEO-01 FIX: Proper app title -->
+  <meta name="apple-mobile-web-app-title" content="Revive">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <!-- SEO-01 FIX: Proper page title -->
+  <title>Revive — Perbaikan Bodi Kendaraan</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    /* Allow text selection globally — Flutter web disables this by default */
+    flt-glass-pane { user-select: text !important; -webkit-user-select: text !important; }
+  </style>
+</head>
+<body>
+  <!-- Forward Ctrl+C / Cmd+C to the clipboard using the native Selection API.
+       Flutter's engine captures keyboard events before the browser can act on
+       them, so SelectionArea alone is not enough to make copy work on web.
+       This handler fires after Flutter has updated window.getSelection() and
+       writes it to the clipboard directly. -->
+  <script>
+    document.addEventListener('copy', function(e) {
+      var sel = window.getSelection();
+      if (sel && sel.toString().length > 0) {
+        e.clipboardData.setData('text/plain', sel.toString());
+        e.preventDefault();
+      }
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
