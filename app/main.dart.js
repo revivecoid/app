@@ -129851,6 +129851,8 @@ break}if(a==="partner_mechanic"){q=a1==null?"/partner-dashboard":a1
 s=1
 break}if(a==="partner_staff"||a==="partner_driver"){q=a1==null?"/ops":a1
 s=1
+break}if(a==="partner_applicant"){q=a1==null?"/partner/application-status":a1
+s=1
 break}q=a1==null?"/":a1
 s=1
 break}else{a2=$.AZ
