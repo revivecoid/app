@@ -1,79 +1,76 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kebijakan Privasi - Revive Auto Repair</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-        }
-        .container {
-            background-color: #fff;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 { color: #D10721; margin-top: 0; }
-        h2 { color: #222; margin-top: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        p { margin-bottom: 15px; }
-        ul { margin-bottom: 15px; }
-        .footer {
-            margin-top: 40px;
-            text-align: center;
-            font-size: 0.9em;
-            color: #666;
-        }
-    </style>
+    <title>Kebijakan Privasi - re-V</title>
+    <meta name="description" content="Kebijakan Privasi platform re-V.">
+    <link rel="canonical" href="https://revive.co.id/privacy.html">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { brand: '#FF3B30', darkBg: '#121212', darkCard: '#1E1E1E' } } } }
+    </script>
 </head>
-<body>
-    <div class="container">
-        <h1>Kebijakan Privasi</h1>
-        <p><strong>Terakhir Diperbarui:</strong> 5 September 2026</p>
+<body class="bg-gray-50 dark:bg-darkBg text-gray-900 dark:text-white min-h-screen flex flex-col">
+    <header class="border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-black/50 backdrop-blur fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="/" class="flex items-center space-x-3"><img src="/assets/images/revive_logo.png" class="h-8"><span class="text-xl font-bold">re-V</span></a>
+            
+            <div class="flex items-center space-x-4">
+                <button id="themeToggle" class="text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-white mr-2 focus:outline-none" aria-label="Toggle Theme">
+                    <svg id="themeIconDark" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <svg id="themeIconLight" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </button>
+                <a href="/app/#/login" class="text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-white font-medium">Login</a>
+                <a href="/app/#/" class="bg-brand text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition">Mulai Estimasi</a>
+            </div>
+        </div>
+    </header>
 
-        <p>Revive Auto Repair ("kami", "kita", atau "milik kami") mengoperasikan platform manajemen perbaikan kendaraan Revive (selanjutnya disebut "Layanan"). Halaman ini memberi tahu Anda tentang kebijakan kami mengenai pengumpulan, penggunaan, dan pengungkapan data pribadi saat Anda menggunakan Layanan kami serta pilihan yang Anda miliki terkait data tersebut.</p>
+    <main class="flex-grow pt-24 pb-16 max-w-3xl mx-auto px-4 prose prose-invert">
+        <h1 class="text-4xl font-bold mb-8">Kebijakan Privasi</h1>
+        <p class="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
+            Data pribadi dan foto kendaraan Anda hanya digunakan untuk tujuan estimasi perbaikan dan komunikasi antara Anda dengan bengkel mitra kami. Kami tidak menjual data pelanggan kepada pihak ketiga.
+        </p>
+    </main>
 
-        <h2>1. Pengumpulan Data Informasi</h2>
-        <p>Kami mengumpulkan beberapa jenis informasi untuk menyediakan dan meningkatkan Layanan kami kepada Anda, termasuk:</p>
-        <ul>
-            <li><strong>Data Pribadi:</strong> Nama, alamat email, nomor telepon (termasuk nomor WhatsApp), dan informasi kontak lainnya.</li>
-            <li><strong>Data Kendaraan:</strong> Merek, model, pelat nomor, dan detail kerusakan atau perbaikan.</li>
-        </ul>
+    <footer class="border-t border-gray-200 dark:border-gray-800 py-8 text-center text-gray-500 dark:text-gray-500">
+        <div class="space-x-4 mb-4">
+            <a href="/" class="hover:text-brand dark:hover:text-white">Beranda</a>
+            <a href="/faq.html" class="hover:text-brand dark:hover:text-white">FAQ</a>
+            <a href="/about.html" class="hover:text-brand dark:hover:text-white">Tentang</a>
+        </div>
+        <p>© 2026 re-V. All rights reserved.</p>
+    </footer>
 
-        <h2>2. Penggunaan Data</h2>
-        <p>Revive Auto Repair menggunakan data yang dikumpulkan untuk berbagai tujuan:</p>
-        <ul>
-            <li>Untuk menyediakan dan memelihara Layanan.</li>
-            <li>Untuk memberi tahu Anda tentang perubahan pada Layanan kami atau status perbaikan kendaraan Anda.</li>
-            <li>Untuk memberikan dukungan pelanggan.</li>
-            <li>Untuk memantau penggunaan Layanan.</li>
-        </ul>
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIconDark = document.getElementById('themeIconDark');
+        const themeIconLight = document.getElementById('themeIconLight');
 
-        <h2>3. Penggunaan Layanan Pihak Ketiga (WhatsApp / Meta)</h2>
-        <p>Untuk memberikan pembaruan status secara real-time mengenai kendaraan Anda, kami terintegrasi dengan penyedia layanan pihak ketiga. Secara khusus, kami menggunakan API WhatsApp Business (disediakan oleh Meta Platforms, Inc.) untuk mengirimkan notifikasi otomatis ke nomor WhatsApp yang Anda daftarkan.</p>
-        <p>Dengan mengaktifkan notifikasi WhatsApp, Anda menyetujui bahwa nomor telepon dan nama Anda akan diproses oleh infrastruktur pesan Meta semata-mata untuk tujuan pengiriman pembaruan layanan (seperti konfirmasi booking dan penyelesaian perbaikan).</p>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            if (themeIconLight) themeIconLight.classList.remove('hidden');
+        } else {
+            document.documentElement.classList.remove('dark');
+            if (themeIconDark) themeIconDark.classList.remove('hidden');
+        }
 
-        <h2>4. Keamanan Data</h2>
-        <p>Keamanan data Anda penting bagi kami, namun ingatlah bahwa tidak ada metode transmisi melalui Internet atau metode penyimpanan elektronik yang 100% aman. Meskipun kami berusaha menggunakan cara yang dapat diterima secara komersial untuk melindungi Data Pribadi Anda, kami tidak dapat menjamin keamanan absolutnya.</p>
-
-        <h2>5. Hak Anda (Penghapusan Data)</h2>
-        <p>Anda memiliki hak untuk meminta penghapusan informasi pribadi Anda yang kami simpan. Jika Anda ingin data Anda dihapus, atau ingin berhenti menerima notifikasi WhatsApp, Anda dapat mengubah preferensi di dalam aplikasi atau menghubungi kami secara langsung.</p>
-
-        <h2>6. Hubungi Kami</h2>
-        <p>Jika Anda memiliki pertanyaan tentang Kebijakan Privasi ini, silakan hubungi kami:</p>
-        <ul>
-            <li>Melalui email: privacy@revive.co.id</li>
-        </ul>
-    </div>
-    
-    <div class="footer">
-        &copy; 2026 Revive Auto Repair. Hak Cipta Dilindungi.
-    </div>
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                if (document.documentElement.classList.contains('dark')) {
+                    localStorage.theme = 'dark';
+                    themeIconLight.classList.remove('hidden');
+                    themeIconDark.classList.add('hidden');
+                } else {
+                    localStorage.theme = 'light';
+                    themeIconLight.classList.add('hidden');
+                    themeIconDark.classList.remove('hidden');
+                }
+            });
+        }
+    </script>
 </body>
+
 </html>
