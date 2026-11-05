@@ -13,6 +13,7 @@ import '../../../../core/utils/image_compressor.dart';
 import '../providers/panel_selection_provider.dart';
 import '../providers/customer_intake_provider.dart';
 import 'widgets/interactive_car_diagram.dart';
+import 'widgets/spare_parts_estimation.dart';
 import '../../../../core/widgets/rev_app_bar.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -1017,6 +1018,11 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                               child: Text('Severity: $severity', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
                             ),
                           ],
+                        ),
+                        // ── Spare parts estimation ─────────────────────
+                        SparePartsPanel(
+                          parts: parseSpareParts(panel as Map<String, dynamic>),
+                          isDark: isDark,
                         ),
                       ],
                     ),

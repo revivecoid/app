@@ -271,6 +271,9 @@ Valid panel names are: Bumper Depan, Spoiler Bumper depan, Kap Mesin, Bumper Bel
 
 For each damaged panel found, classify its specific severity into: 'ringan', 'sedang', or 'berat'.
 Also classify the overall severity of the car damage.
+For each panel, list the spare parts likely needed for repair in the spare_parts_needed array.
+Each spare part must have: name (string, in Bahasa Indonesia), quantity (integer ≥ 1), reason (string, brief explanation in Bahasa Indonesia, max 60 chars).
+Do NOT include prices — prices are not available yet.
 Return precise counts for dents, scratches, and broken panels in EXACTLY this JSON format. Do NOT change field names. Do NOT add extra fields. Do NOT wrap in markdown. Output raw JSON only:
 {
   "analysis_metadata": { "engine_processed": "model-name", "timestamp": "ISO8601" },
@@ -278,12 +281,22 @@ Return precise counts for dents, scratches, and broken panels in EXACTLY this JS
     "severity_classification": "ringan/sedang/berat",
     "total_panels_damaged": 0,
     "damaged_panels_detail": [
-      { "panel_name": "exact_valid_panel_name", "panel_severity": "ringan/sedang/berat", "scratches_found": 0, "dents_found": 0, "requires_replacement": false }
+      {
+        "panel_name": "exact_valid_panel_name",
+        "panel_severity": "ringan/sedang/berat",
+        "damage_type": "scratch/dent/broken",
+        "scratches_found": 0,
+        "dents_found": 0,
+        "requires_replacement": false,
+        "spare_parts_needed": [
+          { "name": "Nama spare part", "quantity": 1, "reason": "Alasan singkat" }
+        ]
+      }
     ]
   },
   "financial_estimation": { "currency": "IDR", "estimated_days_to_repair": 0 }
 }
-CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The severity field MUST be "panel_severity" (not "severity"). Only use values "ringan", "sedang", or "berat" for severity — NOT "mild", "moderate", or "severe".`;
+CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The severity field MUST be "panel_severity" (not "severity"). Only use values "ringan", "sedang", or "berat" for severity — NOT "mild", "moderate", or "severe". spare_parts_needed MUST always be present as an array (use [] if no parts needed).`;
 
     let estimationResult = null;
     let usedModel = "";
@@ -306,8 +319,8 @@ CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The sev
           estimationResult = await callGoogleGemini(photoUrls, masterPrompt, configData.model_name, rowKey || googleApiKey);
         } else if (provider.includes("groq")) {
           estimationResult = await callOpenAICompatible(photoUrls, masterPrompt, configData.model_name, rowKey || groqApiKey, configData.api_base_url);
-        } else if (provider.includes("openai") || provider.includes("router")) {
-          // Covers OpenAI, OpenRouter and 9Router-style gateways
+        } else if (provider.includes("openai") || provider.includes("router") || provider.includes("broadandbright") || provider.includes("9router")) {
+          // Covers OpenAI, OpenRouter, 9Router-style gateways, and broadandbright
           estimationResult = await callOpenAICompatible(photoUrls, masterPrompt, configData.model_name, rowKey || openaiApiKey, configData.api_base_url);
         } else {
           throw new Error(`Unsupported model provider: ${provider}`);
@@ -353,10 +366,10 @@ CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The sev
             panel_name: p.panel_name ?? p.panel ?? p.name ?? null,
             panel_severity: p.severity === 'severe' ? 'berat' : p.severity === 'moderate' ? 'sedang' : p.severity === 'mild' ? 'ringan' : p.panel_severity ?? 'berat',
             scratches_found: p.scratches_found ?? (p.damage_type === 'scratch' ? 1 : 0),
-            dents_found: p.dents_found ?? (p.damage_type === 'dent' ? 1 : 0),
+            dents_found: p.dents_found ?? (p.damage_type === 'dent' ? 1 : ((!p.damage_type && !p.scratches_found && !p.broken_found && !p.requires_replacement) ? 1 : 0)),
             broken_found: p.broken_found ?? (p.damage_type === 'broken' ? 1 : 0),
             requires_replacement: p.requires_replacement ?? (p.damage_type === 'broken'),
-            _no_damage_type: !p.damage_type && !p.scratches_found && !p.dents_found && !p.broken_found,
+            spare_parts_needed: Array.isArray(p.spare_parts_needed) ? p.spare_parts_needed : [],
             }; // close return
           }); // close map
           finalCostEstimation = {
@@ -498,6 +511,7 @@ async function callOpenAICompatible(photoUrls: string[], prompt: string, modelNa
   const payload: any = {
     model: modelName,
     messages: [{ role: "user", content: contentArray }],
+    stream: true,  // Always stream — prevents 30s timeout on slow backends (e.g. broadandbright)
   };
 
   // Skip JSON mode for models that might not fully support strict structured format
@@ -507,7 +521,7 @@ async function callOpenAICompatible(photoUrls: string[], prompt: string, modelNa
 
   const response = await fetch(apiBaseUrl, {
     method: "POST",
-    signal: AbortSignal.timeout(35000), // C-66: 35s model timeout
+    signal: AbortSignal.timeout(55000), // 55s — broadandbright needs ~23s+ for vision
     headers: {
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
@@ -540,15 +554,19 @@ async function callOpenAICompatible(photoUrls: string[], prompt: string, modelNa
       try {
         const chunk = JSON.parse(chunkStr);
         const choice = (chunk.choices ?? [])[0] ?? {};
-        const piece = choice.delta?.content ?? choice.message?.content;
-        if (piece) assembled += piece;
+        // Skip reasoning_content-only chunks (thinking models emit these before the real answer)
+        const piece = choice.delta?.content ?? choice.message?.content ?? null;
+        if (piece != null && piece !== "") assembled += piece;
+        else if (choice.delta?.reasoning_content) { /* skip thinking tokens */ }
       } catch {
         // Skip keep-alive / non-JSON frames
       }
     }
     if (!assembled.trim()) {
+      console.error("[vision-estimation] SSE assembled empty. Raw snippet:", raw.slice(0, 500));
       throw new Error("OpenAI-compatible API returned an SSE stream with no content");
     }
+    console.log("[vision-estimation] SSE assembled length:", assembled.length, "snippet:", assembled.slice(0, 200));
     return assembled;
   }
 
