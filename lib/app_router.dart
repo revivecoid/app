@@ -644,10 +644,11 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
   bool _obscurePassword = true;
   bool _registrationSuccess = false;
   bool _resetSuccess = false;
+  bool _emailAlreadyRegistered = false;
   String? _errorMessage;
 
   Future<void> _executeResetPassword() async {
-    setState(() { _isLoading = true; _errorMessage = null; _resetSuccess = false; });
+    setState(() { _isLoading = true; _errorMessage = null; _resetSuccess = false; _emailAlreadyRegistered = false; });
     try {
       final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
       final redirectTo = _authCallbackUrl(returnTo);
@@ -667,18 +668,26 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
   }
 
   Future<void> _executeAuth() async {
-    setState(() { _isLoading = true; _errorMessage = null; _registrationSuccess = false; _resetSuccess = false; });
+    setState(() { _isLoading = true; _errorMessage = null; _registrationSuccess = false; _resetSuccess = false; _emailAlreadyRegistered = false; });
     try {
       if (_isRegistering) {
         // Pass redirectTo in sign up for email confirmation redirect
         final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
         final emailRedirectTo = _authCallbackUrl(returnTo);
 
-        await Supabase.instance.client.auth.signUp(
+        final res = await Supabase.instance.client.auth.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           emailRedirectTo: emailRedirectTo,
         );
+
+        // Supabase returns an empty identities list when email is already registered and confirmed
+        final identities = res.user?.identities;
+        if (identities != null && identities.isEmpty) {
+          setState(() => _emailAlreadyRegistered = true);
+          return;
+        }
+
         setState(() => _registrationSuccess = true);
       } else {
         await Supabase.instance.client.auth.signInWithPassword(
@@ -688,8 +697,11 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
       }
       // GoRouter redirect interceptor handles login transition automatically
     } on AuthException catch (e) {
-      // SEC-13 fix: friendly error messages, no internal details
-      setState(() => _errorMessage = _mapAuthError(e.message));
+      if (e.message.contains('User already registered') || e.code == 'user_already_exists') {
+        setState(() => _emailAlreadyRegistered = true);
+      } else {
+        setState(() => _errorMessage = _mapAuthError(e.message));
+      }
     } catch (e) {
       // SEC-13 fix: never expose raw exception to user
       debugPrint('[Auth] Login error: $e');
@@ -782,6 +794,78 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                   const SizedBox(height: 8),
                   Text(_isRegistering ? l.loginHeadingRegister : l.loginHeadingLogin, style: const TextStyle(color: AppColors.daysGray)),
                   const SizedBox(height: 32),
+                  if (_emailAlreadyRegistered)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.info_outline, size: 18, color: Colors.amber[800]),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Email ${_emailController.text.trim()} sudah terdaftar.',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Apakah Anda lupa password? Anda dapat langsung masuk atau mereset password akun Anda.',
+                            style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _isRegistering = false;
+                                      _isResettingPassword = false;
+                                      _emailAlreadyRegistered = false;
+                                    });
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                  ),
+                                  child: const Text('Masuk (Login)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _isResettingPassword = true;
+                                      _isRegistering = false;
+                                      _emailAlreadyRegistered = false;
+                                    });
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.fireRed,
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                  ),
+                                  child: const Text('Reset Password', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   if (_errorMessage != null)
                     Container(
                       padding: const EdgeInsets.all(12),
