@@ -608,17 +608,36 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
           // ── Add photo buttons ───────────────────────────────────────────
           if (!atMax) ...[
             if (_selectedImages.isEmpty)
-              ElevatedButton.icon(
-                onPressed: () => _addImage(ImageSource.camera),
-                icon: const Icon(Icons.photo_camera, size: 20),
-                label: Text(context.l10n.estimatorCaptureDamage, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: cs.error,
-                  foregroundColor: cs.onError,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  elevation: 1,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _addImage(ImageSource.camera),
+                      icon: const Icon(Icons.photo_camera, size: 18),
+                      label: Text(context.l10n.estimatorCaptureDamage, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: cs.error,
+                        foregroundColor: cs.onError,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _addImage(ImageSource.gallery),
+                      icon: Icon(Icons.photo_library_outlined, size: 18, color: cs.error),
+                      label: Text(context.l10n.estimatorFromGallery, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: cs.onSurface)),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: cs.outline),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ],
               )
             else
               Row(
