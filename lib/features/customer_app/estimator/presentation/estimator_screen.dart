@@ -911,173 +911,186 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
         : [];
     final totalCost = _structuredData?['financial_estimation']?['calculated_base_cost'] ?? 0;
     final omittedPanels = _omittedSelectedPanels(panels);
+    final replacementParts = parsePergantianSparepart(_structuredData);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: (isDark ? AppColors.surfaceContainerLowest : Theme.of(context).colorScheme.surface),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: const Offset(0, 1))],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: (isDark ? AppColors.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: AppColors.fireRed,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(Icons.assignment_turned_in, color: Theme.of(context).colorScheme.surface, size: 20),
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(context.l10n.estimatorAssessmentReport, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
-                        Text(context.l10n.estimatorTriageMatrix, style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
-                      ],
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    if (_engineId != null)
-                      Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: (isDark ? AppColors.surfaceContainer : Theme.of(context).colorScheme.surfaceContainer),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text('E$_engineId', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
-                      ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: (isDark ? AppColors.surfaceContainer : Theme.of(context).colorScheme.surfaceContainer),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text('${panels.length} Items', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Tabel 1: Jasa Perbaikan (Panel & Structural Repair) ──
+        Container(
+          decoration: BoxDecoration(
+            color: (isDark ? AppColors.surfaceContainerLowest : Theme.of(context).colorScheme.surface),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), blurRadius: 4, offset: const Offset(0, 1))],
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                if (panels.isEmpty)
-                  Text('${context.l10n.estimatorAssessmentLabel}\n$_aiResult', style: TextStyle(color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
-                ...panels.map((panel) {
-                  final severity = (panel['panel_severity']?.toString() ?? 'ringan').toUpperCase();
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: (isDark ? AppColors.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: (isDark ? AppColors.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(panel['panel_name']?.toString() ?? '-', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
-                            Text(formatRupiah(panel['calculated_cost']), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
-                          ],
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AppColors.fireRed,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.assignment_turned_in, color: Theme.of(context).colorScheme.surface, size: 20),
                         ),
-                        const SizedBox(height: 6),
-                        Row(
+                        const SizedBox(width: 8),
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(context.l10n.estimatorObservation, style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
-                            Expanded(
-                              child: Wrap(
-                                spacing: 4,
-                                runSpacing: 4,
-                                children: [
-                                  if ((panel['scratches_found'] as num? ?? 0) > 0)
-                                    Text('⚡ Gores', style: TextStyle(fontSize: 12, color: Colors.orange[700], fontWeight: FontWeight.bold)),
-                                  if ((panel['scratches_found'] as num? ?? 0) > 0 && (panel['dents_found'] as num? ?? 0) > 0)
-                                    Text(' • ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
-                                  if ((panel['dents_found'] as num? ?? 0) > 0)
-                                    Text('🔨 Penyok', style: TextStyle(fontSize: 12, color: Colors.blue[700], fontWeight: FontWeight.bold)),
-                                  if ((panel['dents_found'] as num? ?? 0) > 0 && (panel['broken_found'] as num? ?? 0) > 0)
-                                    Text(' • ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
-                                  if ((panel['broken_found'] as num? ?? 0) > 0)
-                                    Text('💥 Pecah/Ringsek', style: TextStyle(fontSize: 12, color: Colors.red[700], fontWeight: FontWeight.bold)),
-                                  if ((panel['scratches_found'] as num? ?? 0) == 0 && (panel['dents_found'] as num? ?? 0) == 0 && (panel['broken_found'] as num? ?? 0) == 0 && panel['requires_replacement'] == true)
-                                    Text('💥 Pecah/Ringsek', style: TextStyle(fontSize: 12, color: Colors.red[700], fontWeight: FontWeight.bold)),
-                                  if ((panel['scratches_found'] as num? ?? 0) == 0 && (panel['dents_found'] as num? ?? 0) == 0 && (panel['broken_found'] as num? ?? 0) == 0 && panel['requires_replacement'] != true)
-                                    Text('🔨 Penyok', style: TextStyle(fontSize: 12, color: Colors.blue[700], fontWeight: FontWeight.bold)),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.fireRed.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text('Severity: $severity', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
-                            ),
+                            Text('Jasa Perbaikan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
+                            Text('Perbaikan bodi, struktur & pembongkaran', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
                           ],
-                        ),
-                        // ── Spare parts estimation ─────────────────────
-                        SparePartsPanel(
-                          parts: parseSpareParts(panel as Map<String, dynamic>),
-                          isDark: isDark,
                         ),
                       ],
                     ),
-                  );
-                }),
+                    Row(
+                      children: [
+                        if (_engineId != null)
+                          Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: (isDark ? AppColors.surfaceContainer : Theme.of(context).colorScheme.surfaceContainer),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text('E$_engineId', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                          ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: (isDark ? AppColors.surfaceContainer : Theme.of(context).colorScheme.surfaceContainer),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text('${panels.length} Item', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    if (panels.isEmpty)
+                      Text('${context.l10n.estimatorAssessmentLabel}\n$_aiResult', style: TextStyle(color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
+                    ...panels.map((panel) {
+                      final severity = (panel['panel_severity']?.toString() ?? 'ringan').toUpperCase();
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: (isDark ? AppColors.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(panel['panel_name']?.toString() ?? '-', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
+                                Text(formatRupiah(panel['calculated_cost']), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(context.l10n.estimatorObservation, style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                                Expanded(
+                                  child: Wrap(
+                                    spacing: 4,
+                                    runSpacing: 4,
+                                    children: [
+                                      if ((panel['scratches_found'] as num? ?? 0) > 0)
+                                        Text('⚡ Gores', style: TextStyle(fontSize: 12, color: Colors.orange[700], fontWeight: FontWeight.bold)),
+                                      if ((panel['scratches_found'] as num? ?? 0) > 0 && ((panel['dents_found'] as num? ?? 0) > 0 || (panel['broken_found'] as num? ?? 0) > 0 || panel['requires_replacement'] == true))
+                                        Text(' • ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                                      if ((panel['dents_found'] as num? ?? 0) > 0)
+                                        Text('🔨 Penyok', style: TextStyle(fontSize: 12, color: Colors.blue[700], fontWeight: FontWeight.bold)),
+                                      if ((panel['dents_found'] as num? ?? 0) > 0 && ((panel['broken_found'] as num? ?? 0) > 0 || panel['requires_replacement'] == true))
+                                        Text(' • ', style: TextStyle(fontSize: 12, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                                      if ((panel['broken_found'] as num? ?? 0) > 0)
+                                        Text('💥 Pecah/Ringsek', style: TextStyle(fontSize: 12, color: Colors.red[700], fontWeight: FontWeight.bold)),
+                                      if ((panel['scratches_found'] as num? ?? 0) == 0 && (panel['dents_found'] as num? ?? 0) == 0 && (panel['broken_found'] as num? ?? 0) == 0 && panel['requires_replacement'] == true)
+                                        Text('💥 Pecah/Ringsek', style: TextStyle(fontSize: 12, color: Colors.red[700], fontWeight: FontWeight.bold)),
+                                      if ((panel['scratches_found'] as num? ?? 0) == 0 && (panel['dents_found'] as num? ?? 0) == 0 && (panel['broken_found'] as num? ?? 0) == 0 && panel['requires_replacement'] != true)
+                                        Text('🔨 Penyok', style: TextStyle(fontSize: 12, color: Colors.blue[700], fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.fireRed.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text('Severity: $severity', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
+                                ),
+                              ],
+                            ),
+                            // ── Spare parts estimation per panel ──
+                            SparePartsPanel(
+                              parts: parseSpareParts(panel as Map<String, dynamic>),
+                              isDark: isDark,
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
 
-                // Flagged panels the AI could not see or assess, plus the note
-                // explaining why they are excluded from the total below
-                ..._buildOmittedPanelWidgets(omittedPanels, isDark),
+                    // Flagged panels the AI could not see or assess
+                    ..._buildOmittedPanelWidgets(omittedPanels, isDark),
 
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: (isDark ? AppColors.surfaceContainer : Theme.of(context).colorScheme.surfaceContainer),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: (isDark ? AppColors.surfaceContainer : Theme.of(context).colorScheme.surfaceContainer),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(context.l10n.estimatorTotalEstimation, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
-                          Text(context.l10n.estimatorIncludesCoat, style: TextStyle(fontSize: 11, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Subtotal Jasa Perbaikan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                              Text('Belum termasuk sparepart (konfirmasi vendor)', style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                            ],
+                          ),
+                          Text(formatRupiah(totalCost), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
                         ],
                       ),
-                      Text(formatRupiah(totalCost), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+
+        // ── Tabel 2: Pergantian Sparepart (Loss Assessor Replacement Parts) ──
+        if (replacementParts.isNotEmpty)
+          PergantianSparepartCard(
+            parts: replacementParts,
+            isDark: isDark,
+          ),
+      ],
     );
   }
 

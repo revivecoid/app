@@ -73,6 +73,17 @@ const FALLBACK_PRICES: Record<string, number> = {
   'Side Roof LH': 357500,
   'Roof': 1001000,
   'Cover': 286000,
+  'Bullhead': 350000,
+  'Apron RH': 350000,
+  'Apron LH': 350000,
+  'Chasis RH': 500000,
+  'Chasis LH': 500000,
+  'Engsel Kap Mesin RH': 100000,
+  'Engsel Kap Mesin LH': 100000,
+  'Panel Cowl Kaca Depan': 300000,
+  'B/P Kaca Depan': 250000,
+  'B/P Radiator & AC Pack': 150000,
+  'Isi Freon AC': 300000,
 };
 
 // ── LivePricingRule: shape of a row from the pricing_rules table ──
@@ -266,15 +277,29 @@ serve(async (req) => {
         ? `\nIMPORTANT: The user has reported possible damage on these panels: [${selectedPanels.join(', ')}]. Use this as a HINT of which areas to inspect closely. However, you must ONLY include a panel in your response if you can VISUALLY CONFIRM actual damage (scratches, dents, deformation, or paint damage) on it from the image. If a listed panel shows NO visible damage in the image, you MUST OMIT it from damaged_panels_detail entirely. Do NOT assign default or assumed severity to panels that are not clearly damaged in the image. Accuracy is critical — do not include unverifiable panels.`
         : "";
 
-    const masterPrompt = `Analyze the car body damage from these images.
-Valid panel names are: Bumper Depan, Spoiler Bumper depan, Kap Mesin, Bumper Belakang, Spoiler Bumper Belakang, Bagasi, Spoiler Bagasi, Fender RH, Pintu Depan RH, Spion RH, Pintu Belakang RH, Quarter RH, Trisplang RH, Side Roof RH, Fender LH, Pintu Depan LH, Spion LH, Pintu Belakang LH, Quarter LH, Trisplang LH, Side Roof LH, Roof, Cover.${panelsConstraint}
+    const masterPrompt = `You are an expert automotive loss adjuster and body repair estimator. Analyze the vehicle damage from these images thoroughly, inspecting both exterior panels and visible underlying structure/components.
 
-For each damaged panel found, classify its specific severity into: 'ringan', 'sedang', or 'berat'.
-Also classify the overall severity of the car damage.
-For each panel, list the spare parts likely needed for repair in the spare_parts_needed array.
-Each spare part must have: name (string, in Bahasa Indonesia), quantity (integer ≥ 1), reason (string, brief explanation in Bahasa Indonesia, max 60 chars).
-Do NOT include prices — prices are not available yet.
-Return precise counts for dents, scratches, and broken panels in EXACTLY this JSON format. Do NOT change field names. Do NOT add extra fields. Do NOT wrap in markdown. Output raw JSON only:
+1. REPAIR & LABOR ITEMS (Jasa Perbaikan):
+List all damaged panels, deformed structural sections, and necessary disassembly/service operations.
+Valid panel & repair item names are:
+- Exterior panels: Bumper Depan, Spoiler Bumper depan, Kap Mesin, Bumper Belakang, Spoiler Bumper Belakang, Bagasi, Spoiler Bagasi, Fender RH, Pintu Depan RH, Spion RH, Pintu Belakang RH, Quarter RH, Trisplang RH, Side Roof RH, Fender LH, Pintu Depan LH, Spion LH, Pintu Belakang LH, Quarter LH, Trisplang LH, Side Roof LH, Roof, Cover.
+- Inner & structural frame: Bullhead, Apron RH, Apron LH, Chasis RH, Chasis LH, Engsel Kap Mesin RH, Engsel Kap Mesin LH, Panel Cowl Kaca Depan.
+- Labor/assembly operations: B/P Kaca Depan (if windshield broken/dislodged), B/P Radiator & AC Pack (if frontal crash impacted cooling/radiator area), Isi Freon AC (if AC condenser damaged/discharged).${panelsConstraint}
+
+For each repair item, classify panel_severity into 'ringan', 'sedang', or 'berat'. Specify damage_type ('scratch', 'dent', or 'broken').
+Set requires_replacement to true if the panel/component is severely deformed/crushed and cannot be economically repaired by hammer/straightening.
+
+2. VISIBLE BROKEN REPLACEMENT PARTS (Pergantian Sparepart):
+In the pergantian_sparepart array, list EVERY component that is visibly broken, shattered, severed, cracked, punctured, or bent beyond repair in the photos.
+Common examples to detect if visible:
+- Headlamp RH / LH, Foglamp RH / LH, Cover Foglamp RH / LH, Grill Tengah, Breket Bumper RH / LH, Kaca Depan, Sealer Kaca, Radiator, Kondensor AC, Fan Shroud, Steering Rack, Shock Breaker Depan RH / LH, Lower Arm Depan RH / LH, Bullhead, Kap Mesin, Bumper Depan, Fender RH / LH.
+Each item in pergantian_sparepart must have:
+- name: component name in Indonesian (e.g. "Headlamp RH", "Grill Tengah", "Kaca Depan")
+- condition: observed damage state in Indonesian (e.g. "Pecah", "Retak", "Patah", "Bengkok parah", "Bocor")
+- quantity: integer (usually 1 or 2)
+Do NOT include prices for spare parts.
+
+Return precise counts for dents, scratches, and broken panels in EXACTLY this JSON format with NO markdown wrapping:
 {
   "analysis_metadata": { "engine_processed": "model-name", "timestamp": "ISO8601" },
   "assessment": {
@@ -282,21 +307,32 @@ Return precise counts for dents, scratches, and broken panels in EXACTLY this JS
     "total_panels_damaged": 0,
     "damaged_panels_detail": [
       {
-        "panel_name": "exact_valid_panel_name",
+        "panel_name": "exact_valid_panel_or_repair_name",
         "panel_severity": "ringan/sedang/berat",
         "damage_type": "scratch/dent/broken",
         "scratches_found": 0,
         "dents_found": 0,
         "requires_replacement": false,
         "spare_parts_needed": [
-          { "name": "Nama spare part", "quantity": 1, "reason": "Alasan singkat" }
+          { "name": "Nama part", "quantity": 1, "reason": "Pecah/perlu ganti" }
         ]
+      }
+    ],
+    "pergantian_sparepart": [
+      {
+        "name": "Nama Sparepart",
+        "condition": "Pecah/Patah/Bengkok",
+        "quantity": 1
       }
     ]
   },
-  "financial_estimation": { "currency": "IDR", "estimated_days_to_repair": 0 }
+  "financial_estimation": {
+    "currency": "IDR",
+    "estimated_days_to_repair": 0,
+    "spare_parts_status": "Ketersediaan dan harga sparepart masih membutuhkan konfirmasi dari vendor"
+  }
 }
-CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The severity field MUST be "panel_severity" (not "severity"). Only use values "ringan", "sedang", or "berat" for severity — NOT "mild", "moderate", or "severe". spare_parts_needed MUST always be present as an array (use [] if no parts needed).`;
+CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The severity field MUST be "panel_severity" (not "severity"). Only use values "ringan", "sedang", or "berat" for severity. pergantian_sparepart MUST be present as an array.`;
 
     let estimationResult = null;
     let usedModel = "";
@@ -378,14 +414,23 @@ CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The sev
               severity_classification: finalCostEstimation.summary?.overall_severity ?? 'sedang',
               total_panels_damaged: panels.length,
               damaged_panels_detail: panels,
+              pergantian_sparepart: finalCostEstimation.pergantian_sparepart ?? finalCostEstimation.assessment?.pergantian_sparepart ?? [],
             },
             financial_estimation: finalCostEstimation.financial_estimation ?? {},
           };
         }
+
+        if (finalCostEstimation.assessment) {
+          if (!finalCostEstimation.assessment.pergantian_sparepart) {
+            finalCostEstimation.assessment.pergantian_sparepart = finalCostEstimation.pergantian_sparepart ?? [];
+          }
+        }
+
         const calculatedCost = calculateDeterministicCost(finalCostEstimation, liveRules);
         finalCostEstimation.financial_estimation = finalCostEstimation.financial_estimation || {};
         finalCostEstimation.financial_estimation.calculated_base_cost = calculatedCost;
         finalCostEstimation.financial_estimation.pricing_source = "live_db";
+        finalCostEstimation.financial_estimation.spare_parts_status = "Ketersediaan dan harga sparepart masih membutuhkan konfirmasi dari vendor";
         
     } catch (e: any) {
         // L-03 fix: parse fail = hard failure, not success with null structuredData

@@ -61,6 +61,50 @@ List<SparePartItem> parseSpareParts(Map<String, dynamic> panel) {
   return _inferSpareParts(panel);
 }
 
+/// Parse all spare parts needing replacement from the assessment object,
+/// checking both the dedicated `pergantian_sparepart` list and per-panel lists.
+List<SparePartItem> parsePergantianSparepart(Map<String, dynamic>? structuredData) {
+  if (structuredData == null) return [];
+  final assessment = structuredData['assessment'];
+  if (assessment is! Map<String, dynamic>) return [];
+
+  final List<SparePartItem> items = [];
+  final Set<String> seenNames = {};
+
+  // 1. Direct pergantian_sparepart array from AI loss adjuster
+  final rawList = assessment['pergantian_sparepart'] ?? structuredData['pergantian_sparepart'];
+  if (rawList is List && rawList.isNotEmpty) {
+    for (final raw in rawList) {
+      if (raw is Map<String, dynamic>) {
+        final name = (raw['name'] as String? ?? '').trim();
+        if (name.isNotEmpty && seenNames.add(name.toLowerCase())) {
+          items.add(SparePartItem(
+            name: name,
+            quantity: (raw['quantity'] as num?)?.toInt() ?? 1,
+            reason: (raw['condition'] as String? ?? raw['reason'] as String? ?? 'Perlu diganti').trim(),
+          ));
+        }
+      }
+    }
+  }
+
+  // 2. Aggregate from damaged_panels_detail spare_parts_needed
+  final panels = assessment['damaged_panels_detail'];
+  if (panels is List) {
+    for (final p in panels) {
+      if (p is Map<String, dynamic>) {
+        for (final item in parseSpareParts(p)) {
+          if (seenNames.add(item.name.toLowerCase())) {
+            items.add(item);
+          }
+        }
+      }
+    }
+  }
+
+  return items;
+}
+
 /// Fallback: infer likely spare parts from damage flags when AI did not return
 /// a spare_parts_needed list (older AI response format or parse fallback).
 List<SparePartItem> _inferSpareParts(Map<String, dynamic> panel) {
@@ -68,51 +112,11 @@ List<SparePartItem> _inferSpareParts(Map<String, dynamic> panel) {
   final panelName = (panel['panel_name'] as String? ?? '').trim();
   final requiresReplacement = panel['requires_replacement'] == true ||
       (panel['broken_found'] as num? ?? 0) > 0;
-  final hasDent = (panel['dents_found'] as num? ?? 0) > 0;
-  final hasScratch = (panel['scratches_found'] as num? ?? 0) > 0;
 
   if (requiresReplacement && panelName.isNotEmpty) {
     parts.add(SparePartItem(
       name: 'Panel $panelName (pengganti)',
-      reason: 'Panel pecah/ringsek — perlu diganti',
-    ));
-    parts.add(const SparePartItem(
-      name: 'Dempul epoxy primer',
-      reason: 'Dasar cat setelah penggantian panel',
-    ));
-    parts.add(const SparePartItem(
-      name: 'Cat warna (basecoat)',
-      reason: 'Finishing setelah penggantian panel',
-    ));
-    parts.add(const SparePartItem(
-      name: 'Clear coat',
-      reason: 'Lapisan pelindung akhir',
-    ));
-  } else if (hasDent) {
-    parts.add(const SparePartItem(
-      name: 'Dempul polyester',
-      reason: 'Perbaikan penyok — pengisian permukaan',
-    ));
-    parts.add(const SparePartItem(
-      name: 'Cat warna (basecoat)',
-      reason: 'Finishing setelah perbaikan penyok',
-    ));
-    parts.add(const SparePartItem(
-      name: 'Clear coat',
-      reason: 'Lapisan pelindung akhir',
-    ));
-  } else if (hasScratch) {
-    parts.add(const SparePartItem(
-      name: 'Cat warna (basecoat)',
-      reason: 'Perbaikan goresan',
-    ));
-    parts.add(const SparePartItem(
-      name: 'Clear coat',
-      reason: 'Lapisan pelindung akhir',
-    ));
-    parts.add(const SparePartItem(
-      name: 'Amplas compound',
-      reason: 'Halus permukaan goresan sebelum cat',
+      reason: 'Pecah / ringsek — perlu diganti',
     ));
   }
 
@@ -326,22 +330,8 @@ class _PriceChip extends StatelessWidget {
         ),
       );
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-      ),
-      child: const Text(
-        'TBD',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: Colors.orange,
-        ),
-      ),
-    );
+    // Do not show raw TBD or price placeholder as requested
+    return const SizedBox.shrink();
   }
 
   String _fmt(double v) {
@@ -363,25 +353,209 @@ class _VendorConnectionNote extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.06),
+        color: Colors.blue.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.link, size: 12, color: Colors.blue[600]),
-          const SizedBox(width: 6),
+          Icon(Icons.info_outline, size: 14, color: Colors.blue[700]),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Harga spare parts akan ditampilkan setelah integrasi database vendor aktif. Estimasi ini hanya daftar kebutuhan berdasarkan analisis kerusakan.',
+              'Ketersediaan dan harga sparepart masih membutuhkan konfirmasi dari vendor / bengkel mitra.',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
                 height: 1.35,
-                color: isDark ? AppColors.onSurfaceVariant : cs.onSurfaceVariant,
+                color: isDark ? AppColors.onSurface : cs.onSurface,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Standalone Card displaying Table 2: Pergantian Sparepart
+/// (matching loss assessment format, without showing raw price placeholders).
+class PergantianSparepartCard extends StatelessWidget {
+  final List<SparePartItem> parts;
+  final bool isDark;
+
+  const PergantianSparepartCard({
+    super.key,
+    required this.parts,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (parts.isEmpty) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceContainerLowest : cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: cs.onSurface.withValues(alpha: 0.12),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceContainerLow : cs.surfaceContainerLow,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.blue[700],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.build_circle_outlined, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pergantian Sparepart',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? AppColors.onSurface : cs.onSurface,
+                          ),
+                        ),
+                        Text(
+                          'Komponen rusak teridentifikasi yang perlu diganti',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? AppColors.onSurfaceVariant : cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceContainer : cs.surfaceContainer,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${parts.length} Part',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue[700],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Content body
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Info notice
+                _VendorConnectionNote(isDark: isDark),
+                const SizedBox(height: 10),
+
+                // List of broken/replacement parts
+                ...parts.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final part = entry.value;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.surfaceContainerLow : cs.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          '${idx + 1}.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? AppColors.onSurfaceVariant : cs.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '${part.quantity}x',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue[700],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            part.name,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AppColors.onSurface : cs.onSurface,
+                            ),
+                          ),
+                        ),
+                        if (part.reason.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              part.reason,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red[700],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
             ),
           ),
         ],
