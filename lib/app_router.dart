@@ -681,9 +681,12 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
           emailRedirectTo: emailRedirectTo,
         );
 
-        // Supabase returns an empty identities list when email is already registered and confirmed
+        // Supabase returns empty identities (or an existing user object) when email already exists
         final identities = res.user?.identities;
-        if (identities != null && identities.isEmpty) {
+        final createdAtStr = res.user?.createdAt;
+        final createdAt = createdAtStr != null ? DateTime.tryParse(createdAtStr) : null;
+        final isOldUser = createdAt != null && createdAt.isBefore(DateTime.now().subtract(const Duration(minutes: 2)));
+        if ((identities != null && identities.isEmpty) || isOldUser) {
           setState(() => _emailAlreadyRegistered = true);
           return;
         }
@@ -796,14 +799,15 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                   const SizedBox(height: 32),
                   if (_emailAlreadyRegistered)
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
                         color: Colors.amber.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
                       ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
@@ -811,7 +815,7 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Email ${_emailController.text.trim()} sudah terdaftar.',
+                                  'Email ${_emailController.text.trim()} sudah terdaftar',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
@@ -821,12 +825,31 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
                           Text(
-                            'Apakah Anda lupa password? Anda dapat langsung masuk atau mereset password akun Anda.',
-                            style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                            'Akun ini sudah terdaftar di re-V. Anda dapat masuk langsung, atau membuat password agar akun memiliki 2 opsi login (Google & Email/Password).',
+                            style: TextStyle(fontSize: 12, height: 1.35, color: theme.colorScheme.onSurfaceVariant),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
+                          // Option 1: Continue with Google
+                          SizedBox(
+                            width: double.infinity,
+                            height: 38,
+                            child: OutlinedButton.icon(
+                              onPressed: _isLoading ? null : _executeGoogleLogin,
+                              icon: Image.asset(
+                                'assets/images/google_logo.png',
+                                height: 16,
+                                width: 16,
+                                errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 20),
+                              ),
+                              label: const Text('Masuk dengan Google', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: theme.colorScheme.outlineVariant),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Expanded(
@@ -841,24 +864,25 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
                                   style: OutlinedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(vertical: 8),
                                   ),
-                                  child: const Text('Masuk (Login)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                  child: const Text('Masuk (Password)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: ElevatedButton(
-                                  onPressed: () {
+                                  onPressed: _isLoading ? null : () {
                                     setState(() {
                                       _isResettingPassword = true;
                                       _isRegistering = false;
                                       _emailAlreadyRegistered = false;
                                     });
+                                    _executeResetPassword();
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.fireRed,
                                     padding: const EdgeInsets.symmetric(vertical: 8),
                                   ),
-                                  child: const Text('Reset Password', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                                  child: const Text('Buat Password Baru', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
                                 ),
                               ),
                             ],
