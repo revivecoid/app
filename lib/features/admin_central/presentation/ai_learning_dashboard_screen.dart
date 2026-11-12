@@ -136,7 +136,7 @@ class _Body extends StatelessWidget {
             child: Text(
               'No completed submissions yet — the figures below are computed '
               'from unfinished scans and may not be trustworthy.',
-              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.6)),
+              style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6)),
             ),
           ),
         const SizedBox(height: 24),
