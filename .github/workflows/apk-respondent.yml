@@ -1,0 +1,103 @@
+name: Build APK (AI Learning respondent app)
+
+# Builds the dedicated respondent APK — the AI training app only. It ships
+# separately from the customer app (own applicationId
+# id.co.revive.re_v_learning), so both can be installed side by side.
+#
+# Runs from the feature branch when a tag matching v*-learning is pushed, or
+# manually from the Actions tab.
+
+on:
+  push:
+    branches:
+      - feature/ai-learning-respondent
+    tags:
+      - 'v*-learning'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-respondent-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: flutter build apk (respondent)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          cat > .env << 'EOF'
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          EOF
+          mkdir -p assets
+          cp .env assets/.env
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze respondent entry point
+        run: flutter analyze lib/ai_learning --no-fatal-warnings --no-fatal-infos
+
+      - name: Run learning tests
+        run: flutter test test/ai_learning
+
+      - name: Decode release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "No KEYSTORE_BASE64 secret — building with debug signing."
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          {
+            echo "KEYSTORE_PATH=$RUNNER_TEMP/release.jks"
+            echo "STORE_PASSWORD=$STORE_PASSWORD"
+            echo "KEY_ALIAS=$KEY_ALIAS"
+            echo "KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      - name: Build respondent APK
+        run: >-
+          flutter build apk --release --flavor respondent
+          -t lib/ai_learning/main_ai_learning.dart
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: revive-ai-learning-apk
+          path: build/app/outputs/flutter-apk/app-respondent-release.apk
+          if-no-files-found: error
+
+      - name: Attach APK to release (tag builds only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/app/outputs/flutter-apk/app-respondent-release.apk

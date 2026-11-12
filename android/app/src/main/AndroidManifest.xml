@@ -4,7 +4,7 @@
     <!-- PLAT-03 FIX: INTERNET permission required for release builds (was only in debug/profile manifests) -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="Revive"
+        android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

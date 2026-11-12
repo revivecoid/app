@@ -25,6 +25,24 @@ android {
         versionName = flutter.versionName
     }
 
+    // Two apps ship from this one codebase and must coexist on a phone:
+    //   customer   — id.co.revive.re_v        (client / workshop app)
+    //   respondent — id.co.revive.re_v_learning (AI Learning, AI training only)
+    // Each flavor carries its own app label so they are distinguishable.
+    flavorDimensions += "app"
+    productFlavors {
+        create("customer") {
+            dimension = "app"
+            applicationId = "id.co.revive.re_v"
+            resValue("string", "app_name", "Revive")
+        }
+        create("respondent") {
+            dimension = "app"
+            applicationId = "id.co.revive.re_v_learning"
+            resValue("string", "app_name", "re-V AI Learning")
+        }
+    }
+
     buildTypes {
         release {
             // PLAT-02 fix: read release keystore from environment variables set in CI
