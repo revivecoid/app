@@ -448,6 +448,50 @@ CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The sev
           };
         }
 
+        // The model sometimes returns NEITHER an assessment wrapper NOR a
+        // damaged_panels_detail key, putting the repair items straight in
+        // pergantian_sparepart. That happened on a heavily damaged car: the
+        // parts list was full but there was no panel detail at all, so the
+        // client parsed zero panels and the respondent app reported "No panels
+        // flagged" while the customer app (which reads pergantian_sparepart
+        // directly) showed a full estimate. Rebuild an assessment from the
+        // parts rather than silently returning nothing.
+        if (!finalCostEstimation.assessment) {
+          const spareParts = Array.isArray(finalCostEstimation.pergantian_sparepart)
+            ? finalCostEstimation.pergantian_sparepart
+            : [];
+          if (spareParts.length > 0) {
+            // One panel entry per named part, so every flagged component
+            // reaches the reviewer instead of being dropped.
+            const panels = spareParts
+              .filter((p: any) => p && typeof p === 'object' && (p.panel_name ?? p.name))
+              .map((p: any) => ({
+                panel_name: p.panel_name ?? p.name ?? null,
+                panel_severity: p.panel_severity ?? 'berat',
+                scratches_found: 0,
+                dents_found: 0,
+                broken_found: 1,
+                requires_replacement: true,
+                spare_parts_needed: [{ name: p.panel_name ?? p.name, quantity: p.quantity ?? 1, reason: p.condition ?? 'perlu ganti' }],
+              }));
+            finalCostEstimation = {
+              analysis_metadata: finalCostEstimation.analysis_metadata ?? {},
+              assessment: {
+                severity_classification: 'berat',
+                total_panels_damaged: panels.length,
+                damaged_panels_detail: panels,
+                pergantian_sparepart: spareParts,
+              },
+              financial_estimation: finalCostEstimation.financial_estimation ?? {},
+            };
+            console.warn(
+              '[vision-estimation] model omitted assessment/damaged_panels_detail; rebuilt from',
+              spareParts.length,
+              'spare parts',
+            );
+          }
+        }
+
         if (finalCostEstimation.assessment) {
           if (!finalCostEstimation.assessment.pergantian_sparepart) {
             finalCostEstimation.assessment.pergantian_sparepart = finalCostEstimation.pergantian_sparepart ?? [];

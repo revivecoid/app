@@ -144,7 +144,16 @@ class _ScanScreenState extends State<ScanScreen> {
 
       final result = await repo.analyse(
         photoUrls: urls,
-        selectedPanels: const [],
+        // Asks the estimator to inspect the standard exterior panels it can
+        // see. Without a hint the model decides on its own what to look at and
+        // routinely returns nothing on badly damaged cars; the customer app
+        // passes labels and gets a targeted inspection for exactly this reason.
+        selectedPanels: const [
+          'Bumper Depan', 'Kap Mesin', 'Bumper Belakang', 'Bagasi',
+          'Fender RH', 'Fender LH', 'Pintu Depan RH', 'Pintu Depan LH',
+          'Pintu Belakang RH', 'Pintu Belakang LH', 'Quarter RH', 'Quarter LH',
+          'Spion RH', 'Spion LH', 'Roof',
+        ],
       );
       // Defensive: a non-object structuredData used to throw an uncaught
       // "List<dynamic> is not a subtype of Map<String, dynamic>?" and surface
