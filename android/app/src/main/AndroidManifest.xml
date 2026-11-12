@@ -32,15 +32,21 @@
                  The scheme is per-flavor: manifestPlaceholders.authScheme is
                  set in build.gradle.kts (customer: id.co.revive, respondent:
                  id.co.revive.revlearning) so a Google sign-in started in one
-                 app returns to that app and not to the other. -->
+                 app returns to that app and not to the other.
+
+                 Deliberately no android:pathPrefix. Supabase appends a
+                 fragment (and sometimes a trailing slash) to the callback,
+                 and a path constraint makes the filter miss those URLs - the
+                 browser then keeps the navigation instead of opening the app,
+                 which is what dropped the user on the website. Host-only
+                 matching accepts every shape Supabase emits. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data
                     android:scheme="${authScheme}"
-                    android:host="login-callback"
-                    android:pathPrefix="/"/>
+                    android:host="login-callback"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
