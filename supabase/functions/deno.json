@@ -1,0 +1,13 @@
+{
+  "lint": {
+    "rules": {
+      "exclude": [
+        "no-import-prefix",
+        "no-explicit-any"
+      ]
+    }
+  },
+  "fmt": {
+    "exclude": ["supabase/functions/"]
+  }
+}

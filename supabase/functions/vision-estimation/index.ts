@@ -229,6 +229,10 @@ serve(async (req) => {
       });
     }
 
+    // damageDescription is part of the documented request contract but the
+    // model derives description from the images; kept destructured so callers
+    // sending it do not silently break.
+    // deno-lint-ignore no-unused-vars
     const { photoUrl, photoUrls: photoUrlsRaw, damageDescription, selectedPanels } = await req.json();
 
     // Support both the new array format and the legacy single-URL format
@@ -483,7 +487,7 @@ async function callGoogleGemini(photoUrls: string[], prompt: string, modelName: 
       throw new Error('Image too large (max 10MB)');
     }
     const imageBuffer = await imageResp.arrayBuffer();
-    const base64Image = base64Encode(new Uint8Array(imageBuffer));
+    const base64Image = base64Encode(imageBuffer);
     const mimeType = imageResp.headers.get('content-type') || 'image/jpeg';
     imageParts.push({ inline_data: { mime_type: mimeType, data: base64Image } });
   }
@@ -544,7 +548,7 @@ async function callOpenAICompatible(photoUrls: string[], prompt: string, modelNa
       throw new Error('Image too large (max 10MB)');
     }
     const imageBuffer = await imageResp.arrayBuffer();
-    const base64Image = base64Encode(new Uint8Array(imageBuffer));
+    const base64Image = base64Encode(imageBuffer);
     const mimeType = imageResp.headers.get("content-type") || "image/jpeg";
     imageParts.push({
       type: "image_url",

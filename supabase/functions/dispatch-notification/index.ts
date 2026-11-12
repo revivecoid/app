@@ -307,7 +307,7 @@ Deno.serve(async (req) => {
     // message through Meta, or a customer notification through the consumer
     // bridge, depending on which slot the config happened to hold. The row's
     // value is the decision that was actually made, so it wins.
-    let provider: string | null =
+    const provider: string | null =
       outbox.provider ??
       (outbox.channel === "email" ? cfg?.email_provider : cfg?.whatsapp_provider);
 

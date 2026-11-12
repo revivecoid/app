@@ -82,13 +82,12 @@ async function sendWhatsApp(toNumber: string, customerName: string, title: strin
     }),
   });
   if (!res.ok) {
-    console.error("[WhatsApp] Failed — job_id:", jobId);
-    return false;
+    console.error("[WhatsApp] Failed — status:", res.status);
+    return;
   }
   // C-90 fix: mask phone number in logs
   const masked = withCC.slice(0, 4) + "****" + withCC.slice(-3);
-  console.log("[WhatsApp] Sent to", masked, "job:", jobId);
-  return true;
+  console.log("[WhatsApp] Sent to", masked);
 }
 
 async function sendEmail(toEmail: string, title: string, body: string, jobId: string): Promise<void> {
@@ -102,13 +101,12 @@ async function sendEmail(toEmail: string, title: string, body: string, jobId: st
   });
   if (!res.ok) {
     console.error("[Email] Failed — job_id:", jobId);
-    return false;
+    return;
   }
   // C-90 fix: mask email in logs
   const parts = toEmail.split('@');
   const masked = parts[0].slice(0, 2) + '***@' + (parts[1] ?? '');
   console.log("[Email] Sent to", masked, "job:", jobId);
-  return true;
 }
 
 serve(async (req) => {
@@ -154,6 +152,7 @@ serve(async (req) => {
   // ── Resolve which message to send ─────────────────────────────────────────
   let title: string;
   let body: string;
+  // deno-lint-ignore no-unused-vars
   let type: string;
   let notifType: string;
 

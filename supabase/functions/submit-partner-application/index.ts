@@ -28,7 +28,6 @@ const REQUIRED = ['entity_name', 'shop_name', 'owner_name', 'email', 'phone', 'a
 const DOC_TYPES = ['nib', 'npwp', 'siup', 'ktp'] as const
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function bad(message: string, status = 400) {
   return new Response(JSON.stringify({ error: message }), {

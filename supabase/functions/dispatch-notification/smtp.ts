@@ -109,7 +109,9 @@ function buildMessage(creds: SmtpCredentials, to: string, subject: string, body:
 }
 
 async function upgradeToTls(session: Session, host: string): Promise<Session> {
-  const tls = await Deno.startTls(session.conn, { hostname: host });
+  // Deno.startTls only accepts a plain TCP connection; the session here is
+  // always the one from Deno.connect (STARTTLS path), never the TLS one.
+  const tls = await Deno.startTls(session.conn as Deno.TcpConn, { hostname: host });
   return makeSession(tls);
 }
 
@@ -120,7 +122,10 @@ export async function sendSmtp(
   body: string,
   timeoutMs = 20_000,
 ): Promise<{ ok: boolean; detail: string }> {
-  let conn: Deno.Conn | null = null;
+  // Held in an object so the assignment inside work() is visible outside it.
+  // A plain `let` assigned only inside the closure narrows to never at the
+  // cleanup site, which is what made conn.close() unresolvable (TS2339).
+  const held: { conn: Deno.Conn | null } = { conn: null };
   const deadline = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error(`SMTP timed out after ${timeoutMs}ms`)), timeoutMs)
   );
@@ -133,9 +138,10 @@ export async function sendSmtp(
     // variable (TS2345 on the assignment, TS2339 on conn.close()). The runtime
     // objects are the same; only the declared type needed pinning.
     const implicitTls = creds.port === 465;
-    conn = implicitTls
+    held.conn = implicitTls
       ? (await Deno.connectTls({ hostname: creds.host, port: creds.port })) as Deno.Conn
       : (await Deno.connect({ hostname: creds.host, port: creds.port })) as Deno.Conn;
+    const conn: Deno.Conn = held.conn!;
 
     let session: Session = makeSession(conn);
 
@@ -216,6 +222,6 @@ export async function sendSmtp(
   } catch (e) {
     return { ok: false, detail: `smtp transport error: ${e}`.slice(0, 400) };
   } finally {
-    try { conn?.close(); } catch { /* already closed */ }
+    try { held.conn?.close(); } catch { /* already closed */ }
   }
 }
