@@ -91,28 +91,35 @@ class _Body extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── KPIs
+        // ── KPIs. Accuracy is computed from completed submissions only:
+        // a scan abandoned mid-review used to be counted, so the headline
+        // number included answers nobody finished. The all-in figure stays
+        // visible as the subtitle for contrast.
         Row(
           children: [
             Expanded(
               child: _kpi('Panel accuracy',
-                  _pct(stats.panelAccuracy),
-                  '${stats.confirmedPanelReviews}/${stats.totalPanelReviews} confirmed',
+                  _pct(stats.panelAccuracyCompleted),
+                  '${stats.confirmedPanelReviews}/${stats.totalPanelReviews} confirmed'
+                  '${stats.completedPanelReviews == 0 ? '' : ' · completed only'}',
                   Icons.fact_check_outlined, AppColors.fireRed),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: _kpi('Spare-part accuracy',
-                  _pct(stats.partAccuracy),
-                  '${stats.confirmedPartReviews}/${stats.totalPartReviews} confirmed',
+                  _pct(stats.partAccuracyCompleted),
+                  '${stats.confirmedPartReviews}/${stats.totalPartReviews} confirmed'
+                  '${stats.completedPartReviews == 0 ? '' : ' · completed only'}',
                   Icons.settings_suggest_outlined, Colors.blue),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: _kpi('Reviewed scans',
-                  '${stats.reviewedSubmissions}',
-                  'of ${stats.totalSubmissions} submissions',
-                  Icons.photo_library_outlined, Colors.green),
+              child: _kpi('Completed scans',
+                  '${stats.completedSubmissions}',
+                  'of ${stats.totalSubmissions} · '
+                      '${stats.pendingSubmissions} pending, '
+                      '${stats.legacySubmissions} legacy',
+                  Icons.task_alt_outlined, Colors.green),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -123,6 +130,15 @@ class _Body extends StatelessWidget {
             ),
           ],
         ),
+        if (stats.completedPanelReviews == 0 && stats.totalPanelReviews > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(
+              'No completed submissions yet — the figures below are computed '
+              'from unfinished scans and may not be trustworthy.',
+              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.6)),
+            ),
+          ),
         const SizedBox(height: 24),
 
         // ── Tables
@@ -135,11 +151,11 @@ class _Body extends StatelessWidget {
                 context,
                 'Panel accuracy',
                 'Lowest first — where the estimator is wrong most often.',
-                stats.panels.isEmpty
+                stats.panelsCompleted.isEmpty
                     ? null
                     : Column(
                         children: [
-                          for (final p in stats.panels.take(15))
+                          for (final p in stats.panelsCompleted.take(15))
                             _row(
                               context,
                               label: p.panelName,
@@ -158,11 +174,11 @@ class _Body extends StatelessWidget {
                 context,
                 'Spare-part accuracy',
                 'Parts the AI predicted that respondents did or did not confirm.',
-                stats.parts.isEmpty
+                stats.partsCompleted.isEmpty
                     ? null
                     : Column(
                         children: [
-                          for (final p in stats.parts.take(15))
+                          for (final p in stats.partsCompleted.take(15))
                             _row(
                               context,
                               label: p.partName,
@@ -221,6 +237,43 @@ class _Body extends StatelessWidget {
                                   style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.daysGray)),
+                            ),
+                            // Status is the difference between data you can
+                            // train on and a scan someone walked away from.
+                            SizedBox(
+                              width: 96,
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: (s.isCompleted
+                                            ? Colors.green
+                                            : s.isLegacy
+                                                ? Colors.grey
+                                                : Colors.orange)
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    s.isCompleted
+                                        ? 'Completed'
+                                        : s.isLegacy
+                                            ? 'Legacy'
+                                            : 'Pending',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: s.isCompleted
+                                          ? Colors.green.shade700
+                                          : s.isLegacy
+                                              ? Colors.grey.shade700
+                                              : Colors.orange.shade800,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                             SizedBox(
                               width: 150,

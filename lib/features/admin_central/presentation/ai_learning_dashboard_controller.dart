@@ -44,6 +44,8 @@ class SubmissionSummary {
     required this.photoKeys,
     required this.panelCount,
     required this.reviewedCount,
+    required this.status,
+    this.completedAt,
   });
 
   final String id;
@@ -52,6 +54,11 @@ class SubmissionSummary {
   final List<String> photoKeys;
   final int panelCount;
   final int reviewedCount;
+  final String status;
+  final DateTime? completedAt;
+
+  bool get isCompleted => status == 'completed';
+  bool get isLegacy => status == 'legacy';
 }
 
 class LearningStats {
@@ -66,10 +73,18 @@ class LearningStats {
     required this.panels,
     required this.parts,
     required this.recent,
+    this.completedSubmissions = 0,
+    this.pendingSubmissions = 0,
+    this.legacySubmissions = 0,
+    required this.panelsCompleted,
+    required this.partsCompleted,
   });
 
   final int totalSubmissions;
   final int reviewedSubmissions;
+  final int completedSubmissions;
+  final int pendingSubmissions;
+  final int legacySubmissions;
   final int totalPanelReviews;
   final int confirmedPanelReviews;
   final int totalPartReviews;
@@ -77,6 +92,10 @@ class LearningStats {
   final int respondentCount;
   final List<PanelAccuracy> panels;
   final List<PartAccuracy> parts;
+  /// Only the accuracy rows for reviews on COMPLETED submissions. The
+  /// unfiltered lists above include abandoned scans.
+  final List<PanelAccuracy> panelsCompleted;
+  final List<PartAccuracy> partsCompleted;
   final List<SubmissionSummary> recent;
 
   double get panelAccuracy =>
@@ -84,6 +103,27 @@ class LearningStats {
 
   double get partAccuracy =>
       totalPartReviews == 0 ? 0 : confirmedPartReviews / totalPartReviews;
+
+  int get _completedPanelTotal =>
+      panelsCompleted.fold(0, (s, p) => s + p.total);
+  int get _completedPanelConfirmed =>
+      panelsCompleted.fold(0, (s, p) => s + p.confirmed);
+  int get _completedPartTotal => partsCompleted.fold(0, (s, p) => s + p.total);
+  int get _completedPartConfirmed =>
+      partsCompleted.fold(0, (s, p) => s + p.confirmed);
+
+  /// The trustworthy figures: reviews that belong to a submission the
+  /// respondent actually finished.
+  double get panelAccuracyCompleted => _completedPanelTotal == 0
+      ? 0
+      : _completedPanelConfirmed / _completedPanelTotal;
+
+  double get partAccuracyCompleted => _completedPartTotal == 0
+      ? 0
+      : _completedPartConfirmed / _completedPartTotal;
+
+  int get completedPanelReviews => _completedPanelTotal;
+  int get completedPartReviews => _completedPartTotal;
 }
 
 final learningStatsProvider = FutureProvider<LearningStats>((ref) async {
@@ -91,7 +131,7 @@ final learningStatsProvider = FutureProvider<LearningStats>((ref) async {
 
   final submissions = await db
       .from('ai_learning_submissions')
-      .select('id, respondent_id, photo_paths, created_at, ai_result')
+      .select('id, respondent_id, photo_paths, created_at, ai_result, status, completed_at')
       .order('created_at', ascending: false)
       .limit(200);
 
@@ -132,10 +172,39 @@ final learningStatsProvider = FutureProvider<LearningStats>((ref) async {
     if (r['verdict'] == true) agg[1]++;
   }
 
+  // Which submissions count as finished. Reviews on a submission that was
+  // abandoned mid-review used to be folded into the headline accuracy, so the
+  // figure included answers nobody completed.
+  final completedIds = <String>{
+    for (final s in (submissions as List))
+      if (s is Map && (s['status'] ?? '') == 'completed') s['id'].toString(),
+  };
+
+  final panelAggCompleted = <String, List<int>>{};
+  for (final r in (panelReviews as List)) {
+    if (r is! Map) continue;
+    if (!completedIds.contains(r['submission_id']?.toString())) continue;
+    final name = (r['panel_name'] ?? '').toString().trim();
+    if (name.isEmpty) continue;
+    final agg = panelAggCompleted.putIfAbsent(name, () => [0, 0]);
+    agg[0]++;
+    if (r['verdict'] == true) agg[1]++;
+  }
+
+  final partAggCompleted = <String, List<int>>{};
+  for (final r in (partReviews as List)) {
+    if (r is! Map) continue;
+    if (!completedIds.contains(r['submission_id']?.toString())) continue;
+    final name = (r['part_name'] ?? '').toString().trim();
+    if (name.isEmpty) continue;
+    final agg = partAggCompleted.putIfAbsent(name, () => [0, 0]);
+    agg[0]++;
+    if (r['verdict'] == true) agg[1]++;
+  }
+
   final reviewedBySubmission = <String, int>{};
   for (final r in [...(panelReviews), ...(partReviews)]) {
-    if (r is! Map) continue;
-    final id = r['submission_id']?.toString();
+    final id = (r as Map)['submission_id']?.toString();
     if (id == null) continue;
     reviewedBySubmission[id] = (reviewedBySubmission[id] ?? 0) + 1;
   }
@@ -164,15 +233,25 @@ final learningStatsProvider = FutureProvider<LearningStats>((ref) async {
           .toList(),
       panelCount: panelCount,
       reviewedCount: reviewedBySubmission[id] ?? 0,
+      status: (s['status'] ?? 'pending').toString(),
+      completedAt:
+          DateTime.tryParse(s['completed_at']?.toString() ?? '')?.toLocal(),
     ));
   }
 
   int confirmedOf(List r) =>
       r.where((e) => e is Map && e['verdict'] == true).length;
 
+  int countStatus(String s) => (submissions as List)
+      .where((e) => e is Map && (e['status'] ?? 'pending').toString() == s)
+      .length;
+
   return LearningStats(
     totalSubmissions: (submissions).length,
     reviewedSubmissions: reviewedBySubmission.length,
+    completedSubmissions: countStatus('completed'),
+    pendingSubmissions: countStatus('pending'),
+    legacySubmissions: countStatus('legacy'),
     totalPanelReviews: (panelReviews).length,
     confirmedPanelReviews: confirmedOf(panelReviews),
     totalPartReviews: (partReviews).length,
@@ -187,6 +266,22 @@ final learningStatsProvider = FutureProvider<LearningStats>((ref) async {
         .toList()
       ..sort((a, b) => a.accuracy.compareTo(b.accuracy)),
     parts: partAgg.entries
+        .map((e) => PartAccuracy(
+              partName: e.key,
+              total: e.value[0],
+              confirmed: e.value[1],
+            ))
+        .toList()
+      ..sort((a, b) => a.accuracy.compareTo(b.accuracy)),
+    panelsCompleted: panelAggCompleted.entries
+        .map((e) => PanelAccuracy(
+              panelName: e.key,
+              total: e.value[0],
+              confirmed: e.value[1],
+            ))
+        .toList()
+      ..sort((a, b) => a.accuracy.compareTo(b.accuracy)),
+    partsCompleted: partAggCompleted.entries
         .map((e) => PartAccuracy(
               partName: e.key,
               total: e.value[0],
