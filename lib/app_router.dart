@@ -121,7 +121,11 @@ String? _sanitizeReturnTo(String? raw) {
 String _authCallbackUrl(String? returnTo) {
   final queryParam =
       returnTo != null ? '?returnTo=${Uri.encodeComponent(returnTo)}' : '';
-  if (!kIsWeb) return 'id.co.revive://login-callback$queryParam';
+  // Trailing slash matters: Supabase normalises a custom-scheme redirect and
+  // appends '/', so the manifest filter must declare pathPrefix="/" and the
+  // URL we send must already carry a path, or the callback opens a browser
+  // instead of returning to the app.
+  if (!kIsWeb) return 'id.co.revive://login-callback/$queryParam';
   return '${Uri.base.origin}/#/auth/callback$queryParam';
 }
 

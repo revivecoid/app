@@ -12,7 +12,7 @@ import '../data/learning_gate.dart';
 /// Supabase dashboard or the provider rejects the request.
 String _oauthRedirectUrl() {
   if (kIsWeb) return '${Uri.base.origin}/#/auth/callback';
-  return 'id.co.revive.revlearning://login-callback';
+  return 'id.co.revive.revlearning://login-callback/';
 }
 
 /// Sign in or register. Registration is required before the app can be used.
