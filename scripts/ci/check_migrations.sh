@@ -56,12 +56,15 @@ for f in "$MIGRATIONS_DIR"/*.sql; do
 done
 
 # 5. Forbidden patterns: user_metadata / raw_user_meta_data in new policies/functions
+# Comments are stripped first: a migration that *removes* these policies naturally
+# names user_metadata in its explanation, and flagging that text hid the real question
+# (whether executable SQL still reads auth metadata).
 echo "-- Forbidden auth source check --"
 for f in "$MIGRATIONS_DIR"/*.sql; do
   base=$(basename "$f")
   # Only check new migrations (after remediation baseline)
   if [[ "$base" > "20260927" ]]; then
-    if grep -qiE "(user_metadata|raw_user_meta_data)" "$f"; then
+    if sed -E 's/--.*$//' "$f" | grep -qiE "(user_metadata|raw_user_meta_data)"; then
       echo "FAIL: user_metadata reference in new migration: $base" >&2
       ERRORS=$((ERRORS + 1))
     fi

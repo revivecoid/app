@@ -127,10 +127,15 @@ export async function sendSmtp(
 
   const work = async (): Promise<{ ok: boolean; detail: string }> => {
     // ── connect ──────────────────────────────────────────────────────────────
+    // Both branches are widened to Deno.Conn explicitly: Deno.connectTls returns
+    // TcpConn and Deno.connect returns Conn<Addr>, and newer Deno type
+    // definitions no longer treat those as interchangeable for a union-typed
+    // variable (TS2345 on the assignment, TS2339 on conn.close()). The runtime
+    // objects are the same; only the declared type needed pinning.
     const implicitTls = creds.port === 465;
     conn = implicitTls
-      ? await Deno.connectTls({ hostname: creds.host, port: creds.port })
-      : await Deno.connect({ hostname: creds.host, port: creds.port });
+      ? (await Deno.connectTls({ hostname: creds.host, port: creds.port })) as Deno.Conn
+      : (await Deno.connect({ hostname: creds.host, port: creds.port })) as Deno.Conn;
 
     let session: Session = makeSession(conn);
 
