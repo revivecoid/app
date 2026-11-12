@@ -56,7 +56,19 @@ class _ScanScreenState extends State<ScanScreen> {
         photoUrls: urls,
         selectedPanels: const [],
       );
-      final structured = result['structuredData'] as Map<String, dynamic>?;
+      // Defensive: a non-object structuredData used to throw an uncaught
+      // "List<dynamic> is not a subtype of Map<String, dynamic>?" and surface
+      // as a raw type error to the user. Accept a list by taking its first
+      // map, and treat anything else as "no panels detected".
+      final raw = result['structuredData'];
+      final Map<String, dynamic>? structured = switch (raw) {
+        final Map<String, dynamic> m => m,
+        final Map m => Map<String, dynamic>.from(m),
+        final List l => l.whereType<Map>().isEmpty
+            ? null
+            : Map<String, dynamic>.from(l.whereType<Map>().first),
+        _ => null,
+      };
       final panels = parseDamagedPanels(structured);
 
       final submissionId = await repo.saveSubmission(

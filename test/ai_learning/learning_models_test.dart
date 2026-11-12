@@ -50,4 +50,44 @@ void main() {
   test('partKey is stable per panel and part', () {
     expect(partKey('Hood', 'Hinge'), 'Hood::Hinge');
   });
+
+  // The edge function used to echo whatever the model returned. When the model
+  // wrapped its answer in an array, the app crashed with
+  // "List<dynamic> is not a subtype of Map<String, dynamic>?". The screen now
+  // coerces a list to a map; these lock in that the parser copes either way.
+  group('structured data shape tolerance', () {
+    test('a list payload still yields panels via its first map', () {
+      final raw = <dynamic>[
+        {
+          'assessment': {
+            'damaged_panels_detail': [
+              {'panel': 'Bumper Depan', 'panel_severity': 'berat'},
+            ],
+          },
+        },
+      ];
+      final Map<String, dynamic>? structured = switch (raw) {
+        final Map<String, dynamic> m => m,
+        final Map m => Map<String, dynamic>.from(m),
+        final List l => l.whereType<Map>().isEmpty
+            ? null
+            : Map<String, dynamic>.from(l.whereType<Map>().first),
+        _ => null,
+      };
+      expect(parseDamagedPanels(structured).single.name, 'Bumper Depan');
+    });
+
+    test('an unexpected scalar yields no panels instead of throwing', () {
+      const raw = 'model said no damage';
+      final Map<String, dynamic>? structured = switch (raw) {
+        final Map<String, dynamic> m => m,
+        final Map m => Map<String, dynamic>.from(m),
+        final List l => l.whereType<Map>().isEmpty
+            ? null
+            : Map<String, dynamic>.from(l.whereType<Map>().first),
+        _ => null,
+      };
+      expect(parseDamagedPanels(structured), isEmpty);
+    });
+  });
 }

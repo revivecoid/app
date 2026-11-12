@@ -401,6 +401,26 @@ CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The sev
         }
         
         finalCostEstimation = JSON.parse(jsonStr);
+        // The model occasionally ignores the "one JSON object" instruction and
+        // returns an array (or a bare string/number). Every consumer below -
+        // and the clients - assume an object, so a non-object became the Dart
+        // "List<dynamic> is not a subtype of Map<String, dynamic>?" crash.
+        if (Array.isArray(finalCostEstimation)) {
+          // A single-element array is the model wrapping its object; unwrap it.
+          // Anything longer is genuinely ambiguous, so merge panels instead.
+          if (finalCostEstimation.length === 1 && !Array.isArray(finalCostEstimation[0])) {
+            finalCostEstimation = finalCostEstimation[0];
+          } else {
+            const panels = finalCostEstimation.filter(
+              (p: any) => p && typeof p === 'object' && !Array.isArray(p),
+            );
+            finalCostEstimation = { damaged_panels_detail: panels };
+          }
+          console.warn('[vision-estimation] model returned an array; normalised to object');
+        }
+        if (!finalCostEstimation || typeof finalCostEstimation !== 'object') {
+          throw new Error(`model returned ${typeof finalCostEstimation}, expected object`);
+        }
         console.log('[vision-estimation] parsed keys:', Object.keys(finalCostEstimation).join(','));
         // Normalise: if model returned damaged_panels_detail at root (no assessment wrapper), wrap it
         if (!finalCostEstimation.assessment && finalCostEstimation.damaged_panels_detail) {
