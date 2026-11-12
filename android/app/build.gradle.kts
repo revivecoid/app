@@ -49,7 +49,7 @@ android {
             // Set KEYSTORE_PATH, KEY_ALIAS, KEY_PASSWORD, STORE_PASSWORD in CI secrets
             // See docs/remediation/MANUAL.md for keystore generation instructions
             val keystorePath = System.getenv("KEYSTORE_PATH")
-            if (keystorePath != null && java.io.File(keystorePath).exists()) {
+            if (keystorePath != null && java.io.File(keystorePath).isFile) {
                 signingConfigs.create("release") {
                     storeFile = java.io.File(keystorePath)
                     storePassword = System.getenv("STORE_PASSWORD") ?: ""
