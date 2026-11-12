@@ -119,14 +119,16 @@ String? _sanitizeReturnTo(String? raw) {
 // builds must return through the custom scheme registered in
 // AndroidManifest.xml (manifestPlaceholders.authScheme) instead.
 String _authCallbackUrl(String? returnTo) {
+  // Native returns a CONSTANT, exactly like the respondent app that works.
+  // Supabase validates the redirect against the allow-list as a whole string,
+  // so appending "?returnTo=%2Festimator" made it a different URL from the
+  // allow-listed one, Supabase fell back to site_url, and the user ended up on
+  // the web app. The destination is already preserved in-memory via
+  // _cachedReturnTo, so the query string is not needed.
+  if (!kIsWeb) return 'id.co.revive://login-callback';
+
   final queryParam =
       returnTo != null ? '?returnTo=${Uri.encodeComponent(returnTo)}' : '';
-  // Native: a custom scheme with no path. The manifest filter matches on
-  // scheme+host only, so the callback still lands if Supabase appends a
-  // trailing slash or a fragment. A path in the redirect made those variants
-  // miss the filter and the browser stayed on the web page instead of
-  // handing the URL to the app.
-  if (!kIsWeb) return 'id.co.revive://login-callback$queryParam';
   return '${Uri.base.origin}/#/auth/callback$queryParam';
 }
 
@@ -748,14 +750,13 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
       final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
       final redirectTo = _authCallbackUrl(returnTo);
 
+      // Same call as the respondent app, which works end to end: hand the URL
+      // to the external browser, and let supabase_flutter's deep-link observer
+      // (app_links uriLinkStream) deliver the callback into the app.
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: redirectTo,
-        // Force the external browser on native so the custom-scheme callback
-        // actually fires; the in-app webview variant never hands the session
-        // back to Flutter.
-        authScreenLaunchMode:
-            kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+        authScreenLaunchMode: LaunchMode.externalApplication,
       );
     } on AuthException catch (e) {
       if (mounted) setState(() { _errorMessage = _mapAuthError(e.message); _isLoading = false; });
