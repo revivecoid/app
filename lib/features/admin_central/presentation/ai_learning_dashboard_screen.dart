@@ -75,7 +75,7 @@ class AiLearningDashboardScreen extends ConsumerWidget {
   }
 }
 
-class _Body extends StatelessWidget {
+class _Body extends StatefulWidget {
   const _Body({
     required this.stats,
     required this.isDark,
@@ -85,6 +85,46 @@ class _Body extends StatelessWidget {
   final LearningStats stats;
   final bool isDark;
   final Color textColor;
+
+  @override
+  State<_Body> createState() => _BodyState();
+}
+
+/// Status filter for the recent-scans list. `null` means every status.
+enum _StatusFilter { all, completed, pending, legacy }
+
+class _BodyState extends State<_Body> {
+  _StatusFilter _filter = _StatusFilter.all;
+
+  LearningStats get stats => widget.stats;
+  bool get isDark => widget.isDark;
+  Color get textColor => widget.textColor;
+
+  List<SubmissionSummary> get _visibleRecent {
+    switch (_filter) {
+      case _StatusFilter.all:
+        return stats.recent;
+      case _StatusFilter.completed:
+        return stats.recent.where((s) => s.status == 'completed').toList();
+      case _StatusFilter.pending:
+        return stats.recent.where((s) => s.status == 'pending').toList();
+      case _StatusFilter.legacy:
+        return stats.recent.where((s) => s.status == 'legacy').toList();
+    }
+  }
+
+  int _countFor(_StatusFilter f) {
+    switch (f) {
+      case _StatusFilter.all:
+        return stats.recent.length;
+      case _StatusFilter.completed:
+        return stats.recent.where((s) => s.status == 'completed').length;
+      case _StatusFilter.pending:
+        return stats.recent.where((s) => s.status == 'pending').length;
+      case _StatusFilter.legacy:
+        return stats.recent.where((s) => s.status == 'legacy').length;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -194,15 +234,46 @@ class _Body extends StatelessWidget {
         const SizedBox(height: 24),
 
         // ── Recent submissions
+        // Filter row: pick a status to isolate what you want to look at.
+        // Counts come from the same 200-row window as the list, so they match
+        // what is actually on screen rather than the full table.
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Wrap(
+            spacing: 8,
+            children: [
+              for (final f in _StatusFilter.values)
+                ChoiceChip(
+                  label: Text('${_filterLabel(f)} (${_countFor(f)})'),
+                  selected: _filter == f,
+                  onSelected: (_) => setState(() => _filter = f),
+                ),
+            ],
+          ),
+        ),
         _tableCard(
           context,
           'Recent reviewed scans',
-          'Photos are stored in R2; the thumbnail is signed on demand.',
-          stats.recent.isEmpty
-              ? null
+          _filter == _StatusFilter.all
+              ? 'Photos are stored in R2; the thumbnail is signed on demand.'
+              : 'Filtered to ${_filterLabel(_filter).toLowerCase()} scans only.',
+          _visibleRecent.isEmpty
+              ? (_filter == _StatusFilter.all
+                  ? null
+                  : Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          'No ${_filterLabel(_filter).toLowerCase()} scans in '
+                          'the latest ${stats.recent.length} shown.',
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.daysGray),
+                        ),
+                      ),
+                    ))
               : Column(
                   children: [
-                    for (final s in stats.recent)
+                    for (final s in _visibleRecent)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Row(
@@ -290,6 +361,19 @@ class _Body extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _filterLabel(_StatusFilter f) {
+    switch (f) {
+      case _StatusFilter.all:
+        return 'All';
+      case _StatusFilter.completed:
+        return 'Completed';
+      case _StatusFilter.pending:
+        return 'Pending';
+      case _StatusFilter.legacy:
+        return 'Legacy';
+    }
   }
 
   Widget _kpi(String title, String value, String subtitle, IconData icon,
