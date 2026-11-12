@@ -47,11 +47,15 @@ android {
             dimension = "app"
             applicationId = "id.co.revive.re_v"
             resValue("string", "app_name", "Revive")
+            manifestPlaceholders["authScheme"] = "id.co.revive"
         }
         create("respondent") {
             dimension = "app"
             applicationId = "id.co.revive.re_v_learning"
             resValue("string", "app_name", "re-V AI Learning")
+            // Distinct OAuth return scheme: both apps can be installed at once,
+            // and the callback must land in the app that started the sign-in.
+            manifestPlaceholders["authScheme"] = "id.co.revive.revlearning"
         }
     }
 

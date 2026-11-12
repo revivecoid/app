@@ -24,7 +24,14 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   void initState() {
     super.initState();
     final meta = Supabase.instance.client.auth.currentUser?.userMetadata;
-    _name = TextEditingController(text: meta?['full_name']?.toString() ?? '');
+    // Google returns the name under full_name, name, or given/family name
+    // depending on the scopes granted — fall back so the field is not blank.
+    final name = meta?['full_name'] ??
+        meta?['name'] ??
+        [meta?['given_name'], meta?['family_name']]
+            .whereType<Object>()
+            .join(' ');
+    _name = TextEditingController(text: (name as String?)?.trim() ?? '');
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'package:re_v/core/utils/error_mapper.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -112,9 +113,15 @@ String? _sanitizeReturnTo(String? raw) {
 // The hash URL strategy keeps the router path in the fragment, so the callback
 // must be '/#/auth/callback'. A bare '/auth/callback' would ask GitHub Pages for
 // a file that does not exist and get a 404 instead of the app.
+//
+// On native there is no origin to return to: Uri.base is a file:// URI there,
+// which Supabase rejects as a redirect target ("Google login failed"). Native
+// builds must return through the custom scheme registered in
+// AndroidManifest.xml (manifestPlaceholders.authScheme) instead.
 String _authCallbackUrl(String? returnTo) {
   final queryParam =
       returnTo != null ? '?returnTo=${Uri.encodeComponent(returnTo)}' : '';
+  if (!kIsWeb) return 'id.co.revive://login-callback$queryParam';
   return '${Uri.base.origin}/#/auth/callback$queryParam';
 }
 
@@ -739,6 +746,11 @@ class _GlobalAuthGateState extends State<_GlobalAuthGate> {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: redirectTo,
+        // Force the external browser on native so the custom-scheme callback
+        // actually fires; the in-app webview variant never hands the session
+        // back to Flutter.
+        authScreenLaunchMode:
+            kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
       );
     } on AuthException catch (e) {
       if (mounted) setState(() { _errorMessage = _mapAuthError(e.message); _isLoading = false; });

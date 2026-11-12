@@ -28,14 +28,17 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- PLAT-04 fix: OAuth callback deep link for Google/email auth on native -->
-            <!-- Replace 'id.co.revive' with your actual application ID if different -->
-            <intent-filter android:autoVerify="true">
+            <!-- OAuth callback deep link for Google/email auth on native.
+                 The scheme is per-flavor: manifestPlaceholders.authScheme is
+                 set in build.gradle.kts (customer: id.co.revive, respondent:
+                 id.co.revive.revlearning) so a Google sign-in started in one
+                 app returns to that app and not to the other. -->
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data
-                    android:scheme="id.co.revive"
+                    android:scheme="${authScheme}"
                     android:host="login-callback"/>
             </intent-filter>
         </activity>

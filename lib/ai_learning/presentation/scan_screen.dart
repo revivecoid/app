@@ -90,7 +90,16 @@ class _ScanScreenState extends State<ScanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.workspaceLight,
-      appBar: AppBar(title: const Text('New scan')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/images/respondent_logo.png', height: 26),
+            const SizedBox(width: 8),
+            const Text('New scan'),
+          ],
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
