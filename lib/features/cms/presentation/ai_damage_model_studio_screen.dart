@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/rev_app_bar.dart';
@@ -82,6 +83,12 @@ class AiDamageModelStudioScreen extends StatelessWidget {
                 ),
                 Row(
                   children: [
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/admin-central/cms/ai-learning'),
+                      icon: const Icon(Icons.school_outlined, size: 18),
+                      label: const Text('AI Learning'),
+                    ),
+                    const SizedBox(width: 8),
                     OutlinedButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.biotech, size: 18),
