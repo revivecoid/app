@@ -1,3 +1,9 @@
+// Imported rather than written as java.io.File: inside android {} the name
+// `java` resolves to Gradle's java{} extension, so the qualified form fails
+// with "Unresolved reference 'io'". Imports must precede everything else in
+// a .kts file, so this sits above the plugins block.
+import java.io.File as JavaFile
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -12,6 +18,12 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    // Required for resValue(...) in productFlavors — the per-flavor app_name.
+    // AGP disables custom resource values by default.
+    buildFeatures {
+        resValues = true
     }
 
     defaultConfig {
@@ -49,9 +61,9 @@ android {
             // Set KEYSTORE_PATH, KEY_ALIAS, KEY_PASSWORD, STORE_PASSWORD in CI secrets
             // See docs/remediation/MANUAL.md for keystore generation instructions
             val keystorePath = System.getenv("KEYSTORE_PATH")
-            if (keystorePath != null && java.io.File(keystorePath).isFile) {
+            if (keystorePath != null && JavaFile(keystorePath).isFile) {
                 signingConfigs.create("release") {
-                    storeFile = java.io.File(keystorePath)
+                    storeFile = JavaFile(keystorePath)
                     storePassword = System.getenv("STORE_PASSWORD") ?: ""
                     keyAlias = System.getenv("KEY_ALIAS") ?: ""
                     keyPassword = System.getenv("KEY_PASSWORD") ?: ""
