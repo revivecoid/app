@@ -78,11 +78,9 @@ class _FrontendCmsState extends ConsumerState<FrontendContentStudioScreen> {
   }
 
   Future<void> _loadAssets() async {
-    setState(() => _assetsLoading = true);
-    try {
-      final f = await _supabase.storage.from('revive-photos').list();
-      if (mounted) setState(() => _assets = f);
-    } catch (e) { debugPrint('[CMS] loadAssets error: $e'); }
+    // Asset listing moved with the photos to Cloudflare R2, which has no
+    // list-from-client API (by design: the app never holds R2 credentials).
+    // The asset manager stays empty until an admin listing endpoint exists.
     if (mounted) setState(() => _assetsLoading = false);
   }
 

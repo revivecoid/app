@@ -1,3 +1,4 @@
+import '../../../../core/services/r2_storage.dart';
 import 'package:re_v/core/utils/error_mapper.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -371,14 +372,14 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
       // 2. Client-side compression (<300KB constraint)
       final compressedBytes = await ImageCompressor.compressImage(rawImage);
 
-      // 3. Upload to Supabase Storage (user-scoped path for RLS)
-      final userId = _supabase.auth.currentUser!.id;
-      final fileName = '$userId/${state.partnerId}_${jobId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-
-      await _supabase.storage.from('revive-photos').uploadBinary(
-        fileName,
+      // 3. Upload to R2. Partner progress photos are job-scoped, the same
+      // folder family ops uses: ops/<partnerId>/<jobId>/<step>/...
+      final fileName = await R2Storage.uploadBytes(
         compressedBytes,
-        fileOptions: const FileOptions(contentType: 'image/jpeg'),
+        scope: R2Scope.opsJob,
+        partnerId: state.partnerId,
+        jobId: jobId,
+        stageKey: currentContext.replaceAll(RegExp(r'^\d+_'), '').replaceAll(RegExp(r'[^a-z0-9_]'), '_'),
       );
 
       // 4. Insert photo record
@@ -481,15 +482,20 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
             final localFile = File(action['local_path'] as String);
             if (await localFile.exists()) {
               final bytes = await localFile.readAsBytes();
-              await _supabase.storage.from('revive-photos').uploadBinary(
-                action['r2_key'] as String, 
+              final stepKey = action['context'].toString()
+                  .replaceAll(RegExp(r'^\d+_'), '')
+                  .replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+              final r2Key = await R2Storage.uploadBytes(
                 bytes,
-                fileOptions: const FileOptions(contentType: 'image/jpeg'),
+                scope: R2Scope.opsJob,
+                partnerId: state.partnerId,
+                jobId: action['job_id'] as String,
+                stageKey: stepKey.isEmpty ? 'progress' : stepKey,
               );
               await _supabase.from('repair_photos').insert({
                 'job_id': action['job_id'],
                 'step_context': action['context'].toString().replaceAll(RegExp(r'^\d+_'), ''),
-                'r2_file_key': action['r2_key'],
+                'r2_file_key': r2Key,
                 'uploaded_at': DateTime.now().toIso8601String(),
               });
               await localFile.delete(); // Clear cache

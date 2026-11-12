@@ -1,30 +1,24 @@
 // lib/core/utils/storage_url.dart
 //
-// Helper terpusat untuk menghasilkan URL foto dari bucket private revive-photos.
-// SEC-04/PRIV-01: Bucket kini private — gunakan signedUrl, bukan publicUrl.
+// Helper terpusat untuk menghasilkan URL foto. Semua foto ada di bucket
+// Cloudflare R2 `revive-photos`; URL bertanda tangan (presigned) diminta ke
+// edge function `r2-presign`. Lihat core/services/r2_storage.dart.
 //
-// Semua kode yang sebelumnya memanggil getPublicUrl() harus beralih ke helper ini.
+// Kode yang sebelumnya memanggil getPublicUrl() atau createSignedUrl() harus
+// memakai helper ini.
 
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/r2_storage.dart';
 
-const String _kBucket = 'revive-photos';
-const int _kDefaultTtlSeconds = 3600; // 1 jam
+const int _kDefaultTtlSeconds = 3600; // 1 jam (TTL diatur oleh r2-presign)
 
-/// Menghasilkan signed URL untuk objek di bucket revive-photos.
+/// Menghasilkan signed URL untuk objek di bucket revive-photos (R2).
 /// Mengembalikan null bila fileKey kosong atau ada error.
 Future<String?> signedPhotoUrl(
   String? fileKey, {
   int ttlSeconds = _kDefaultTtlSeconds,
 }) async {
   if (fileKey == null || fileKey.isEmpty) return null;
-  try {
-    return await Supabase.instance.client.storage
-        .from(_kBucket)
-        .createSignedUrl(fileKey, ttlSeconds);
-  } catch (e) {
-    debugPrintStorageError('signedPhotoUrl', fileKey, e);
-    return null;
-  }
+  return R2Storage.signedUrl(fileKey);
 }
 
 /// Menghasilkan banyak signed URL sekaligus.

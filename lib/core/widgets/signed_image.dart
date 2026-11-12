@@ -11,7 +11,8 @@
 // the app.
 
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../services/r2_storage.dart';
 
 class SignedImage extends StatefulWidget {
   const SignedImage({
@@ -23,7 +24,6 @@ class SignedImage extends StatefulWidget {
     this.borderRadius,
     this.placeholder,
     this.errorWidget,
-    this.bucket = 'revive-photos',
     this.ttlSeconds = 3600,
   });
 
@@ -34,7 +34,6 @@ class SignedImage extends StatefulWidget {
   final BorderRadius? borderRadius;
   final Widget? placeholder;
   final Widget? errorWidget;
-  final String bucket;
   final int ttlSeconds;
 
   @override
@@ -63,14 +62,7 @@ class _SignedImageState extends State<SignedImage> {
     if (key == null || key.isEmpty) return null;
     // Already a full URL (e.g. avatar from Google OAuth) — pass through
     if (key.startsWith('http://') || key.startsWith('https://')) return key;
-    try {
-      return await Supabase.instance.client.storage
-          .from(widget.bucket)
-          .createSignedUrl(key, widget.ttlSeconds);
-    } catch (e) {
-      debugPrint('[SignedImage] createSignedUrl failed for $key: $e');
-      return null;
-    }
+    return R2Storage.signedUrl(key);
   }
 
   @override

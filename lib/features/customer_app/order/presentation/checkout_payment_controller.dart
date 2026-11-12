@@ -1,3 +1,4 @@
+import '../../../../core/services/r2_storage.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -266,16 +267,15 @@ class CheckoutController extends StateNotifier<CheckoutState> {
       // Upload transfer proof if applicable
       if (state.paymentMethod == PaymentMethod.manualTransfer &&
           state.transferProof != null) {
-        final fileExt = state.transferProof!.name.split('.').last;
-        final userId = _supabase.auth.currentUser!.id;
-        final fileName =
-            '$userId/proof_${state.jobId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+        final fileExt = state.transferProof!.name.split('.').last.toLowerCase();
+        final isPdf = fileExt == 'pdf';
         final bytes = await state.transferProof!.readAsBytes();
-        await _supabase.storage.from('revive-photos').uploadBinary(
-              fileName,
-              bytes,
-              fileOptions: FileOptions(contentType: 'image/$fileExt'),
-            );
+        final fileName = await R2Storage.uploadBytes(
+          bytes,
+          scope: R2Scope.self,
+          ext: isPdf ? 'pdf' : 'jpg',
+          contentType: isPdf ? 'application/pdf' : 'image/jpeg',
+        );
         await _supabase.from('repair_photos').insert({
           'job_id': state.jobId,
           'step_context': 'payment',
@@ -353,16 +353,15 @@ class CheckoutController extends StateNotifier<CheckoutState> {
       if (!state.jobId.startsWith('JB-')) {
         // Upload transfer proof if applicable
         if (state.paymentMethod == PaymentMethod.manualTransfer && state.transferProof != null) {
-          final fileExt = state.transferProof!.name.split('.').last;
-          // SEC-04 FIX: User-scoped upload path for private bucket
-          final userId = _supabase.auth.currentUser!.id;
-          final fileName = '$userId/proof_${state.jobId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+          final fileExt = state.transferProof!.name.split('.').last.toLowerCase();
+          final isPdf = fileExt == 'pdf';
           final bytes = await state.transferProof!.readAsBytes();
-          
-          await _supabase.storage.from('revive-photos').uploadBinary(
-            fileName,
+
+          final fileName = await R2Storage.uploadBytes(
             bytes,
-            fileOptions: FileOptions(contentType: 'image/$fileExt'),
+            scope: R2Scope.self,
+            ext: isPdf ? 'pdf' : 'jpg',
+            contentType: isPdf ? 'application/pdf' : 'image/jpeg',
           );
 
           await _supabase.from('repair_photos').insert({

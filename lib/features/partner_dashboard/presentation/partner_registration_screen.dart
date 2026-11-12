@@ -1,3 +1,4 @@
+import '../../../../core/services/r2_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -97,8 +98,6 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
   String? _submitStage;
   String? _submitError;
   bool _isSuccess = false;
-
-  static const _bucket = 'revive-photos';
 
   late final AnimationController _anim;
 
@@ -258,9 +257,6 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
       final uid = await GuestSession.ensure();
       if (uid == null) throw Exception('Gagal memulai sesi upload. Coba lagi.');
 
-      final storage = Supabase.instance.client.storage;
-      final stamp = DateTime.now().millisecondsSinceEpoch;
-      final prefix = '$uid/partner-applications/$stamp';
       final failed = <String>[];
 
       // — photos
@@ -269,13 +265,16 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
         final bytes = _facilityPhotos[i];
         if (bytes == null) continue;
         stage('Upload foto ${_photoLabels[i]}…');
-        final key = '$prefix/facility/slot$i.jpg';
+        final label = _photoLabels[i];
         try {
-          await storage.from(_bucket).uploadBinary(key, bytes,
-              fileOptions: const FileOptions(contentType: 'image/jpeg', cacheControl: '3600', upsert: false));
-          photoKeys.add({'slot': i, 'label': _photoLabels[i], 'file_key': key});
+          final key = await R2Storage.uploadBytes(
+            bytes,
+            scope: R2Scope.self,
+            docType: 'application_facility_slot$i',
+          );
+          photoKeys.add({'slot': i, 'label': label, 'file_key': key});
         } catch (e) {
-          failed.add(_photoLabels[i]);
+          failed.add(label);
         }
       }
 
@@ -287,12 +286,14 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
         stage('Upload ${t.toUpperCase()}…');
         final name = _docFileNames[t] ?? '$t.pdf';
         final ext = name.contains('.') ? name.split('.').last.toLowerCase() : 'pdf';
-        final key = '$prefix/docs/${t}_$stamp.$ext';
         try {
-          await storage.from(_bucket).uploadBinary(key, bytes,
-              fileOptions: FileOptions(
-                  contentType: ext == 'pdf' ? 'application/pdf' : 'image/jpeg',
-                  cacheControl: '3600', upsert: false));
+          final key = await R2Storage.uploadBytes(
+            bytes,
+            scope: R2Scope.self,
+            docType: 'application_doc_$t',
+            ext: ext,
+            contentType: ext == 'pdf' ? 'application/pdf' : 'image/jpeg',
+          );
           docKeys[t] = key;
         } catch (e) {
           failed.add(t.toUpperCase());

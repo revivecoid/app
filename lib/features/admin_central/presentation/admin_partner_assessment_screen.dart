@@ -1,3 +1,4 @@
+import '../../../core/services/r2_storage.dart';
 import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -709,9 +710,8 @@ class _ApplicationDetailPanelState
 
   Future<void> _openFile(String key, String label) async {
     try {
-      final url = await Supabase.instance.client.storage
-          .from('revive-photos')
-          .createSignedUrl(key, 3600);
+      final url = await R2Storage.signedUrl(key);
+      if (url == null) throw Exception('Could not sign $key');
       final messenger = ScaffoldMessenger.of(context);
       final launched = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       if (!launched && context.mounted) {
@@ -2221,9 +2221,8 @@ class _DownloadButton extends StatelessWidget {
           ? null
           : () async {
               try {
-                final url = await Supabase.instance.client.storage
-                    .from('revive-photos')
-                    .createSignedUrl(fileKey, 3600);
+                final url = await R2Storage.signedUrl(fileKey);
+                if (url == null) throw Exception('Could not sign $fileKey');
                 // C-28 fix: open URL directly with launchUrl
                 final uri = Uri.parse(url);
                 final messenger = ScaffoldMessenger.of(context);
