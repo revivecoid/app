@@ -97,6 +97,82 @@ function json(body: unknown, status: number, origin: string | null): Response {
 
 const enc = new TextEncoder();
 
+// S3 ListObjectsV2, signed with the service credentials. Only reachable by a
+// master admin (checked in the request handler), because it exposes every key.
+async function listObjects(prefix: string, limit: number): Promise<unknown[]> {
+  const host = `${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
+  const dateStamp = amzDate.slice(0, 8);
+  const scope = `${dateStamp}/${REGION}/${SERVICE}/aws4_request`;
+  const payloadHash = await sha256Hex("");
+
+  const params: [string, string][] = [
+    ["list-type", "2"],
+    ["max-keys", String(limit)],
+  ];
+  if (prefix) params.push(["prefix", prefix]);
+  params.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  const canonicalQuery = params
+    .map(([k, v]) => `${encodeRfc3986(k)}=${encodeRfc3986(v)}`)
+    .join("&");
+
+  const canonicalUri = "/" + encodeRfc3986(R2_BUCKET);
+  const canonicalHeaders =
+    `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
+  const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+
+  const canonicalRequest = [
+    "GET",
+    canonicalUri,
+    canonicalQuery,
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash,
+  ].join("\n");
+
+  const stringToSign = [
+    "AWS4-HMAC-SHA256",
+    amzDate,
+    scope,
+    await sha256Hex(canonicalRequest),
+  ].join("\n");
+
+  const kDate = await hmac(enc.encode("AWS4" + R2_SECRET_ACCESS_KEY), dateStamp);
+  const kRegion = await hmac(kDate, REGION);
+  const kService = await hmac(kRegion, SERVICE);
+  const kSigning = await hmac(kService, "aws4_request");
+  const signature = hex(await hmac(kSigning, stringToSign));
+
+  const url = `https://${host}${canonicalUri}?${canonicalQuery}`;
+  const res = await fetch(url, {
+    headers: {
+      "x-amz-content-sha256": payloadHash,
+      "x-amz-date": amzDate,
+      Authorization:
+        `AWS4-HMAC-SHA256 Credential=${R2_ACCESS_KEY_ID}/${scope}, ` +
+        `SignedHeaders=${signedHeaders}, Signature=${signature}`,
+    },
+  });
+  if (!res.ok) throw new Error(`R2 list failed: ${res.status}`);
+
+  const xml = await res.text();
+  const items: unknown[] = [];
+  for (const m of xml.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)) {
+    const body = m[1];
+    const pick = (tag: string) => {
+      const hit = body.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`));
+      return hit ? hit[1] : "";
+    };
+    items.push({
+      key: pick("Key"),
+      size: Number(pick("Size") || 0),
+      last_modified: pick("LastModified"),
+    });
+  }
+  return items;
+}
+
 function hex(buf: ArrayBuffer): string {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -265,6 +341,24 @@ serve(async (req) => {
     }
     const url = await presign("GET", key);
     return json({ key, url, expiresIn: PRESIGN_TTL_SECONDS }, 200, origin);
+  }
+
+  if (body.action === "list") {
+    // Admin-only: the bucket listing exposes every key.
+    const { data: isAdmin, error: adminErr } = await asCaller(token).rpc("is_master_admin");
+    if (adminErr || isAdmin !== true) {
+      return json({ error: "Forbidden" }, 403, origin);
+    }
+    const prefix = (body as { prefix?: string }).prefix ?? "";
+    if (prefix.includes("..")) {
+      return json({ error: "Invalid prefix" }, 400, origin);
+    }
+    try {
+      const items = await listObjects(prefix, 200);
+      return json({ items }, 200, origin);
+    } catch (e) {
+      return json({ error: (e as Error).message }, 502, origin);
+    }
   }
 
   return json({ error: "Unknown action" }, 400, origin);
