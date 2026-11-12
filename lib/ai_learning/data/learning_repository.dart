@@ -117,6 +117,28 @@ class LearningRepository {
     if (partRows.isNotEmpty) {
       await _client.from('ai_learning_part_reviews').insert(partRows);
     }
+
+    // Mark the submission done in the same flow as the verdicts. Without this
+    // an abandoned scan and a reviewed one were indistinguishable in the
+    // dashboard, so accuracy figures counted both.
+    await _client
+        .from('ai_learning_submissions')
+        .update({
+          'status': 'completed',
+          'completed_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', submissionId);
+  }
+
+  /// How many submissions this respondent has completed. Shown on the scan
+  /// screen as a contribution counter.
+  Future<int> completedCount() async {
+    final rows = await _client
+        .from('ai_learning_submissions')
+        .select('id')
+        .eq('respondent_id', _uid)
+        .eq('status', 'completed');
+    return (rows as List).length;
   }
 }
 

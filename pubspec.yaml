@@ -32,6 +32,8 @@ dependencies:
   # Tapping a customer's number to open WhatsApp / the dialler. Already in the
   # tree transitively; declared directly now that the ops screens depend on it.
   url_launcher: ^6.3.2
+  # Version/build shown in the respondent app so test builds are identifiable.
+  package_info_plus: ^10.2.1
 
   web: any
 dev_dependencies:

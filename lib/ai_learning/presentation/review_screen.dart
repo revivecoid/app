@@ -41,6 +41,49 @@ class _ReviewScreenState extends State<ReviewScreen> {
   int get _answeredItems => _panelVerdicts.length + _partVerdicts.length;
 
   Future<void> _save() async {
+    // Recap before writing: a verdict is unrecoverable once submitted, so show
+    // what is about to be saved and let the respondent spot a mis-tap.
+    final confirmed = _panelVerdicts.values.where((v) => v).length;
+    final rejected = _panelVerdicts.values.where((v) => !v).length;
+    final partsTrue = _partVerdicts.values.where((v) => v).length;
+    final partsFalse = _partVerdicts.values.where((v) => !v).length;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Submit review?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Panels confirmed damaged: $confirmed'),
+            Text('Panels marked not damaged: $rejected'),
+            if (_partVerdicts.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Parts confirmed needed: $partsTrue'),
+              Text('Parts marked not needed: $partsFalse'),
+            ],
+            const SizedBox(height: 12),
+            const Text(
+              'This cannot be changed after submitting.',
+              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep editing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Submit'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+
     setState(() {
       _busy = true;
       _message = null;
