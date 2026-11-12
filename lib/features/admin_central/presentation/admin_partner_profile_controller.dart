@@ -143,17 +143,18 @@ class AdminPartnerProfileController extends StateNotifier<AdminPartnerProfileSta
           .order('created_at', ascending: true);
       final initialMessages = (msgRes as List).map((e) => _parseMessage(e as Map<String, dynamic>)).toList();
 
-      // 5. Fetch facility photos from storage
+      // 5. Facility photos are referenced by their R2 keys in
+      // partner_facility_photos; the UI signs each one on demand.
       final photoUrls = <String>[];
       try {
-        // REL-04 FIX: Use unified 'revive-photos' bucket
-        final objects = await _supabase.storage.from('revive-photos').list(path: 'facility/$partnerId/');
-        for (final o in objects) {
-          if (o.name.isNotEmpty) {
-            // SEC-04: Bucket private — simpan file_key, UI akan request signed URL on-demand.
-            // TODO: await signedPhotoUrl('facility/$partnerId/${o.name}')
-            photoUrls.add('facility/$partnerId/${o.name}');
-          }
+        final rows = await _supabase
+            .from('partner_facility_photos')
+            .select('file_key')
+            .eq('partner_id', partnerId)
+            .eq('is_current', true);
+        for (final r in (rows as List)) {
+          final key = (r as Map<String, dynamic>)['file_key']?.toString();
+          if (key != null && key.isNotEmpty) photoUrls.add(key);
         }
       } catch (e) { debugPrint('[AdminPartner] facility photos error: $e'); }
 

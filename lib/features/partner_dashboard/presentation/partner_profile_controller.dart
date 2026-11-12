@@ -1,3 +1,4 @@
+import '../../../../core/services/r2_storage.dart';
 import 'package:re_v/core/utils/error_mapper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -138,8 +139,6 @@ class PartnerProfileState {
 
 class PartnerProfileController extends StateNotifier<PartnerProfileState> {
   final SupabaseClient _sb = Supabase.instance.client;
-  // REL-04 FIX: Use unified bucket name
-  static const _bucket = 'revive-photos';
 
   String? _partnerId; // null until we find/create the partners row
 
@@ -370,21 +369,17 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
             'the limit is ${DocumentPicker.maxBytes ~/ (1024 * 1024)}MB.');
       }
 
-      // Timestamped path — never collides with prior versions
-      final ts = DateTime.now().millisecondsSinceEpoch;
+      // Timestamped name — never collides with prior versions. The presign
+      // function places it under partners/<id>/docs/<doc_type>/.
       final ext = _docExtension(fileName, mimeType);
-      final storageKey =
-          'partners/$_partnerId/docs/${docType}_$ts.$ext';
 
-      await _sb.storage.from(_bucket).uploadBinary(
-        storageKey,
+      final storageKey = await R2Storage.uploadBytes(
         bytes,
-        fileOptions: FileOptions(
-          // Explicitly typed: a document may be a PDF, not just an image.
-          contentType: _docContentType(ext, mimeType),
-          cacheControl: '3600',
-          upsert: false,
-        ),
+        scope: R2Scope.partnerDocs,
+        partnerId: _partnerId!,
+        docType: docType,
+        ext: ext,
+        contentType: _docContentType(ext, mimeType),
       );
 
       // Demote prior current versions
@@ -443,17 +438,11 @@ class PartnerProfileController extends StateNotifier<PartnerProfileState> {
     final uploadKey = 'photo_$slot';
     state = state.copyWith(uploading: {...state.uploading, uploadKey});
     try {
-      final ts = DateTime.now().millisecondsSinceEpoch;
-      final storageKey = 'partners/$_partnerId/facility/slot${slot}_$ts.jpg';
-
-      await _sb.storage.from(_bucket).uploadBinary(
-        storageKey,
+      final storageKey = await R2Storage.uploadBytes(
         bytes,
-        fileOptions: const FileOptions(
-          contentType: 'image/jpeg',
-          cacheControl: '3600',
-          upsert: false,
-        ),
+        scope: R2Scope.partnerFacility,
+        partnerId: _partnerId!,
+        docType: 'slot$slot',
       );
 
       // Demote prior current photos in this slot

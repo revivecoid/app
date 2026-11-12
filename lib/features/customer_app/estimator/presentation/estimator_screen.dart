@@ -1,3 +1,4 @@
+import '../../../../core/services/r2_storage.dart';
 import 'package:re_v/core/utils/error_mapper.dart';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
@@ -146,18 +147,18 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
       // C-31/L-03 fix: clear estimatedCost before every analysis run
       ref.read(customerIntakeProvider.notifier).updateEstimatedCost(0);
 
-      // PERF-04 fix: parallel uploads with Future.wait
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      // PERF-04 fix: parallel uploads with Future.wait. Photos go to R2; the
+      // presigned URL is what vision-estimation fetches.
       final List<String> photoUrls = await Future.wait(
         List.generate(_selectedImages.length, (i) async {
           final compressedBytes = await ImageCompressor.compressImage(_selectedImages[i]);
-          final fileName = '$guestId/${timestamp}_$i.jpg';
-          await Supabase.instance.client.storage
-              .from('revive-photos')
-              .uploadBinary(fileName, compressedBytes);
-          return Supabase.instance.client.storage
-              .from('revive-photos')
-              .createSignedUrl(fileName, 3600);
+          final key = await R2Storage.uploadBytes(
+            compressedBytes,
+            scope: R2Scope.estimator,
+          );
+          final url = await R2Storage.signedUrl(key);
+          if (url == null) throw Exception('Could not read back $key');
+          return url;
         }),
       );
 

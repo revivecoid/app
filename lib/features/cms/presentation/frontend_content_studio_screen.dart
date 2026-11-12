@@ -50,6 +50,24 @@ class FrontendContentStudioScreen extends ConsumerStatefulWidget {
   ConsumerState<FrontendContentStudioScreen> createState() => _FrontendCmsState();
 }
 
+/// One object in the R2 bucket, as returned by the admin-only `list` action.
+class R2Asset {
+  const R2Asset({required this.key, required this.size, this.lastModified});
+
+  final String key;
+  final int size;
+  final String? lastModified;
+
+  /// Display name: the object's own filename, without the folder path.
+  String get name => key.split('/').last;
+
+  factory R2Asset.fromJson(Map<String, dynamic> json) => R2Asset(
+        key: json['key']?.toString() ?? '',
+        size: (json['size'] as num?)?.toInt() ?? 0,
+        lastModified: json['last_modified']?.toString(),
+      );
+}
+
 class _FrontendCmsState extends ConsumerState<FrontendContentStudioScreen> {
   final _supabase = Supabase.instance.client;
   int _tab = 0;
@@ -58,7 +76,7 @@ class _FrontendCmsState extends ConsumerState<FrontendContentStudioScreen> {
   bool _saving = false;
   Map<String, String> _settings = {};
   List<Map<String, dynamic>> _pricing = [];
-  List<FileObject> _assets = [];
+  List<R2Asset> _assets = [];
   bool _assetsLoading = false;
   String _assetCat = 'All';
   final Map<int, bool> _nlpToggles = {for (var i = 0; i < _nlpIntents.length; i++) i: _nlpIntents[i].active};
@@ -80,9 +98,22 @@ class _FrontendCmsState extends ConsumerState<FrontendContentStudioScreen> {
   Future<void> _loadAssets() async {
     setState(() => _assetsLoading = true);
     try {
-      final f = await _supabase.storage.from('revive-photos').list();
-      if (mounted) setState(() => _assets = f);
-    } catch (e) { debugPrint('[CMS] loadAssets error: $e'); }
+      final res = await _supabase.functions.invoke(
+        'r2-presign',
+        body: {'action': 'list', 'prefix': ''},
+      );
+      final data = res.data;
+      final items = data is Map ? data['items'] : null;
+      if (items is List && mounted) {
+        setState(() => _assets = items
+            .whereType<Map<String, dynamic>>()
+            .map(R2Asset.fromJson)
+            .where((a) => a.key.isNotEmpty)
+            .toList());
+      }
+    } catch (e) {
+      debugPrint('[CMS] loadAssets error: $e');
+    }
     if (mounted) setState(() => _assetsLoading = false);
   }
 
@@ -697,7 +728,7 @@ class _ContentTabState extends State<_ContentTab> {
 
 // --- Tab 1: Digital Asset Manager ---
 class _AssetTab extends StatelessWidget {
-  final ColorScheme cs; final List<FileObject> assets; final bool loading;
+  final ColorScheme cs; final List<R2Asset> assets; final bool loading;
   final String cat; final ValueChanged<String> onCat;
   final VoidCallback onRefresh; final SupabaseClient sup;
   const _AssetTab({required this.cs, required this.assets, required this.loading,
@@ -712,7 +743,7 @@ class _AssetTab extends StatelessWidget {
         const Spacer(),
         IconButton(icon: Icon(Icons.refresh_rounded, size: 18, color: cs.onSurfaceVariant), onPressed: onRefresh),
       ]),
-      Text('revive-photos bucket - Supabase Storage', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+      Text('revive-photos bucket - Cloudflare R2', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
       const SizedBox(height: 14),
       Wrap(spacing: 8, children: ['All', 'Hero', 'Brand', 'Estimator', 'Promo', 'Marketing', 'Other'].map((c) =>
         FilterChip(label: Text(c, style: const TextStyle(fontSize: 11)), selected: cat == c,
@@ -729,7 +760,7 @@ class _AssetTab extends StatelessWidget {
               Text('No assets in bucket', style: TextStyle(color: cs.onSurfaceVariant))]))
           : ListView.builder(itemCount: filtered.length, itemBuilder: (ctx, i) {
               final f = filtered[i];
-              final url = f.name;  // SEC-04: file_key sementara — TODO: await signedPhotoUrl(f.name)
+              final url = f.key;  // R2 key; open with signedPhotoUrl(f.key) to view
               return Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: cs.surfaceContainerLowest,
                   borderRadius: BorderRadius.circular(10),

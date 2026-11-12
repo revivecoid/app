@@ -1,3 +1,4 @@
+import '../../../../core/services/r2_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -263,13 +264,13 @@ class _OpsStagePhotoScreenState extends ConsumerState<OpsStagePhotoScreen> {
       final fileKeys = <String>[];
 
       for (final photo in _photos) {
-        final fileKey =
-            'ops/$partnerId/${widget.jobId}/${stage.stageKey}/${photo.name}';
-        await _sb.storage.from('revive-photos').uploadBinary(
-              fileKey,
-              photo.bytes,
-              fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false),
-            );
+        final fileKey = await R2Storage.uploadBytes(
+          photo.bytes,
+          scope: R2Scope.opsJob,
+          partnerId: partnerId,
+          jobId: widget.jobId,
+          stageKey: stage.stageKey,
+        );
         fileKeys.add(fileKey);
       }
 

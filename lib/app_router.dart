@@ -47,6 +47,7 @@ import 'features/ops_mobile/presentation/ops_stage_photo_screen.dart';
 
 // --- IMPORTING CMS SCREENS ---
 import 'features/cms/presentation/ai_damage_model_studio_screen.dart';
+import 'features/admin_central/presentation/ai_learning_dashboard_screen.dart';
 import 'features/cms/presentation/customer_concierge_nlp_studio_screen.dart';
 import 'features/cms/presentation/digital_asset_manager_screen.dart';
 import 'features/cms/presentation/frontend_content_studio_screen.dart';
@@ -435,6 +436,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin-central/cms/ai-damage-model-pricing-rules',
         builder: (context, state) => const AiDamageModelStudioScreen(),
+      ),
+      GoRoute(
+        path: '/admin-central/cms/ai-learning',
+        builder: (context, state) => const AiLearningDashboardScreen(),
       ),
       GoRoute(
         path: '/admin-central/cms/customer-concierge-nlp',

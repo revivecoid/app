@@ -37,12 +37,16 @@ async function checkDbRateLimit(supabaseAdmin: any, userId: string, isAnon: bool
   return data === true;
 }
 
-// SEC-03 FIX: Only accept signed URLs from our own Supabase project
+// SEC-03 FIX: Only accept signed URLs from our own Supabase project or the
+// R2 bucket that now stores every photo. Both are presigned, short-lived URLs.
 const ownSupabaseHost = new URL(supabaseUrl || "https://ahaospjkkuetkaixwzzz.supabase.co").hostname;
+const r2Host = `${Deno.env.get("R2_ACCOUNT_ID") ?? ""}.r2.cloudflarestorage.com`;
 function isValidPhotoUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.hostname === ownSupabaseHost || parsed.hostname === "localhost";
+    return parsed.hostname === ownSupabaseHost ||
+      parsed.hostname === "localhost" ||
+      (r2Host.startsWith(".") ? false : parsed.hostname === r2Host);
   } catch {
     return false;
   }

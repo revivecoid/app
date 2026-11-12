@@ -25,13 +25,11 @@ TIMEOUT = 30
 # ---------------------------------------------------------------------------
 
 def _supabase_req(url, key, method, path, payload=None,
-                  is_auth=False, is_storage=False,
+                  is_auth=False,
                   content_type="application/json"):
     base = url.rstrip("/")
     if is_auth:
         full_url = f"{base}/auth/v1{path}"
-    elif is_storage:
-        full_url = f"{base}/storage/v1{path}"
     else:
         full_url = f"{base}/rest/v1{path}"
 
@@ -202,20 +200,106 @@ def map_wa_to_profile(url, key, phone, name):
 
 
 # ---------------------------------------------------------------------------
-# Photo upload
+# Photo upload — Cloudflare R2
 # ---------------------------------------------------------------------------
+# Every photo in re-V lives in the R2 bucket `revive-photos`; Supabase stores
+# only the object key. This bot predates the R2 move, so it keeps writing with
+# the R2 S3 credentials directly (it already runs with service credentials).
+# Keys are job-scoped, matching what the app's r2-presign function issues for
+# ops: ops/<partner_id>/<job_id>/<stage>/... . Because the job does not exist
+# yet at upload time, the bot uses a "chatbot" actor segment instead, which the
+# app can sign and read like any other key.
+
+def _r2_creds():
+    account = os.environ.get("R2_ACCOUNT_ID")
+    key_id = os.environ.get("R2_ACCESS_KEY_ID")
+    secret = os.environ.get("R2_SECRET_ACCESS_KEY")
+    bucket = os.environ.get("R2_BUCKET", "revive-photos")
+    if not account or not key_id or not secret:
+        raise RuntimeError(
+            "Missing env R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY")
+    return account, key_id, secret, bucket
+
+
+def _r2_put(key, data, content_type="image/jpeg"):
+    """PUT an object to R2 with an AWS SigV4 signed request."""
+    import hashlib
+    import hmac
+
+    account, key_id, secret, bucket = _r2_creds()
+    host = f"{account}.r2.cloudflarestorage.com"
+    now = datetime.now(timezone.utc)
+    amz_date = now.strftime("%Y%m%dT%H%M%SZ")
+    date_stamp = now.strftime("%Y%m%d")
+    scope = f"{date_stamp}/auto/s3/aws4_request"
+    payload_hash = hashlib.sha256(data).hexdigest()
+
+    canonical_uri = "/" + bucket + "/" + urllib.parse.quote(key, safe="/")
+    canonical_headers = (
+        f"content-type:{content_type}\n"
+        f"host:{host}\n"
+        f"x-amz-content-sha256:{payload_hash}\n"
+        f"x-amz-date:{amz_date}\n"
+    )
+    signed_headers = "content-type;host;x-amz-content-sha256;x-amz-date"
+    canonical_request = "\n".join(
+        ["PUT", canonical_uri, "", canonical_headers, signed_headers, payload_hash])
+
+    string_to_sign = "\n".join([
+        "AWS4-HMAC-SHA256",
+        amz_date,
+        scope,
+        hashlib.sha256(canonical_request.encode()).hexdigest(),
+    ])
+
+    def _sign(k, msg):
+        return hmac.new(k, msg.encode(), hashlib.sha256).digest()
+
+    k = _sign(("AWS4" + secret).encode(), date_stamp)
+    k = _sign(k, "auto")
+    k = _sign(k, "s3")
+    k = _sign(k, "aws4_request")
+    signature = hmac.new(k, string_to_sign.encode(), hashlib.sha256).hexdigest()
+
+    authorization = (
+        f"AWS4-HMAC-SHA256 Credential={key_id}/{scope}, "
+        f"SignedHeaders={signed_headers}, Signature={signature}"
+    )
+    req = urllib.request.Request(
+        f"https://{host}{canonical_uri}",
+        method="PUT",
+        data=data,
+        headers={
+            "Content-Type": content_type,
+            "x-amz-content-sha256": payload_hash,
+            "x-amz-date": amz_date,
+            "Authorization": authorization,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+            r.read()
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", "ignore")[:300]
+        raise RuntimeError(f"R2 PUT {key} -> HTTP {e.code}: {detail}") from None
+
 
 def upload_photo(url, key, user_id, photo_path):
+    """Upload a chat photo to R2 and return (r2_key, r2_key).
+
+    The second value is what gets stored in repair_photos.r2_file_key and the
+    estimation payload. The app signs reads from that key on demand, so no
+    public URL is produced any more.
+    """
     print(f"Uploading {photo_path}...")
-    filename = f"{int(time.time())}_{os.path.basename(photo_path)}"
-    path = f"chatbot/{user_id}/{filename}"
+    stamp = int(time.time() * 1000)
+    filename = f"{stamp}_{os.path.basename(photo_path)}"
+    r2_key = f"ops/chatbot/{user_id}/vehicle_intake/{filename}"
     with open(photo_path, "rb") as f:
         file_bytes = f.read()
-    _supabase_req(url, key, "POST", f"/object/revive-photos/{path}",
-                  payload=file_bytes, is_storage=True, content_type="image/jpeg")
-    print(f"  Uploaded to {path}")
-    public_url = f"{url.rstrip('/')}/storage/v1/object/public/revive-photos/{path}"
-    return public_url, path
+    _r2_put(r2_key, file_bytes)
+    print(f"  Uploaded to R2: {r2_key}")
+    return r2_key, r2_key
 
 
 # ---------------------------------------------------------------------------
@@ -428,13 +512,12 @@ def main():
                 print("Error: No photos provided for booking.", file=sys.stderr)
                 return 1
 
-            public_urls, photo_keys = [], []
+            photo_keys = []
             for p in photo_paths:
                 if not os.path.exists(p):
                     print(f"Warning: {p} not found. Skipping.")
                     continue
-                pub_url, p_key = upload_photo(url, key, profile["id"], p)
-                public_urls.append(pub_url)
+                _, p_key = upload_photo(url, key, profile["id"], p)
                 photo_keys.append(p_key)
 
             if not photo_keys:
