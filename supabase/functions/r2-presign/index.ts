@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { decode as base64Decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 // Issues short-lived presigned URLs for the R2 bucket. The Flutter app never
 // sees R2 credentials. Keys are generated here, always under the caller's uid.
@@ -14,6 +15,9 @@ const R2_BUCKET = Deno.env.get("R2_BUCKET") ?? "revive-photos";
 const REGION = "auto";
 const SERVICE = "s3";
 const PRESIGN_TTL_SECONDS = 300;
+// Hard cap for the relay path: one compressed phone photo is ~300 KB, so 8 MB
+// leaves room for full-resolution partner documents without opening a hole.
+const MAX_RELAY_BYTES = 8 * 1024 * 1024;
 
 // Upload scopes. The function derives the whole key, so a caller can only write
 // into the folders its scope allows — never outside them.
@@ -245,6 +249,59 @@ async function presign(method: "GET" | "PUT", key: string): Promise<string> {
   return `https://${host}${canonicalUri}?${canonicalQuery}&X-Amz-Signature=${signature}`;
 }
 
+// Resolves the folder a caller may write into, or returns the error response.
+// Shared by the presigned-upload and relay-upload actions so the scope rules
+// can never drift apart between them.
+async function resolveUploadDir(
+  body: {
+    scope?: string;
+    partner_id?: string;
+    job_id?: string;
+    stage_key?: string;
+    doc_type?: string;
+  },
+  uid: string,
+  token: string,
+  origin: string | null,
+): Promise<string | Response> {
+  switch (body.scope) {
+    case "learning":
+    case "estimator":
+    case "self":
+      return body.scope === "self" ? `${uid}` : `${uid}/${body.scope}`;
+    case "opsJob": {
+      const partnerId = body.partner_id ?? "";
+      const jobId = body.job_id ?? "";
+      const stageKey = body.stage_key ?? "";
+      if (!isUuid(partnerId) || !isUuid(jobId) || !/^[a-z0-9_]{2,40}$/.test(stageKey)) {
+        return json({ error: "Invalid ops job scope" }, 400, origin);
+      }
+      return `ops/${partnerId}/${jobId}/${stageKey}`;
+    }
+    case "partnerDocs":
+    case "partnerFacility": {
+      const partnerId = body.partner_id ?? "";
+      if (!isUuid(partnerId)) {
+        return json({ error: "Invalid partner" }, 400, origin);
+      }
+      if (!(await isMemberOf(token, partnerId))) {
+        return json({ error: "Forbidden" }, 403, origin);
+      }
+      let dir = PARTNER_SCOPES[body.scope](partnerId);
+      if (body.scope === "partnerDocs") {
+        const docType = body.doc_type ?? "";
+        if (!/^[a-z0-9_]{2,20}$/.test(docType)) {
+          return json({ error: "Invalid doc type" }, 400, origin);
+        }
+        dir = `${dir}/${docType}`;
+      }
+      return dir;
+    }
+    default:
+      return json({ error: "Invalid scope" }, 400, origin);
+  }
+}
+
 serve(async (req) => {
   const origin = req.headers.get("origin");
 
@@ -267,6 +324,8 @@ serve(async (req) => {
   const uid = userData.user.id;
 
   let body: {
+    content_base64?: string;
+    content_type?: string;
     action?: string;
     scope?: string;
     key?: string;
@@ -287,51 +346,59 @@ serve(async (req) => {
     if (!/^[a-z0-9]{2,5}$/.test(ext)) {
       return json({ error: "Invalid extension" }, 400, origin);
     }
-    const stamp = Date.now();
-    const rand = crypto.randomUUID();
-    let dir: string;
+    const dir = await resolveUploadDir(body, uid, token, origin);
+    if (typeof dir !== "string") return dir;
 
-    switch (body.scope) {
-      case "learning":
-      case "estimator":
-      case "self":
-        dir = body.scope === "self" ? `${uid}` : `${uid}/${body.scope}`;
-        break;
-      case "opsJob": {
-        const partnerId = body.partner_id ?? "";
-        const jobId = body.job_id ?? "";
-        const stageKey = body.stage_key ?? "";
-        if (!isUuid(partnerId) || !isUuid(jobId) || !/^[a-z0-9_]{2,40}$/.test(stageKey)) {
-          return json({ error: "Invalid ops job scope" }, 400, origin);
-        }
-        dir = `ops/${partnerId}/${jobId}/${stageKey}`;
-        break;
-      }
-      case "partnerDocs":
-      case "partnerFacility": {
-        const partnerId = body.partner_id ?? "";
-        if (!isUuid(partnerId)) {
-          return json({ error: "Invalid partner" }, 400, origin);
-        }
-        const allowed = await isMemberOf(token, partnerId);
-        if (!allowed) return json({ error: "Forbidden" }, 403, origin);
-        dir = PARTNER_SCOPES[body.scope](partnerId);
-        if (body.scope === "partnerDocs") {
-          const docType = body.doc_type ?? "";
-          if (!/^[a-z0-9_]{2,20}$/.test(docType)) {
-            return json({ error: "Invalid doc type" }, 400, origin);
-          }
-          dir = `${dir}/${docType}`;
-        }
-        break;
-      }
-      default:
-        return json({ error: "Invalid scope" }, 400, origin);
-    }
-
-    const key = `${dir}/${stamp}_${rand}.${ext}`;
+    const key = `${dir}/${Date.now()}_${crypto.randomUUID()}.${ext}`;
     const url = await presign("PUT", key);
     return json({ key, url, expiresIn: PRESIGN_TTL_SECONDS }, 200, origin);
+  }
+
+  // Relay upload: the browser posts the bytes here and the server PUTs them to
+  // R2 with its own SigV4 signature. A browser PUT straight to the bucket is
+  // gated on a bucket CORS policy, and `revive-photos` has none — every
+  // preflight answers 403 "CORS not configured for this bucket", which surfaces
+  // in the app as `ClientException: Failed to fetch`. Reads do not need it
+  // (<img> is not CORS-gated and the vision function fetches server-side), so
+  // only writes use this path.
+  if (body.action === "uploadProxy") {
+    const ext = (body.ext ?? "jpg").toLowerCase();
+    if (!/^[a-z0-9]{2,5}$/.test(ext)) {
+      return json({ error: "Invalid extension" }, 400, origin);
+    }
+    const dir = await resolveUploadDir(body, uid, token, origin);
+    if (typeof dir !== "string") return dir;
+
+    const encoded = body.content_base64 ?? "";
+    if (!encoded) return json({ error: "Missing content_base64" }, 400, origin);
+
+    let bytes: Uint8Array;
+    try {
+      bytes = base64Decode(encoded);
+    } catch {
+      return json({ error: "Invalid base64" }, 400, origin);
+    }
+    if (bytes.length === 0) return json({ error: "Empty file" }, 400, origin);
+    if (bytes.length > MAX_RELAY_BYTES) {
+      return json({ error: "File too large" }, 413, origin);
+    }
+
+    const contentType = body.content_type ?? "image/jpeg";
+    if (!/^(image\/[a-z0-9.+-]{1,30}|application\/pdf)$/.test(contentType)) {
+      return json({ error: "Invalid content type" }, 400, origin);
+    }
+
+    const key = `${dir}/${Date.now()}_${crypto.randomUUID()}.${ext}`;
+    const url = await presign("PUT", key);
+    const put = await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": contentType },
+      body: bytes,
+    });
+    if (!put.ok) {
+      return json({ error: `R2 upload failed (${put.status})` }, 502, origin);
+    }
+    return json({ key, size: bytes.length }, 200, origin);
   }
 
   if (body.action === "read") {

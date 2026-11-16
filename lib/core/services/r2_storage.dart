@@ -12,8 +12,10 @@
 // The scope decides where the object may land. The function derives the exact
 // key, so a caller can never write outside its own scope.
 
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -39,6 +41,11 @@ class R2Storage {
   R2Storage._();
 
   static SupabaseClient get _client => Supabase.instance.client;
+
+  /// Set once a direct browser PUT has been refused. The bucket has no CORS
+  /// policy, so every later upload skips the doomed attempt and goes straight
+  /// to the relay. Resets when the app restarts, which re-probes for free.
+  static bool _directUploadBlocked = false;
 
   /// A short-lived GET URL for [key]. Returns null when the key is empty or
   /// the caller is not allowed to read it.
@@ -75,31 +82,60 @@ class R2Storage {
     String ext = 'jpg',
     String contentType = 'image/jpeg',
   }) async {
-    final res = await _client.functions.invoke(
-      'r2-presign',
-      body: {
-        'action': 'upload',
-        'scope': scope.name,
-        'partner_id': partnerId,
-        'job_id': jobId,
-        'stage_key': stageKey,
-        'doc_type': docType,
-        'ext': ext,
-      },
-    );
-    final data = res.data;
-    if (data is! Map || data['url'] is! String || data['key'] is! String) {
-      throw Exception('Could not get an upload URL: ${data is Map ? data['error'] : data}');
+    final scopeFields = <String, dynamic>{
+      'scope': scope.name,
+      'partner_id': partnerId,
+      'job_id': jobId,
+      'stage_key': stageKey,
+      'doc_type': docType,
+      'ext': ext,
+    };
+
+    // Direct path: presign here, PUT from the client. Works on native builds
+    // and on web once the bucket carries a CORS policy.
+    if (!_directUploadBlocked) {
+      try {
+        final res = await _client.functions.invoke(
+          'r2-presign',
+          body: {'action': 'upload', ...scopeFields},
+        );
+        final data = res.data;
+        if (data is! Map || data['url'] is! String || data['key'] is! String) {
+          throw Exception('Could not get an upload URL: ${data is Map ? data['error'] : data}');
+        }
+        final put = await http.put(
+          Uri.parse(data['url'] as String),
+          body: bytes,
+          headers: {'Content-Type': contentType},
+        );
+        if (put.statusCode >= 200 && put.statusCode < 300) {
+          return data['key'] as String;
+        }
+        if (!kIsWeb) throw Exception('Photo upload failed (${put.statusCode})');
+      } catch (e) {
+        // On web the usual cause is a CORS preflight the bucket refuses, which
+        // reaches Dart as `ClientException: Failed to fetch`. Native has no
+        // preflight, so a failure there is real and must surface.
+        if (!kIsWeb) rethrow;
+        _directUploadBlocked = true;
+      }
     }
 
-    final put = await http.put(
-      Uri.parse(data['url'] as String),
-      body: bytes,
-      headers: {'Content-Type': contentType},
+    // Relay path: the function holds the R2 credentials and does the PUT, so
+    // the browser never talks to the bucket and CORS cannot block it.
+    final relay = await _client.functions.invoke(
+      'r2-presign',
+      body: {
+        'action': 'uploadProxy',
+        ...scopeFields,
+        'content_type': contentType,
+        'content_base64': base64Encode(bytes),
+      },
     );
-    if (put.statusCode < 200 || put.statusCode >= 300) {
-      throw Exception('Photo upload failed (${put.statusCode})');
+    final relayed = relay.data;
+    if (relayed is! Map || relayed['key'] is! String) {
+      throw Exception('Photo upload failed: ${relayed is Map ? relayed['error'] : relayed}');
     }
-    return data['key'] as String;
+    return relayed['key'] as String;
   }
 }
