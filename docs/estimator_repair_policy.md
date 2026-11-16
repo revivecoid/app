@@ -68,7 +68,7 @@ To set a price later, either:
 
 ```sql
 INSERT INTO pricing_rules (panel_id, panel_name, base_rate, severity_min, severity_max, mode, is_active)
-VALUES ('LABOR_BONGKAR_QUARTER_RH', 'Bongkar Quarter RH', 0, 1.0, 1.0, 'auto', true)
+VALUES ('LABOR_BONGKAR_QUARTER_RH', 'Bongkar Quarter RH', 450000, 1.0, 1.0, 'auto', true)
 ON CONFLICT (panel_id) DO UPDATE SET base_rate = EXCLUDED.base_rate;
 ```
 
