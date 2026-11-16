@@ -13,6 +13,7 @@ import '../../../core/l10n/app_localizations_extension.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/document_picker.dart';
 import '../../../core/utils/guest_session.dart';
+import '../../../core/utils/image_compressor.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/rev_app_bar.dart';
 
@@ -197,9 +198,32 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
 
   // ── uploads ───────────────────────────────────────────────────────────────
   // The relay carries a file as base64 (4/3 of its size) inside a ~8 MB request
-  // body, so 6 MB is the real ceiling per file. Checked before the upload starts
-  // rather than after it fails with an opaque 413.
-  static const int _maxFileBytes = 6 * 1024 * 1024;
+  // body, so 6 MB is the real ceiling there. A native build PUTs straight to R2
+  // — no preflight, no relay — so it can carry more, which leaves room for a
+  // scanned NIB that no image compressor can shrink.
+  static const int _maxRelayBytes = 6 * 1024 * 1024;
+  static const int _maxDirectBytes = 20 * 1024 * 1024;
+  int get _maxFileBytes => kIsWeb ? _maxRelayBytes : _maxDirectBytes;
+  int get _maxFileMb => _maxFileBytes ~/ (1024 * 1024);
+
+  /// Downscales a picked image before it is uploaded. A phone photo is 4–12 MB
+  /// raw while the compressed result is a few hundred KB, so shrinking first
+  /// keeps an ordinary workshop photo under the relay ceiling and off mobile
+  /// data. If the platform compressor fails the original bytes are used, so a
+  /// bad codec degrades to the old behaviour instead of losing the pick.
+  Future<Uint8List?> _compressForUpload(XFile file) async {
+    try {
+      final compressed = await ImageCompressor.compressImage(file);
+      if (compressed.isNotEmpty) return compressed;
+    } catch (_) {
+      // fall through to the original bytes
+    }
+    try {
+      return await file.readAsBytes();
+    } catch (_) {
+      return null;
+    }
+  }
 
   void _toast(String msg, {bool error = false}) {
     if (!mounted) return;
@@ -293,9 +317,15 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
     final f = await _imagePicker.pickImage(
         source: ImageSource.gallery, maxWidth: 1920, imageQuality: 80);
     if (f == null) return;
-    final bytes = await f.readAsBytes();
+    final bytes = await _compressForUpload(f);
+    if (bytes == null) {
+      _toast('Foto ${_photoLabels[i]} tidak bisa dibaca. Coba pilih ulang.',
+          error: true);
+      return;
+    }
     if (bytes.length > _maxFileBytes) {
-      _toast('Foto ${_photoLabels[i]} ${_mb(bytes.length)} MB — maksimum 6 MB.',
+      _toast(
+          'Foto ${_photoLabels[i]} ${_mb(bytes.length)} MB — maksimum $_maxFileMb MB.',
           error: true);
       return;
     }
@@ -306,10 +336,28 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
   Future<void> _pickDoc(String key) async {
     final f = await DocumentPicker.pick();
     if (f == null) return;
-    final bytes = await f.readAsBytes();
+    final isPdf = f.name.toLowerCase().endsWith('.pdf');
+    // A PDF goes up untouched — nothing here can shrink it, so only the size
+    // check applies. Images take the same compression as the facility photos.
+    Uint8List? bytes;
+    try {
+      bytes = isPdf ? await f.readAsBytes() : await _compressForUpload(f);
+    } catch (_) {
+      bytes = null;
+    }
+    if (bytes == null) {
+      _toast('${_docLabel(key)} tidak bisa dibaca. Coba pilih ulang.',
+          error: true);
+      return;
+    }
     if (bytes.length > _maxFileBytes) {
-      _toast('${_docLabel(key)} ${_mb(bytes.length)} MB — maksimum 6 MB. '
-          'Kompres dulu atau foto langsung.', error: true);
+      _toast(
+          isPdf
+              ? '${_docLabel(key)} ${_mb(bytes.length)} MB — maksimum '
+                  '$_maxFileMb MB. Kompres PDF-nya dulu atau foto dokumennya.'
+              : '${_docLabel(key)} ${_mb(bytes.length)} MB — maksimum '
+                  '$_maxFileMb MB.',
+          error: true);
       return;
     }
     await _replaceDoc(key, bytes, f.name);
@@ -967,7 +1015,7 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
             ? 'Mengunggah…'
             : uploaded
                 ? 'Tersimpan'
-                : (fn ?? 'PDF / JPG, maks 6 MB');
+                : (fn ?? 'PDF / JPG, maks $_maxFileMb MB');
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(

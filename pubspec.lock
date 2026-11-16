@@ -271,7 +271,7 @@ packages:
     source: hosted
     version: "1.1.0"
   flutter_image_compress_web:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: flutter_image_compress_web
       sha256: "91cc58e091a1e09c7683d216d579e2b964119a8527fc43b64dfdb00f1acc94ec"

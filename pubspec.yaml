@@ -36,6 +36,7 @@ dependencies:
   package_info_plus: ^10.2.1
 
   web: any
+  flutter_image_compress_web: ^0.1.5+1
 dev_dependencies:
   flutter_test:
     sdk: flutter
