@@ -54,10 +54,31 @@ CREATE POLICY "Admins read all ratings"
   USING (public.is_master_admin());
 
 -- ── the one call the customer makes ────────────────────────────────────────
+  -- Drop the smallint variant: Postgres will not cast an integer argument to
+  -- smallint when it resolves the function, so a plain 4 never matched the
+  -- signature and the call came back "function does not exist".
+  --
+  -- Dropped by OID: a plain DROP FUNCTION with the argument list does not
+  -- match once the function carries a default value.
+  DO $$
+  DECLARE
+    r record;
+  BEGIN
+    FOR r IN
+      SELECT oid
+        FROM pg_proc
+       WHERE proname = 'customer_confirm_handover'
+         AND pronamespace = 'public'::regnamespace
+    LOOP
+      EXECUTE 'DROP FUNCTION public.customer_confirm_handover(' ||
+              pg_get_function_identity_arguments(r.oid) || ') CASCADE';
+    END LOOP;
+  END $$;
+
 CREATE OR REPLACE FUNCTION public.customer_confirm_handover(
   p_job_id uuid,
-  p_rating smallint,
-  p_comment text DEFAULT NULL::text
+  p_rating integer,
+  p_comment text DEFAULT NULL
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -125,4 +146,4 @@ BEGIN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.customer_confirm_handover(uuid, smallint, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.customer_confirm_handover(uuid, integer, text) TO authenticated;
