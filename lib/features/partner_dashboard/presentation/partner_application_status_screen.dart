@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -27,32 +30,61 @@ class _PartnerApplicationStatusScreenState
   bool _loading = true;
   String? _error;
 
+  // ── contact verification ──────────────────────────────────────────────────
+  final _waCodeCtrl = TextEditingController();
+  final _emailCodeCtrl = TextEditingController();
+  final Map<String, bool> _busy = {'whatsapp': false, 'email': false};
+  final Map<String, String?> _msg = {'whatsapp': null, 'email': null};
+  final Map<String, DateTime> _resendAt = {};
+  Timer? _ticker;
+
   @override
   void initState() {
     super.initState();
     _load();
   }
 
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    _waCodeCtrl.dispose();
+    _emailCodeCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
-      if (mounted) setState(() { _loading = false; _error = 'Sesi tidak valid. Gunakan link dari email Anda.'; });
+      if (mounted) setState(() { _loading = false; _error = 'Sesi tidak valid. Buka ulang halaman ini.'; });
       return;
     }
 
-    try {
-      final email = user.email?.toLowerCase().trim();
-      if (email == null) throw Exception('Email tidak ditemukan di akun ini.');
+    const columns = 'id, shop_name, entity_name, owner_name, email, phone, status, '
+        'submitted_at, reviewed_at, revision_notes, rejection_reason, '
+        'tier, paint_brand, nib_file_key, npwp_file_key, siup_file_key, '
+        'ktp_file_key, facility_photo_keys, wa_verified, email_verified';
 
-      final rows = await Supabase.instance.client
+    try {
+      // The applicant files the application from an anonymous (guest) session,
+      // so `submitted_by` is the reliable link to the row — it exists before any
+      // email is clicked. Email lookup stays as the fallback for applicants who
+      // signed in with the magic link afterwards.
+      final own = await Supabase.instance.client
           .from('partner_applications')
-          .select('id, shop_name, entity_name, owner_name, email, status, '
-              'submitted_at, reviewed_at, revision_notes, rejection_reason, '
-              'tier, paint_brand, nib_file_key, npwp_file_key, siup_file_key, '
-              'ktp_file_key, facility_photo_keys, wa_verified')
-          .eq('email', email)
+          .select(columns)
+          .eq('submitted_by', user.id)
           .order('submitted_at', ascending: false)
           .limit(1);
+
+      var rows = own;
+      if (rows.isEmpty && user.email != null) {
+        rows = await Supabase.instance.client
+            .from('partner_applications')
+            .select(columns)
+            .eq('email', user.email!.toLowerCase().trim())
+            .order('submitted_at', ascending: false)
+            .limit(1);
+      }
 
       if (mounted) {
         setState(() {
@@ -166,6 +198,10 @@ class _PartnerApplicationStatusScreenState
             _buildBanner(t, status, app),
             const SizedBox(height: 24),
 
+            // ── Contact verification ─────────────────────────────────────────
+            _buildVerification(t),
+            const SizedBox(height: 20),
+
             // ── Timeline ─────────────────────────────────────────────────────
             _section(t, 'Timeline', [
               _row(t, 'Dikirim', submittedAt),
@@ -178,6 +214,7 @@ class _PartnerApplicationStatusScreenState
               _row(t, 'Dokumen Legal', '$docs / 4 diunggah'),
               _row(t, 'Foto Fasilitas', '$photos / 4 diunggah'),
               _row(t, 'WA Terverifikasi', app['wa_verified'] == true ? 'Ya ✓' : 'Belum'),
+              _row(t, 'Email Terverifikasi', app['email_verified'] == true ? 'Ya ✓' : 'Belum'),
             ]),
             const SizedBox(height: 20),
 
@@ -198,6 +235,252 @@ class _PartnerApplicationStatusScreenState
         ),
       ),
     );
+  }
+
+  // ── Verification ──────────────────────────────────────────────────────────
+  /// Calls an edge function and always returns a map: error bodies (429, 400)
+  /// are read from FunctionException.details and shown as ordinary messages, so
+  /// a cooldown or an exhausted attempt budget never surfaces as a crash.
+  Future<Map<String, dynamic>?> _invoke(String fn, Map<String, dynamic> body) async {
+    try {
+      final res = await Supabase.instance.client.functions.invoke(fn, body: body);
+      final d = res.data;
+      return d is Map ? Map<String, dynamic>.from(d) : null;
+    } on FunctionException catch (e) {
+      final d = e.details;
+      if (d is Map) return Map<String, dynamic>.from(d);
+      return {'error': 'Gagal menghubungi server (${e.status}).'};
+    } catch (e) {
+      return {'error': 'Gagal menghubungi server. Periksa koneksi Anda.'};
+    }
+  }
+
+  Future<void> _verifyCode(String channel) async {
+    final app = _app;
+    if (app == null || _busy[channel] == true) return;
+    final ctrl = channel == 'whatsapp' ? _waCodeCtrl : _emailCodeCtrl;
+    final code = ctrl.text.trim();
+    if (code.length != 6) {
+      setState(() => _msg[channel] = 'Masukkan 6 digit kode.');
+      return;
+    }
+    setState(() { _busy[channel] = true; _msg[channel] = null; });
+
+    final data = await _invoke('verify-partner-otp', {
+      'application_id': app['id'],
+      'channel': channel,
+      'code': code,
+    });
+    if (!mounted) return;
+
+    if (data != null && data['verified'] == true) {
+      ctrl.clear();
+      setState(() { _busy[channel] = false; _msg[channel] = 'Terverifikasi.'; });
+      await _load();
+      return;
+    }
+
+    var m = data?['error']?.toString() ?? 'Kode tidak valid.';
+    final left = data?['attempts_left'];
+    if (left is num) m = '$m Sisa $left percobaan.';
+    final retry = data?['retry_after_seconds'];
+    if (retry is num) {
+      _resendAt[channel] = DateTime.now().add(Duration(seconds: retry.toInt()));
+      _startTicker();
+    }
+    setState(() { _busy[channel] = false; _msg[channel] = m; });
+  }
+
+  Future<void> _resend(String channel) async {
+    final app = _app;
+    if (app == null || _busy[channel] == true || _cooldownLeft(channel) > 0) return;
+    setState(() { _busy[channel] = true; _msg[channel] = null; });
+
+    final data = await _invoke('send-partner-otp', {
+      'application_id': app['id'],
+      'channel': channel,
+    });
+    if (!mounted) return;
+
+    final wait = (data?['retry_after_seconds'] as num?)?.toInt();
+    if (wait != null && wait > 0) {
+      _resendAt[channel] = DateTime.now().add(Duration(seconds: wait));
+      _startTicker();
+    }
+    if (data != null && data['sent'] == true) {
+      setState(() { _busy[channel] = false; _msg[channel] = 'Kode baru dikirim.'; });
+      return;
+    }
+    if (data != null && data['verified'] == true) {
+      setState(() { _busy[channel] = false; _msg[channel] = 'Sudah terverifikasi.'; });
+      await _load();
+      return;
+    }
+    setState(() {
+      _busy[channel] = false;
+      _msg[channel] = data?['error']?.toString() ?? 'Gagal mengirim kode.';
+    });
+  }
+
+  int _cooldownLeft(String channel) {
+    final at = _resendAt[channel];
+    if (at == null) return 0;
+    final s = at.difference(DateTime.now()).inSeconds;
+    return s > 0 ? s : 0;
+  }
+
+  void _startTicker() {
+    _ticker?.cancel();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (tm) {
+      if (!mounted) { tm.cancel(); return; }
+      setState(() {});
+      if (!_resendAt.values.any((t) => t.isAfter(DateTime.now()))) tm.cancel();
+    });
+  }
+
+  Widget _buildVerification(ThemeData t) {
+    final app = _app!;
+    final waDone = app['wa_verified'] == true;
+    final emailDone = app['email_verified'] == true;
+
+    if (waDone && emailDone) {
+      return _section(t, 'Verifikasi Kontak', [
+        Row(children: [
+          const Icon(Icons.verified_user, size: 18, color: Color(0xFF10B981)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text('Nomor WhatsApp dan email sudah terverifikasi.',
+                style: TextStyle(fontSize: 12, color: t.colorScheme.onSurface)),
+          ),
+        ]),
+      ]);
+    }
+
+    return _section(t, 'Verifikasi Kontak', [
+      Text(
+        'Kode 6 digit dikirim ke WhatsApp dan email setelah pendaftaran dikirim. '
+        'Masukkan kodenya untuk memverifikasi kontak Anda.',
+        style: TextStyle(fontSize: 12, color: t.colorScheme.onSurfaceVariant, height: 1.5),
+      ),
+      const SizedBox(height: 14),
+      _otpChannelCard(t, 'whatsapp', waDone, _waCodeCtrl,
+          _maskPhone(app['phone']?.toString())),
+      const SizedBox(height: 10),
+      _otpChannelCard(t, 'email', emailDone, _emailCodeCtrl,
+          _maskEmail(app['email']?.toString())),
+    ]);
+  }
+
+  Widget _otpChannelCard(ThemeData t, String channel, bool done,
+      TextEditingController ctrl, String target) {
+    final isWa = channel == 'whatsapp';
+    final busy = _busy[channel] == true;
+    final msg = _msg[channel];
+    final left = _cooldownLeft(channel);
+    final good = msg != null && (msg.contains('Terverifikasi') || msg.contains('dikirim'));
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: t.colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+            color: done
+                ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                : t.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(isWa ? Icons.chat_bubble_outline : Icons.mail_outline,
+              size: 16,
+              color: done ? const Color(0xFF10B981) : AppColors.primaryContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(isWa ? 'WhatsApp — $target' : 'Email — $target',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: t.colorScheme.onSurface)),
+          ),
+          if (done) const Icon(Icons.check_circle, size: 16, color: Color(0xFF10B981)),
+        ]),
+        if (!done) ...[
+          const SizedBox(height: 10),
+          Row(children: [
+            Expanded(
+              child: TextField(
+                controller: ctrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(6),
+                ],
+                style: const TextStyle(fontSize: 14, letterSpacing: 4),
+                decoration: InputDecoration(
+                  hintText: '6 digit',
+                  filled: true,
+                  fillColor: t.brightness == Brightness.dark
+                      ? const Color(0xFF18191C)
+                      : t.colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  isDense: true,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: busy ? null : () => _verifyCode(channel),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryContainer,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14)),
+              child: busy
+                  ? const SizedBox(
+                      width: 14, height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Verifikasi', style: TextStyle(fontSize: 11)),
+            ),
+          ]),
+          const SizedBox(height: 4),
+          Row(children: [
+            Expanded(
+              child: Text(
+                msg ?? (left > 0 ? 'Kirim ulang tersedia dalam ${left}s.' : 'Tidak menerima kode?'),
+                style: TextStyle(
+                    fontSize: 11,
+                    color: msg != null
+                        ? (good ? const Color(0xFF10B981) : t.colorScheme.error)
+                        : t.colorScheme.onSurfaceVariant),
+              ),
+            ),
+            TextButton(
+              onPressed: (busy || left > 0) ? null : () => _resend(channel),
+              child: Text(left > 0 ? 'Kirim ulang (${left}s)' : 'Kirim ulang',
+                  style: const TextStyle(fontSize: 11)),
+            ),
+          ]),
+        ],
+      ]),
+    );
+  }
+
+  String _maskPhone(String? p) {
+    if (p == null || p.isEmpty) return '—';
+    if (p.length < 6) return p;
+    return '${p.substring(0, 4)}••••${p.substring(p.length - 3)}';
+  }
+
+  String _maskEmail(String? e) {
+    if (e == null || e.isEmpty) return '—';
+    final at = e.indexOf('@');
+    if (at <= 1) return e;
+    final local = e.substring(0, at);
+    final keep = local.length >= 3 ? 2 : 1;
+    return '${local.substring(0, keep)}•••${e.substring(at)}';
   }
 
   Widget _buildBanner(ThemeData t, String status, Map<String, dynamic> app) {

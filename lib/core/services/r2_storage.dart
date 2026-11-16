@@ -142,4 +142,24 @@ class R2Storage {
     }
     return relayed['key'] as String;
   }
+
+  /// Removes an object the caller owns (its own folder only). The delete is
+  /// performed by the edge function: a browser DELETE would need a CORS
+  /// preflight the bucket does not answer. Best effort — a failure here must
+  /// never block the flow that triggered it.
+  static Future<bool> deleteKey(String? key) async {
+    if (key == null || key.isEmpty) return false;
+    try {
+      final res = await _client.functions.invoke(
+        'r2-presign',
+        body: {'action': 'delete', 'key': key},
+      );
+      final data = res.data;
+      return data is Map && data['deleted'] == true;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[R2Storage] deleteKey failed for $key: $e');
+      return false;
+    }
+  }
 }

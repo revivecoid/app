@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import {
+  expiresAtFrom,
+  generateOtp,
+  normaliseMsisdn,
+  sha256hex,
+} from '../_shared/partner_otp.ts'
+import { queueOtp } from '../_shared/partner_otp_delivery.ts'
 
 // ── SEC-06: the only path that may create a partner application ───────────────
 // partner_applications carried an INSERT policy of `true` for roles {public}, so
@@ -157,6 +164,12 @@ serve(async (req) => {
     const tier = Number(payload.tier ?? 2)
     if (![1, 2, 3].includes(tier)) return bad('tier must be 1, 2, or 3', 400)
 
+    // The form shows "+62" as a prefix and keeps digits only, so what arrives is
+    // 8…, 08… or 62…. The WhatsApp JID and the notification outbox both need
+    // one MSISDN form, so normalise once, here, and store that.
+    const phone = normaliseMsisdn(String(payload.phone ?? '').trim())
+    if (!phone) return bad('Nomor WhatsApp tidak valid. Gunakan format 08xx-xxxx-xxxx.', 400)
+
     const throughput = Number(payload.throughput_capacity ?? 12)
     if (throughput < 1 || throughput > 50) return bad('throughput_capacity must be 1-50', 400)
 
@@ -180,7 +193,7 @@ serve(async (req) => {
         shop_name: String(payload.shop_name).trim(),
         owner_name: String(payload.owner_name).trim(),
         email,
-        phone: String(payload.phone).trim(),
+        phone,
         address: String(payload.address).trim(),
         tier,
         paint_brand: payload.paint_brand ?? 'glasurit',
@@ -200,7 +213,6 @@ serve(async (req) => {
         bank_name: String(payload.bank_name ?? '').trim() || null,
         bank_account_number: String(payload.bank_account_number ?? '').trim() || null,
         bank_account_holder: String(payload.bank_account_holder ?? '').trim() || null,
-        wa_verified: payload.wa_verified === true,
       })
       .select('id')
       .single()
@@ -287,12 +299,64 @@ serve(async (req) => {
       })
     }
 
+    // ── Contact verification codes ───────────────────────────────────────────
+    // The codes exist only now — after the applicant pressed Submit — and they
+    // go straight into notification_outbox. public.notify() cannot do this job:
+    // it fans out to known users/memberships and needs a notification_preferences
+    // consent row, and an applicant who just registered has neither.
+    const otpSummary: Record<string, { queued: boolean; error?: string }> = {}
+    const otpUserId = authUserId ?? uid
+    const { data: cfg } = await supabaseAdmin
+      .from('notification_config')
+      .select('whatsapp_provider, email_provider')
+      .eq('id', 1)
+      .single()
+
+    for (const channel of ['whatsapp', 'email'] as const) {
+      const to = channel === 'whatsapp' ? phone : email
+      const provider = channel === 'whatsapp' ? cfg?.whatsapp_provider : cfg?.email_provider
+      if (!to || !provider || provider === 'none') {
+        otpSummary[channel] = { queued: false, error: 'channel unavailable' }
+        continue
+      }
+      const code = generateOtp()
+      const hash = await sha256hex(code)
+      const sentAt = new Date()
+      const { error: challengeErr } = await supabaseAdmin
+        .from('partner_contact_otps')
+        .upsert({
+          application_id: inserted.id,
+          channel,
+          code_hash: hash,
+          to_address: to,
+          expires_at: expiresAtFrom(sentAt),
+          attempts: 0,
+          resend_count: 1,
+          last_sent_at: sentAt.toISOString(),
+        }, { onConflict: 'application_id,channel' })
+      if (challengeErr) {
+        otpSummary[channel] = { queued: false, error: challengeErr.message }
+        continue
+      }
+      const delivery = await queueOtp(supabaseAdmin, {
+        applicationId: inserted.id,
+        userId: otpUserId,
+        channel,
+        toAddress: to,
+        code,
+        shopName: String(payload.shop_name).trim(),
+        provider,
+      })
+      otpSummary[channel] = delivery
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         application_id: inserted.id,
         documents: docCount,
         photos: photoKeys.length,
+        otp: otpSummary,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

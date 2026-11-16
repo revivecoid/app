@@ -24,13 +24,18 @@ import '../../../core/widgets/rev_app_bar.dart';
 // Page 4: Location   — geolocation + map pin, service radius
 // Page 5: Bank+Sign  — bank details, consent, submit
 //
-// OTP flow:
-//   • WhatsApp OTP: send-partner-otp edge fn → verify-partner-otp before submit
-//   • Email: Supabase magic-link sent alongside WA OTP; link click flips
-//     email_verified flag on partner_applications row
+// Uploads: each file is uploaded the moment it is picked, not in one batch at
+// the end — a single failed file then costs one retry instead of the whole
+// application. Submit sends the keys; anything still missing is uploaded there.
+//
+// Contact verification: submit-partner-application creates the OTP and sends it
+// to WhatsApp and email at that moment. The applicant enters the code in the
+// dashboard (/partner/application-status).
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum _VerifyState { idle, sending, sent, verified, failed }
+/// Per-file upload state, so the form can show what actually reached the
+/// bucket instead of assuming that a picked file is a stored file.
+enum _UploadState { idle, uploading, uploaded, failed }
 
 class PartnerRegistrationScreen extends StatefulWidget {
   const PartnerRegistrationScreen({super.key});
@@ -64,6 +69,9 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
   // ── page 2 — photos ────────────────────────────────────────────────────────
   final _imagePicker = ImagePicker();
   final List<Uint8List?> _facilityPhotos = [null, null, null, null];
+  final List<String?> _facilityPhotoKeys = [null, null, null, null];
+  final List<_UploadState> _facilityUpload =
+      List.generate(4, (_) => _UploadState.idle);
 
   // ── page 3 — documents ────────────────────────────────────────────────────
   final Map<String, Uint8List?> _docFiles = {
@@ -72,6 +80,18 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
   final Map<String, String?> _docFileNames = {
     'nib': null, 'npwp': null, 'siup': null, 'ktp': null,
   };
+  final Map<String, String?> _docKeys = {
+    'nib': null, 'npwp': null, 'siup': null, 'ktp': null,
+  };
+  final Map<String, _UploadState> _docUpload = {
+    'nib': _UploadState.idle, 'npwp': _UploadState.idle,
+    'siup': _UploadState.idle, 'ktp': _UploadState.idle,
+  };
+
+  /// The guest session that owns the uploaded files. If the session changes the
+  /// old keys belong to a different uid and the server rejects them, so the
+  /// files are uploaded again under the new one.
+  String? _uploadUid;
 
   // ── page 4 — location ──────────────────────────────────────────────────────
   final _workshopAddressCtrl = TextEditingController();
@@ -87,17 +107,16 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
   final _bankHolderCtrl = TextEditingController();
   bool _consentChecked = false;
 
-  // ── OTP ───────────────────────────────────────────────────────────────────
-  _VerifyState _waVerify = _VerifyState.idle;
-  _VerifyState _emailVerify = _VerifyState.idle;
-  final _otpCtrl = TextEditingController();
-  String? _otpError;
-
   // ── submission ────────────────────────────────────────────────────────────
   bool _isSubmitting = false;
   String? _submitStage;
   String? _submitError;
   bool _isSuccess = false;
+
+  /// Filled from the submit response: the filed application and the per-channel
+  /// delivery status of the verification codes.
+  String? _applicationId;
+  Map? _otpDelivery;
 
   late final AnimationController _anim;
 
@@ -108,6 +127,14 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
         'Customer Lounge',
         'Mixing Station',
       ];
+
+  String _docLabel(String slot) => switch (slot) {
+        'nib' => 'NIB',
+        'npwp' => 'NPWP',
+        'siup' => 'SIUP',
+        'ktp' => 'KTP',
+        _ => slot.toUpperCase(),
+      };
 
   @override
   void initState() {
@@ -122,7 +149,7 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
     for (final c in [
       _entityNameCtrl, _brandNameCtrl, _picCtrl, _phoneCtrl, _emailCtrl,
       _legalAddressCtrl, _workshopAddressCtrl,
-      _bankNameCtrl, _bankAccountCtrl, _bankHolderCtrl, _otpCtrl,
+      _bankNameCtrl, _bankAccountCtrl, _bankHolderCtrl,
       _customPaintCtrl,
     ]) { c.dispose(); }
     super.dispose();
@@ -167,56 +194,97 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
     }
   }
 
-  // ── OTP — WhatsApp ─────────────────────────────────────────────────────────
-  Future<void> _sendWaOtp() async {
-    final phone = _phoneCtrl.text.trim();
-    if (phone.isEmpty) return;
-    setState(() { _waVerify = _VerifyState.sending; _otpError = null; });
-    try {
-      await Supabase.instance.client.functions.invoke(
-        'send-partner-otp',
-        body: {'phone': phone, 'channel': 'whatsapp'},
-      );
-      setState(() => _waVerify = _VerifyState.sent);
-    } catch (e) {
-      setState(() { _waVerify = _VerifyState.failed; _otpError = e.toString(); });
-    }
+  // ── uploads ───────────────────────────────────────────────────────────────
+  // The relay carries a file as base64 (4/3 of its size) inside a ~8 MB request
+  // body, so 6 MB is the real ceiling per file. Checked before the upload starts
+  // rather than after it fails with an opaque 413.
+  static const int _maxFileBytes = 6 * 1024 * 1024;
+
+  void _toast(String msg, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: error ? Colors.red.shade700 : null,
+    ));
   }
 
-  Future<void> _verifyWaOtp() async {
-    final phone = _phoneCtrl.text.trim();
-    final code = _otpCtrl.text.trim();
-    if (code.length != 6) return;
+  String _mb(int bytes) => (bytes / (1024 * 1024)).toStringAsFixed(1);
+
+  /// Uploads facility photo [i] and stores its key. Safe to call twice: the
+  /// second call simply replaces the key with the newer object.
+  Future<void> _uploadPhoto(int i) async {
+    final bytes = _facilityPhotos[i];
+    if (bytes == null || !mounted) return;
+    setState(() => _facilityUpload[i] = _UploadState.uploading);
     try {
-      final res = await Supabase.instance.client.functions.invoke(
-        'verify-partner-otp',
-        body: {'phone': phone, 'code': code},
+      final key = await R2Storage.uploadBytes(
+        bytes,
+        scope: R2Scope.partnerApplication,
+        docType: 'facility_slot$i',
       );
-      final ok = (res.data as Map?)?['verified'] == true;
+      if (!mounted) return;
       setState(() {
-        _waVerify = ok ? _VerifyState.verified : _VerifyState.failed;
-        _otpError = ok ? null : 'Kode OTP salah / expired';
+        _facilityPhotoKeys[i] = key;
+        _facilityUpload[i] = _UploadState.uploaded;
       });
     } catch (e) {
-      setState(() { _waVerify = _VerifyState.failed; _otpError = e.toString(); });
+      if (!mounted) return;
+      setState(() => _facilityUpload[i] = _UploadState.failed);
+      _toast('Gagal upload foto ${_photoLabels[i]}. Tap untuk coba lagi.', error: true);
     }
   }
 
-  // ── OTP — Email ────────────────────────────────────────────────────────────
-  Future<void> _sendEmailOtp() async {
-    final email = _emailCtrl.text.trim();
-    if (email.isEmpty) return;
-    setState(() => _emailVerify = _VerifyState.sending);
+  /// Same for a document slot. The extension decides the stored content type:
+  /// a NIB is usually a PDF, everything else is a phone photo.
+  Future<void> _uploadDoc(String slot) async {
+    final bytes = _docFiles[slot];
+    if (bytes == null || !mounted) return;
+    setState(() => _docUpload[slot] = _UploadState.uploading);
+    final name = (_docFileNames[slot] ?? '').toLowerCase();
+    final isPdf = name.endsWith('.pdf');
     try {
-      await Supabase.instance.client.auth.signInWithOtp(
-        email: email,
-        shouldCreateUser: false, // only verification, no account creation here
+      final key = await R2Storage.uploadBytes(
+        bytes,
+        scope: R2Scope.partnerApplication,
+        docType: slot,
+        ext: isPdf ? 'pdf' : 'jpg',
+        contentType: isPdf ? 'application/pdf' : 'image/jpeg',
       );
-      setState(() => _emailVerify = _VerifyState.sent);
+      if (!mounted) return;
+      setState(() {
+        _docKeys[slot] = key;
+        _docUpload[slot] = _UploadState.uploaded;
+      });
     } catch (e) {
-      // If user doesn't exist we still show "sent" — don't leak existence
-      setState(() => _emailVerify = _VerifyState.sent);
+      if (!mounted) return;
+      setState(() => _docUpload[slot] = _UploadState.failed);
+      _toast('Gagal upload ${_docLabel(slot)}. Tap untuk coba lagi.', error: true);
     }
+  }
+
+  /// A re-pick replaces the file, so the previous object is removed instead of
+  /// lingering in the bucket as an orphan.
+  Future<void> _replacePhoto(int i, Uint8List bytes) async {
+    final old = _facilityPhotoKeys[i];
+    setState(() {
+      _facilityPhotos[i] = bytes;
+      _facilityPhotoKeys[i] = null;
+      _facilityUpload[i] = _UploadState.uploading;
+    });
+    if (old != null) await R2Storage.deleteKey(old);
+    await _uploadPhoto(i);
+  }
+
+  Future<void> _replaceDoc(String slot, Uint8List bytes, String name) async {
+    final old = _docKeys[slot];
+    setState(() {
+      _docFiles[slot] = bytes;
+      _docFileNames[slot] = name;
+      _docKeys[slot] = null;
+      _docUpload[slot] = _UploadState.uploading;
+    });
+    if (old != null) await R2Storage.deleteKey(old);
+    await _uploadDoc(slot);
   }
 
   // ── photo picker ──────────────────────────────────────────────────────────
@@ -225,7 +293,12 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
         source: ImageSource.gallery, maxWidth: 1920, imageQuality: 80);
     if (f == null) return;
     final bytes = await f.readAsBytes();
-    if (mounted) setState(() => _facilityPhotos[i] = bytes);
+    if (bytes.length > _maxFileBytes) {
+      _toast('Foto ${_photoLabels[i]} ${_mb(bytes.length)} MB — maksimum 6 MB.',
+          error: true);
+      return;
+    }
+    await _replacePhoto(i, bytes);
   }
 
   // ── doc picker ────────────────────────────────────────────────────────────
@@ -233,12 +306,12 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
     final f = await DocumentPicker.pick();
     if (f == null) return;
     final bytes = await f.readAsBytes();
-    if (mounted) {
-      setState(() {
-        _docFiles[key] = bytes;
-        _docFileNames[key] = f.name;
-      });
+    if (bytes.length > _maxFileBytes) {
+      _toast('${_docLabel(key)} ${_mb(bytes.length)} MB — maksimum 6 MB. '
+          'Kompres dulu atau foto langsung.', error: true);
+      return;
     }
+    await _replaceDoc(key, bytes, f.name);
   }
 
   // ── submit ────────────────────────────────────────────────────────────────
@@ -257,51 +330,60 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
       final uid = await GuestSession.ensure();
       if (uid == null) throw Exception('Gagal memulai sesi upload. Coba lagi.');
 
+      // Every file was uploaded when it was picked. Anything that failed — or
+      // that was uploaded under a session which has since changed, making the
+      // key foreign to this uid — is retried here, one file at a time.
+      if (_uploadUid != null && _uploadUid != uid) {
+        for (var i = 0; i < _facilityPhotoKeys.length; i++) {
+          _facilityPhotoKeys[i] = null;
+        }
+        for (final k in _docKeys.keys) {
+          _docKeys[k] = null;
+        }
+      }
+      _uploadUid = uid;
+
       final failed = <String>[];
 
       // — photos
       final photoKeys = <Map<String, dynamic>>[];
       for (var i = 0; i < _facilityPhotos.length; i++) {
-        final bytes = _facilityPhotos[i];
-        if (bytes == null) continue;
-        stage('Upload foto ${_photoLabels[i]}…');
+        if (_facilityPhotos[i] == null) continue;
         final label = _photoLabels[i];
-        try {
-          final key = await R2Storage.uploadBytes(
-            bytes,
-            scope: R2Scope.partnerApplication,
-            docType: 'facility_slot$i',
-          );
-          photoKeys.add({'slot': i, 'label': label, 'file_key': key});
-        } catch (e) {
-          failed.add(label);
+        var key = _facilityPhotoKeys[i];
+        if (key == null) {
+          stage('Upload foto $label…');
+          await _uploadPhoto(i);
+          key = _facilityPhotoKeys[i];
         }
+        if (key == null) {
+          failed.add(label);
+          continue;
+        }
+        photoKeys.add({'slot': i, 'label': label, 'file_key': key});
       }
 
       // — documents
       final docKeys = <String, String>{};
       for (final t in _docFiles.keys) {
-        final bytes = _docFiles[t];
-        if (bytes == null) continue;
-        stage('Upload ${t.toUpperCase()}…');
-        final name = _docFileNames[t] ?? '$t.pdf';
-        final ext = name.contains('.') ? name.split('.').last.toLowerCase() : 'pdf';
-        try {
-          final key = await R2Storage.uploadBytes(
-            bytes,
-            scope: R2Scope.partnerApplication,
-            docType: t,
-            ext: ext,
-            contentType: ext == 'pdf' ? 'application/pdf' : 'image/jpeg',
-          );
-          docKeys[t] = key;
-        } catch (e) {
-          failed.add(t.toUpperCase());
+        if (_docFiles[t] == null) continue;
+        var key = _docKeys[t];
+        if (key == null) {
+          stage('Upload ${t.toUpperCase()}…');
+          await _uploadDoc(t);
+          key = _docKeys[t];
         }
+        if (key == null) {
+          failed.add(t.toUpperCase());
+          continue;
+        }
+        docKeys[t] = key;
       }
 
       if (failed.isNotEmpty) {
-        throw Exception('Gagal upload: ${failed.join(', ')}. Tidak ada data yang terkirim.');
+        throw Exception(
+            'Gagal upload: ${failed.join(', ')}. File lain sudah tersimpan — '
+            'tap file yang gagal untuk mencoba lagi, lalu submit ulang.');
       }
 
       stage('Mengirim aplikasi…');
@@ -338,7 +420,6 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
             'siup_file_key': docKeys['siup'],
             'ktp_file_key': docKeys['ktp'],
             'facility_photo_keys': photoKeys,
-            'wa_verified': _waVerify == _VerifyState.verified,
           },
         );
       } on FunctionException catch (e) {
@@ -355,7 +436,15 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
       }
 
       if (!mounted) return;
-      setState(() { _isSubmitting = false; _submitStage = null; _isSuccess = true; });
+      setState(() {
+        _isSubmitting = false;
+        _submitStage = null;
+        _isSuccess = true;
+        if (data is Map) {
+          _applicationId = data['application_id'] as String?;
+          _otpDelivery = data['otp'] as Map?;
+        }
+      });
     } catch (e) {
       debugPrint('partner_registration submit: $e');
       if (!mounted) return;
@@ -528,12 +617,26 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
         _field(t, l.partnerRegLegalAddress, _legalAddressCtrl, required: true, maxLines: 2),
         const SizedBox(height: 14),
 
-        // Phone with OTP
-        _buildPhoneOtpRow(t, l),
+        // Phone and email: plain fields now. The verification code is created
+        // by submit-partner-application and entered in the dashboard, so there
+        // is nothing to send or verify on this page.
+        _field(t, l.partnerRegPhone, _phoneCtrl,
+            required: true,
+            prefix: '+62',
+            keyboardType: TextInputType.phone,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
+        const SizedBox(height: 6),
+        Text('Kode verifikasi WhatsApp & email dikirim setelah aplikasi di-submit.',
+            style: TextStyle(fontSize: 11, color: t.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 14),
 
-        // Email with verification
-        _buildEmailVerifyRow(t, l),
+        _field(t, l.partnerRegEmail, _emailCtrl,
+            required: true, keyboardType: TextInputType.emailAddress,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return l.partnerRegEmailRequired;
+              if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v.trim())) return l.partnerRegEmailInvalid;
+              return null;
+            }),
         const SizedBox(height: 20),
 
         // Paint brand
@@ -541,118 +644,6 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
         const SizedBox(height: 8),
         _buildPaintRow(t),
       ],
-    );
-  }
-
-  Widget _buildPhoneOtpRow(ThemeData t, AppL l) {
-    final verified = _waVerify == _VerifyState.verified;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: _field(t, l.partnerRegPhone, _phoneCtrl,
-                  required: true,
-                  prefix: '+62',
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  suffixIcon: verified
-                      ? const Icon(Icons.verified, color: Colors.green, size: 18)
-                      : null),
-            ),
-            const SizedBox(width: 10),
-            _otpButton(t, l, _waVerify, _sendWaOtp),
-          ],
-        ),
-        if (_waVerify == _VerifyState.sent) ...[
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _field(t, l.partnerRegOtpCode, _otpCtrl,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)]),
-              ),
-              const SizedBox(width: 10),
-              ElevatedButton(
-                onPressed: _verifyWaOtp,
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryContainer,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14)),
-                child: Text(l.partnerRegVerify, style: const TextStyle(fontSize: 12)),
-              ),
-            ],
-          ),
-          if (_otpError != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(_otpError!, style: const TextStyle(fontSize: 11, color: Colors.red)),
-            ),
-        ],
-        if (_waVerify == _VerifyState.verified)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Row(children: [
-              const Icon(Icons.check_circle, size: 14, color: Colors.green),
-              const SizedBox(width: 4),
-              Text(l.partnerRegPhoneVerified, style: const TextStyle(fontSize: 11, color: Colors.green)),
-            ]),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildEmailVerifyRow(ThemeData t, AppL l) {
-    final sent = _emailVerify == _VerifyState.sent || _emailVerify == _VerifyState.verified;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(child: _field(t, l.partnerRegEmail, _emailCtrl,
-                required: true, keyboardType: TextInputType.emailAddress,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return l.partnerRegEmailRequired;
-                  if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v.trim())) return l.partnerRegEmailInvalid;
-                  return null;
-                })),
-            const SizedBox(width: 10),
-            _otpButton(t, l, _emailVerify, _sendEmailOtp),
-          ],
-        ),
-        if (sent)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Row(children: [
-              const Icon(Icons.mail_outline, size: 14, color: Colors.blue),
-              const SizedBox(width: 4),
-              Expanded(child: Text(l.partnerRegEmailSent, style: const TextStyle(fontSize: 11, color: Colors.blue))),
-            ]),
-          ),
-      ],
-    );
-  }
-
-  Widget _otpButton(ThemeData t, AppL l, _VerifyState state, VoidCallback onTap) {
-    final loading = state == _VerifyState.sending;
-    final done = state == _VerifyState.verified;
-    return SizedBox(
-      height: 46,
-      child: ElevatedButton(
-        onPressed: (loading || done) ? null : onTap,
-        style: ElevatedButton.styleFrom(
-            backgroundColor: done ? Colors.green : t.colorScheme.surfaceContainerHighest,
-            foregroundColor: done ? Colors.white : t.colorScheme.onSurface,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 14)),
-        child: loading
-            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-            : Text(done ? l.partnerRegVerified : l.partnerRegSendOtp, style: const TextStyle(fontSize: 11)),
-      ),
     );
   }
 
@@ -823,13 +814,28 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
   // PAGE 2 — Photos
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildPage2(ThemeData t, AppL l) {
-    final uploaded = _facilityPhotos.where((p) => p != null).length;
+    final picked = _facilityPhotos.where((p) => p != null).length;
+    final stored = _facilityUpload.where((s) => s == _UploadState.uploaded).length;
+    final busy = _facilityUpload.contains(_UploadState.uploading);
+    final failed = _facilityUpload.where((s) => s == _UploadState.failed).length;
+    final ok = stored == picked && picked > 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _pageTitle(t, Icons.photo_camera, l.partnerRegStep2, l.partnerRegStep2Sub),
         const SizedBox(height: 8),
-        Text('$uploaded / 4 ${l.partnerRegPhotosUploaded}', style: TextStyle(fontSize: 12, color: uploaded == 4 ? Colors.green : t.colorScheme.onSurfaceVariant)),
+        Text(
+          busy
+              ? 'Mengunggah $stored / $picked foto…'
+              : failed > 0
+                  ? '$stored / $picked foto tersimpan — $failed gagal, tap untuk coba lagi'
+                  : '$stored / 4 ${l.partnerRegPhotosUploaded}',
+          style: TextStyle(
+              fontSize: 12,
+              color: failed > 0
+                  ? Colors.red
+                  : (ok ? Colors.green : t.colorScheme.onSurfaceVariant)),
+        ),
         const SizedBox(height: 20),
         GridView.count(
           crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
@@ -844,14 +850,27 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
 
   Widget _photoBox(ThemeData t, int i) {
     final bytes = _facilityPhotos[i];
+    final state = _facilityUpload[i];
     return GestureDetector(
-      onTap: () => _pickPhoto(i),
+      onTap: () {
+        // A stored file is replaced by picking again; a failed one retries the
+        // upload it already holds before asking for a new file.
+        if (bytes != null && state == _UploadState.failed) {
+          _uploadPhoto(i);
+        } else {
+          _pickPhoto(i);
+        }
+      },
       child: Container(
         decoration: BoxDecoration(
           color: bytes == null ? t.colorScheme.surfaceContainer : null,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: bytes != null ? Colors.green.withValues(alpha: 0.5) : AppColors.primaryContainer.withValues(alpha: 0.3),
+            color: state == _UploadState.failed
+                ? Colors.red.withValues(alpha: 0.6)
+                : state == _UploadState.uploaded
+                    ? Colors.green.withValues(alpha: 0.5)
+                    : AppColors.primaryContainer.withValues(alpha: 0.3),
             width: 1.5,
           ),
         ),
@@ -861,13 +880,30 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
                 Image.memory(bytes, fit: BoxFit.cover),
                 Positioned(top: 6, right: 6, child: Container(
                   padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-                  child: const Icon(Icons.check, size: 10, color: Colors.white),
+                  decoration: BoxDecoration(
+                    color: state == _UploadState.failed
+                        ? Colors.red
+                        : state == _UploadState.uploaded
+                            ? Colors.green
+                            : Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: state == _UploadState.uploading
+                      ? const SizedBox(
+                          width: 10, height: 10,
+                          child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white))
+                      : Icon(
+                          state == _UploadState.failed ? Icons.refresh : Icons.check,
+                          size: 10, color: Colors.white),
                 )),
                 Positioned(bottom: 0, left: 0, right: 0, child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   color: Colors.black.withValues(alpha: 0.55),
-                  child: Text(_photoLabels[i], style: const TextStyle(fontSize: 10, color: Colors.white)),
+                  child: Text(
+                    state == _UploadState.failed
+                        ? '${_photoLabels[i]} — gagal'
+                        : _photoLabels[i],
+                    style: const TextStyle(fontSize: 10, color: Colors.white)),
                 )),
               ])
             : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -913,32 +949,88 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
   Widget _docRow(ThemeData t, AppL l, IconData icon, String code, String name, String key) {
     final has = _docFiles[key] != null;
     final fn = _docFileNames[key];
+    final state = _docUpload[key] ?? _UploadState.idle;
+    final uploaded = state == _UploadState.uploaded;
+    final failed = state == _UploadState.failed;
+    final stateLabel = failed
+        ? 'Gagal upload — tap untuk coba lagi'
+        : state == _UploadState.uploading
+            ? 'Mengunggah…'
+            : uploaded
+                ? 'Tersimpan'
+                : (fn ?? 'PDF / JPG, maks 6 MB');
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: t.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: has ? Colors.green.withValues(alpha: 0.4) : t.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+        border: Border.all(
+            color: failed
+                ? Colors.red.withValues(alpha: 0.5)
+                : uploaded
+                    ? Colors.green.withValues(alpha: 0.4)
+                    : t.colorScheme.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: Row(children: [
         Container(
           width: 36, height: 36,
-          decoration: BoxDecoration(color: has ? Colors.green.withValues(alpha: 0.1) : AppColors.primaryContainer.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-          child: Icon(has ? Icons.check_circle_outline : icon, color: has ? Colors.green : AppColors.primaryContainer, size: 20),
+          decoration: BoxDecoration(
+              color: failed
+                  ? Colors.red.withValues(alpha: 0.1)
+                  : uploaded
+                      ? Colors.green.withValues(alpha: 0.1)
+                      : AppColors.primaryContainer.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8)),
+          child: state == _UploadState.uploading
+              ? const Padding(
+                  padding: EdgeInsets.all(9),
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : Icon(
+                  failed
+                      ? Icons.refresh
+                      : uploaded
+                          ? Icons.check_circle_outline
+                          : icon,
+                  color: failed ? Colors.red : uploaded ? Colors.green : AppColors.primaryContainer,
+                  size: 20),
         ),
         const SizedBox(width: 14),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('$code — $name', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: t.colorScheme.onSurface)),
-          Text(fn ?? 'PDF / JPG, maks 10 MB', style: TextStyle(fontSize: 10, color: has ? Colors.green : t.colorScheme.onSurfaceVariant), overflow: TextOverflow.ellipsis),
+          Text(stateLabel,
+              style: TextStyle(
+                  fontSize: 10,
+                  color: failed
+                      ? Colors.red
+                      : uploaded
+                          ? Colors.green
+                          : t.colorScheme.onSurfaceVariant),
+              overflow: TextOverflow.ellipsis),
         ])),
         const SizedBox(width: 10),
         ElevatedButton(
-          onPressed: () => _pickDoc(key),
+          onPressed: () {
+            if (has && failed) {
+              _uploadDoc(key);
+            } else {
+              _pickDoc(key);
+            }
+          },
           style: ElevatedButton.styleFrom(
-              backgroundColor: has ? Colors.green.withValues(alpha: 0.1) : t.colorScheme.surfaceContainerHighest,
-              foregroundColor: has ? Colors.green : t.colorScheme.onSurface,
+              backgroundColor: uploaded
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : failed
+                      ? Colors.red.withValues(alpha: 0.1)
+                      : t.colorScheme.surfaceContainerHighest,
+              foregroundColor: uploaded
+                  ? Colors.green
+                  : failed
+                      ? Colors.red
+                      : t.colorScheme.onSurface,
               elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-          child: Text(has ? l.partnerRegReplace : l.partnerRegSelectFile, style: const TextStyle(fontSize: 11)),
+          child: Text(
+              has ? l.partnerRegReplace : l.partnerRegSelectFile,
+              style: const TextStyle(fontSize: 11)),
         ),
       ]),
     );
@@ -1148,27 +1240,80 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
   Widget _buildSuccess(ThemeData t, AppL l) {
     final photos = _facilityPhotos.where((p) => p != null).length;
     final docs = _docFiles.values.where((f) => f != null).length;
+    final wa = _otpDelivery?['whatsapp'];
+    final mail = _otpDelivery?['email'];
+    final waQueued = wa is Map && wa['queued'] == true;
+    final mailQueued = mail is Map && mail['queued'] == true;
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(28),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.check_circle, size: 80, color: Colors.green),
-          const SizedBox(height: 24),
-          Text(l.partnerRegSuccessTitle, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: t.colorScheme.onSurface)),
+          const Icon(Icons.check_circle, size: 72, color: Colors.green),
+          const SizedBox(height: 20),
+          Text(l.partnerRegSuccessTitle, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: t.colorScheme.onSurface), textAlign: TextAlign.center),
           const SizedBox(height: 12),
           Text(l.partnerRegSuccessBody, style: TextStyle(fontSize: 14, color: t.colorScheme.onSurfaceVariant), textAlign: TextAlign.center),
           const SizedBox(height: 8),
           Text('$photos ${l.partnerRegSuccessPhotos} • $docs ${l.partnerRegSuccessDocs}',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: t.colorScheme.onSurface)),
-          const SizedBox(height: 32),
+
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: t.colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.primaryContainer.withValues(alpha: 0.3)),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                const Icon(Icons.mark_email_read_outlined, size: 18, color: AppColors.primaryContainer),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('Kode verifikasi sudah dikirim',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: t.colorScheme.onSurface)),
+                ),
+              ]),
+              const SizedBox(height: 8),
+              _deliveryLine(t, 'WhatsApp', waQueued),
+              const SizedBox(height: 4),
+              _deliveryLine(t, 'Email', mailQueued),
+              const SizedBox(height: 8),
+              Text(
+                'Masukkan kode 6 digit di dashboard untuk memverifikasi nomor dan email Anda.',
+                style: TextStyle(fontSize: 11, color: t.colorScheme.onSurfaceVariant),
+              ),
+            ]),
+          ),
+
+          const SizedBox(height: 24),
           ElevatedButton(
+            onPressed: _applicationId == null
+                ? null
+                : () => context.go('/partner/application-status'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryContainer, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14)),
+            child: const Text('Verifikasi Sekarang'),
+          ),
+          const SizedBox(height: 10),
+          TextButton(
             onPressed: () => context.go('/'),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryContainer, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14)),
             child: Text(l.partnerRegGoHome),
           ),
         ]),
       ),
     );
+  }
+
+  Widget _deliveryLine(ThemeData t, String channel, bool queued) {
+    return Row(children: [
+      Icon(queued ? Icons.check_circle : Icons.error_outline,
+          size: 14, color: queued ? Colors.green : Colors.orange),
+      const SizedBox(width: 6),
+      Text(
+        queued ? '$channel: terkirim' : '$channel: belum terkirim — kirim ulang dari dashboard',
+        style: TextStyle(fontSize: 11, color: queued ? Colors.green : Colors.orange.shade800),
+      ),
+    ]);
   }
 
   // ── shared helpers ────────────────────────────────────────────────────────

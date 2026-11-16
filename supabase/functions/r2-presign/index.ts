@@ -203,7 +203,7 @@ function encodeRfc3986(s: string): string {
   );
 }
 
-async function presign(method: "GET" | "PUT", key: string): Promise<string> {
+async function presign(method: "GET" | "PUT" | "DELETE", key: string): Promise<string> {
   const host = `${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
   const now = new Date();
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
@@ -425,6 +425,23 @@ serve(async (req) => {
     }
     const url = await presign("GET", key);
     return json({ key, url, expiresIn: PRESIGN_TTL_SECONDS }, 200, origin);
+  }
+
+  if (body.action === "delete") {
+    // Owner-only. The caller may only remove objects from their own folder;
+    // partner, ops and facility objects are managed server-side and must not be
+    // deletable from a browser session. The DELETE itself is performed here —
+    // a browser DELETE would need a CORS preflight the bucket does not answer.
+    const key = body.key ?? "";
+    if (!key || key.includes("..") || !key.startsWith(`${uid}/`)) {
+      return json({ error: "Forbidden" }, 403, origin);
+    }
+    const url = await presign("DELETE", key);
+    const del = await fetch(url, { method: "DELETE" });
+    if (!del.ok && del.status !== 404) {
+      return json({ error: `R2 delete failed (${del.status})` }, 502, origin);
+    }
+    return json({ key, deleted: true }, 200, origin);
   }
 
   if (body.action === "list") {
