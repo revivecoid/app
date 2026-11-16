@@ -278,6 +278,17 @@ async function resolveUploadDir(
       }
       return `ops/${partnerId}/${jobId}/${stageKey}`;
     }
+    case "partnerApplication": {
+      // File a prospective partner uploads BEFORE a partner row exists, so there
+      // is no membership to check — the guard is the caller's own folder, which
+      // is exactly the '<uid>/partner-applications/' prefix that
+      // submit-partner-application re-checks when the application is filed.
+      const docType = body.doc_type ?? "";
+      if (!/^[a-z0-9_]{2,20}$/.test(docType)) {
+        return json({ error: "Invalid doc type" }, 400, origin);
+      }
+      return `${uid}/partner-applications/${docType}`;
+    }
     case "partnerDocs":
     case "partnerFacility": {
       const partnerId = body.partner_id ?? "";

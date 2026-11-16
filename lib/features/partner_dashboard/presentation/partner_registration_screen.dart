@@ -269,8 +269,8 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
         try {
           final key = await R2Storage.uploadBytes(
             bytes,
-            scope: R2Scope.self,
-            docType: 'application_facility_slot$i',
+            scope: R2Scope.partnerApplication,
+            docType: 'facility_slot$i',
           );
           photoKeys.add({'slot': i, 'label': label, 'file_key': key});
         } catch (e) {
@@ -289,8 +289,8 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
         try {
           final key = await R2Storage.uploadBytes(
             bytes,
-            scope: R2Scope.self,
-            docType: 'application_doc_$t',
+            scope: R2Scope.partnerApplication,
+            docType: t,
             ext: ext,
             contentType: ext == 'pdf' ? 'application/pdf' : 'image/jpeg',
           );

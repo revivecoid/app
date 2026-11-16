@@ -26,8 +26,12 @@ enum R2Scope {
   /// <uid>/estimator/... — customer damage photos for an estimate
   estimator,
 
-  /// <uid>/... — payment proofs, partner application documents
+  /// <uid>/... — payment proofs
   self,
+
+  /// <uid>/partner-applications/<docType>/... — documents and facility photos
+  /// for an application filed before a partner row exists.
+  partnerApplication,
 
   /// ops/<partnerId>/<jobId>/<stageKey>/... — ops milestone photos
   opsJob,
