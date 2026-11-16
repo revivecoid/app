@@ -405,7 +405,10 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
                       if (isEstimated) {
                         context.push('/booking/$jobId');
                       } else if (isInvoiced) {
-                        context.push('/checkout/$jobId?paymentOnly=true');
+                        // The invoice is reviewed and approved here; payment
+                        // follows that approval, so /checkout was the wrong
+                        // door — the customer never saw the itemised invoice.
+                        context.push('/invoice/$jobId');
                       } else {
                         context.push('/checkout/$jobId');
                       }
@@ -918,12 +921,13 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
   }
 
   Widget _buildTrustBadges(ThemeData theme, AsyncValue<CmsL10n> cmsAsync, bool isId) {
-    final cms = cmsAsync.orEmpty;
-    final b1v = cms.t('badge_1_value', en: '38+', id: '38+');
-    final b1l = cms.t('badge_1_label', en: 'Partner Hubs', id: 'Bengkel Mitra');
-    final b2v = cms.t('badge_2_value', en: '4.9/5', id: '4.9/5');
-    final b2l = cms.t('badge_2_label', en: 'Customer Rating', id: 'Rating Pelanggan');
-    final b3v = cms.t('badge_3_value', en: '12K+', id: '12K+');
+    // This block used to advertise "38+ partner hubs", "4.9/5 rating",
+    // "12K+ drivers", "98.7% on-time delivery verified by telemetry", "Garda
+    // Oto & Astra SLA compliant" and a 24-month paint guarantee. None of it
+    // was true: the pilot runs with one workshop, no ratings exist, no insurer
+    // integration exists and no warranty programme exists. A promise the
+    // platform cannot keep is worse than no promise, so the block now states
+    // what re-V actually does.
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -935,16 +939,17 @@ class _CustomerLandingScreenState extends ConsumerState<CustomerLandingScreen> {
       ),
       child: Column(
         children: [
-          Text(isId ? 'STANDAR TERVERIFIKASI' : 'VERIFIED STANDARDS', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
+          Text(isId ? 'ALUR KERJA TERBUKA' : 'AN OPEN FLOW', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Text(isId ? 'Terpercaya oleh Ribuan Pengemudi di Jabodetabek dan Bandung' : 'Trusted by Thousands Across Jabodetabek and Bandung',
+          Text(isId ? 'Mulai dari estimasi AI, harga akhir dari bengkel, dan foto progres yang bisa Anda cek sendiri'
+              : 'Start with an AI estimate, get the final price from the workshop, and check the progress photos yourself',
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          _buildBadgeItem(theme, '$b1v $b1l', isId ? 'Pusat di Jakarta Bogor Depok Tangerang Bekasi dan Bandung' : '38+ Centers in Jakarta Bogor Depok Tangerang Bekasi and Bandung', Icons.hub, theme.colorScheme.primary),
+          _buildBadgeItem(theme, isId ? 'Estimasi AI untuk kerusakan bodi' : 'AI estimate for body damage', isId ? 'Perkiraan awal, bukan harga final' : 'A first estimate, not the final price', Icons.auto_awesome, theme.colorScheme.primary),
           const SizedBox(height: 8),
-          _buildBadgeItem(theme, 'Garda Oto & Astra SLA Compliant', isId ? 'Integrasi langsung asuransi & garansi' : 'Direct insurance paperwork integration & warranty', Icons.shield, theme.colorScheme.primary),
+          _buildBadgeItem(theme, isId ? 'Harga final dari bengkel mitra' : 'Final price from the partner workshop', isId ? 'Ditetukan setelah inspeksi fisik, disetujui lewat invoice' : 'Set after the physical inspection, approved on the invoice', Icons.receipt_long_outlined, theme.colorScheme.primary),
           const SizedBox(height: 8),
-          _buildBadgeItem(theme, '$b2v $b2l ($b3v+ ${isId ? "Pengemudi" : "Drivers"})', isId ? '98,7% metrik pengiriman tepat waktu terverifikasi telemetri' : '98.7% on-time delivery metric verified by telemetry', Icons.star, theme.colorScheme.secondary),
+          _buildBadgeItem(theme, isId ? 'Foto progres di setiap tahap' : 'Progress photos at every stage', isId ? 'Dokumentasi pekerjaan, dapat Anda buka di aplikasi' : 'Work documentation you can open in the app', Icons.photo_camera_outlined, theme.colorScheme.secondary),
           const SizedBox(height: 16),
           Center(
             child: TextButton.icon(

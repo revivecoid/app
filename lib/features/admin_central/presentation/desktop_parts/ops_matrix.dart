@@ -84,20 +84,8 @@ class _OpsMatrixContent extends StatelessWidget {
                   label: 'Unreconciled Slips',
                   value: '${pendingJobs.length} Action Required',
                   highlight: pendingJobs.isNotEmpty),
-              OutlinedButton.icon(
-                onPressed: () {},
-                icon: Icon(Icons.history_rounded,
-                    size: 16, color: cs.onSurface),
-                label: Text('Gateway Audit',
-                    style: TextStyle(
-                        color: cs.onSurface, fontSize: 13)),
-                style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: cs.outline),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8))),
-              ),
+              // "Gateway Audit" used to sit here with an empty handler. There is
+              // no audit trail behind it, so it was a button that did nothing.
             ]),
           ]),
           const SizedBox(height: 16),
@@ -147,11 +135,8 @@ class _OpsMatrixContent extends StatelessWidget {
                       fontSize: 12,
                       color: cs.onSurfaceVariant)),
               const SizedBox(width: 12),
-              IconButton(
-                  icon: Icon(Icons.download_rounded,
-                      color: cs.onSurfaceVariant, size: 20),
-                  tooltip: 'Export',
-                  onPressed: () {}),
+              // The download icon next to this label had an empty handler:
+              // there is no export yet, so it is gone rather than pretending.
             ]),
           ),
           const SizedBox(height: 16),
@@ -560,35 +545,35 @@ class _StatusBadge extends StatelessWidget {
       case '3_booked':
         bg = cs.primary.withValues(alpha: 0.1);
         fg = cs.primary;
-        label = 'Pending Verification';
+        label = jobStatusLabel(status);
         icon = Icons.circle;
       case '3_inspected':
         bg = const Color(0xFFf59e0b).withValues(alpha: 0.15);
         fg = const Color(0xFFb45309);
-        label = 'AWAITING PAYMENT';
+        label = jobStatusLabel(status);
         icon = Icons.receipt_long_outlined;
       case 'overdue':
         bg = cs.secondaryContainer.withValues(alpha: 0.3);
         fg = cs.onSecondaryContainer;
-        label = 'PAYMENT OVERDUE';
+        label = 'Bayar Terlambat';
         icon = Icons.warning_amber_rounded;
       case '6_in_progress':
         bg = const Color(0xFF0ea5e9).withValues(alpha: 0.15);
         fg = const Color(0xFF0369a1);
-        label = 'IN PROGRESS';
+        label = jobStatusLabel(status);
         icon = Icons.construction_rounded;
       case '4_paid':
       case '5_scheduled':
         bg = const Color(0xFF10b981).withValues(alpha: 0.1);
         fg = const Color(0xFF059669);
-        label = status == '4_paid' ? 'PAID' : jobStatusLabel(status).toUpperCase(); // S-08: remove dead '5_scheduled'
+        label = jobStatusLabel(status); // S-08: remove dead '5_scheduled'
         icon = Icons.event_available_rounded;
       default:
         bg = cs.surfaceContainerHigh;
         fg = cs.onSurfaceVariant;
-        label = status
-            .replaceAll('_', ' ')
-            .toUpperCase();
+        // Raw codes like "2_estimated" were shown to admins; the label map
+        // keeps the admin screens in the same language as the rest of the app.
+        label = jobStatusLabel(status);
         icon = Icons.radio_button_unchecked;
     }
     return Container(

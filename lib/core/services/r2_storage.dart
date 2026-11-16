@@ -29,6 +29,10 @@ enum R2Scope {
   /// <uid>/... — payment proofs
   self,
 
+  /// jobs/<jobId>/payment_proof/... — the slip of a manual transfer. The key
+  /// shape is fixed by submit_payment_proof on the server.
+  paymentProof,
+
   /// <uid>/partner-applications/<docType>/... — documents and facility photos
   /// for an application filed before a partner row exists.
   partnerApplication,

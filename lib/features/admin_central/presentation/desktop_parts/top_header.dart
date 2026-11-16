@@ -99,7 +99,8 @@ class _TopHeader extends StatelessWidget {
           IconButton(
               icon: Icon(Icons.notifications_outlined,
                   color: cs.onSurface),
-              onPressed: () {}),
+              tooltip: 'Notifikasi',
+              onPressed: () => context.push('/notifications')),
           Positioned(
               top: 8,
               right: 8,

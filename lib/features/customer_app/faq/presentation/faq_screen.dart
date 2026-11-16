@@ -27,13 +27,13 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
     {'q': 'Can I choose which partner workshop handles my repair?',
      'a': 'Yes. After receiving the AI estimate, you will see a list of certified partner workshops in your area. You can select one based on ratings, distance, and availability.'},
     {'q': 'Is the repair quality guaranteed?',
-     'a': 'All re-V certified partners adhere to our SLA standards, and all repairs come with a 24-month warranty on workmanship and paint matching verified by our digital telemetry certificate.'},
+     'a': 'Not by re-V. There is no warranty programme yet — the final price and the terms come from the partner workshop on the invoice, and any guarantee is whatever that workshop offers on its own invoice. What re-V does control is the process: an AI estimate first, a final price after the physical inspection, and progress photos of the work.'},
     {'q': 'How do I track my repair progress?',
-     'a': 'Open the "Digital Garage" section of your profile. The Live Tracker shows real-time stage updates — from intake, through active bodywork and painting, to handover. Each stage is photo-documented.'},
-    {'q': 'What is the Revive 24-Month Paint Guarantee?',
-     'a': 'Every job completed through re-V includes a digitally signed 24-month guarantee certificate covering paint adhesion, colour accuracy, and surface finish. It is stored in your Garage Profile.'},
+     'a': 'Open the "Digital Garage" section of your profile. The Live Tracker shows the current stage — from intake, through active bodywork and painting, to handover. Each stage is photo-documented.'},
+    {'q': 'Is there a Revive paint guarantee?',
+     'a': 'No. There is no re-V guarantee certificate today, and none is issued after handover. If a partner workshop offers a guarantee for its own work, it is written on that workshop\'s invoice.'},
     {'q': 'How are insurance claims handled?',
-     'a': 'Link your Garda Oto or Astra insurance policy in Profile → Saved Insurance Policies. Our platform auto-generates the required loss-adjustment documentation and submits directly to your insurer.'},
+     'a': 'They are not handled automatically yet. There is no Garda Oto or Astra integration, and no insurance document is submitted on your behalf — please contact the workshop or your insurer directly.'},
   ];
 
   static const _defaultFaqId = [
@@ -42,13 +42,13 @@ class _FaqScreenState extends ConsumerState<FaqScreen> {
     {'q': 'Apakah saya bisa memilih bengkel partner yang menangani perbaikan?',
      'a': 'Ya. Setelah menerima estimasi AI, Anda akan melihat daftar bengkel partner tersertifikasi di area Anda. Anda dapat memilih berdasarkan rating, jarak, dan ketersediaan.'},
     {'q': 'Apakah ada garansi untuk hasil perbaikan?',
-     'a': 'Semua partner tersertifikasi re-V mengikuti standar SLA kami. Setiap perbaikan dilindungi garansi 24 bulan untuk pengerjaan dan pencocokan warna cat.'},
+     'a': 'Garansi dari re-V belum ada. Harga final dan ketentuan pengerjaan berasal dari bengkel mitra pada invoice, dan jaminan apa pun mengikuti invoice bengkel tersebut. Yang dikendalikan re-V adalah alurnya: estimasi AI lebih dulu, harga final setelah inspeksi fisik, dan foto progres pengerjaan.'},
     {'q': 'Bagaimana cara melacak status perbaikan kendaraan saya?',
-     'a': 'Buka bagian "Digital Garage" di profil Anda. Live Tracker menampilkan pembaruan tahap real-time — dari intake, pengerjaan bodi dan pengecatan, hingga serah terima.'},
-    {'q': 'Apa itu Revive 24-Month Paint Guarantee?',
-     'a': 'Setiap pekerjaan yang diselesaikan melalui re-V mencakup sertifikat garansi 24 bulan yang ditandatangani secara digital, mencakup adhesi cat, akurasi warna, dan kualitas permukaan.'},
+     'a': 'Buka bagian "Digital Garage" di profil Anda. Live Tracker menampilkan tahap yang sedang berjalan — dari intake, pengerjaan bodi dan pengecatan, hingga serah terima. Setiap tahap didokumentasi dengan foto.'},
+    {'q': 'Apakah ada Garansi Cat re-V?',
+     'a': 'Belum ada. Saat ini re-V tidak menerbitkan sertifikat garansi dan tidak menerbitkannya setelah serah terima. Jika bengkel mitra memberi jaminan atas pekerjaannya, jaminan itu tertulis di invoice bengkel.'},
     {'q': 'Bagaimana klaim asuransi diproses?',
-     'a': 'Hubungkan polis Garda Oto atau Astra Insurance Anda di Profil → Saved Insurance Policies. Platform kami secara otomatis membuat dokumen loss-adjustment dan mengirimkannya langsung ke perusahaan asuransi Anda.'},
+     'a': 'Belum diproses otomatis. Belum ada integrasi dengan Garda Oto atau Astra, dan tidak ada dokumen klaim yang dikirim atas nama Anda — hubungi bengkel atau perusahaan asuransi Anda secara langsung.'},
   ];
 
   @override

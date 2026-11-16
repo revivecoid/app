@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/widgets/signed_image.dart';
 import 'package:re_v/l10n/app_localizations.dart';
+import '../../../../core/jobs/job_status.dart';
 import 'job_stream_controller.dart';
 import '../../../../core/l10n/app_localizations_extension.dart';
 
@@ -276,6 +277,21 @@ class _TrackerBody extends StatelessWidget {
           _StatusBanner(status: status, mutedColor: mutedColor),
           const SizedBox(height: 16),
 
+          // ─── Handover confirmation + rating ───
+          // Finding 12: the order used to close with nobody confirming that
+          // the car was actually handed over, and the workshop could never be
+          // rated. Both are the customer's to give, so they are asked here.
+          if (status == '8_awaiting_delivery' || status == '9_done') ...[
+            _HandoverCard(
+                jobId: jobId,
+                alreadyConfirmed: status == '9_done',
+                cardColor: cardColor,
+                textColor: textColor,
+                mutedColor: mutedColor,
+                isDark: isDark),
+            const SizedBox(height: 16),
+          ],
+
           // ─── Timeline ───
           _card(
             cardColor: cardColor,
@@ -401,7 +417,7 @@ class _TrackerBody extends StatelessWidget {
                 const SizedBox(height: 12),
                 _detailRow(Icons.tag, 'Job ID', jobId, textColor, mutedColor),
                 const SizedBox(height: 8),
-                _detailRow(Icons.info_outline, 'Current Status', status.replaceAll('_', ' ').toUpperCase(), textColor, mutedColor),
+                _detailRow(Icons.info_outline, 'Status Saat Ini', jobStatusLabel(status), textColor, mutedColor),
                 const SizedBox(height: 8),
                 _detailRow(Icons.photo_library, 'Workshop Photos', '${progressPhotos.length} uploaded', textColor, mutedColor),
               ],
@@ -533,6 +549,171 @@ class _WaitingBar extends StatelessWidget {
 }
 
 // ─── Action Bar — shown only for pre-payment jobs ────────────────────────────
+class _HandoverCard extends StatefulWidget {
+  final String jobId;
+  final bool alreadyConfirmed;
+  final Color cardColor;
+  final Color textColor;
+  final Color mutedColor;
+  final bool isDark;
+
+  const _HandoverCard({
+    required this.jobId,
+    required this.alreadyConfirmed,
+    required this.cardColor,
+    required this.textColor,
+    required this.mutedColor,
+    required this.isDark,
+  });
+
+  @override
+  State<_HandoverCard> createState() => _HandoverCardState();
+}
+
+class _HandoverCardState extends State<_HandoverCard> {
+  int _rating = 0;
+  final TextEditingController _comment = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _comment.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_rating < 1) {
+      setState(() => _error = 'Pilih nilai penilaian dulu.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final res = await Supabase.instance.client.rpc('customer_confirm_handover',
+          params: {
+            'p_job_id': widget.jobId,
+            'p_rating': _rating,
+            'p_comment': _comment.text.trim(),
+          });
+      final ok = res is Map && res['success'] == true;
+      if (!mounted) return;
+      if (!ok) {
+        setState(() {
+          _busy = false;
+          _error = res is Map
+              ? (res['error'] ?? 'Konfirmasi gagal. Coba lagi.')
+              : 'Konfirmasi gagal. Coba lagi.';
+        });
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Terima kasih! Pengantaran dikonfirmasi.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+      setState(() => _busy = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = 'Konfirmasi gagal. Coba lagi.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: widget.cardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.handshake_outlined, color: AppColors.fireRed, size: 18),
+              const SizedBox(width: 8),
+              Text('Konfirmasi Pengantaran',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 15, color: widget.textColor)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            widget.alreadyConfirmed
+                ? 'Pengantaran sudah dikonfirmasi. Penilaian bisa diperbarui di sini.'
+                : 'Sudah menerima mobil? Konfirmasi di sini dan beri penilaian untuk bengkel.',
+            style: TextStyle(fontSize: 12.5, height: 1.45, color: widget.mutedColor),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: List.generate(5, (i) {
+              final filled = i < _rating;
+              return IconButton(
+                padding: const EdgeInsets.only(right: 4),
+                constraints: const BoxConstraints(),
+                visualDensity: VisualDensity.compact,
+                onPressed: _busy ? null : () => setState(() => _rating = i + 1),
+                icon: Icon(filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: filled ? const Color(0xFFF5A623) : widget.mutedColor),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _comment,
+            enabled: !_busy,
+            maxLines: 2,
+            style: TextStyle(fontSize: 13, color: widget.textColor),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: 'Catatan (opsional)',
+              hintStyle: TextStyle(fontSize: 12.5, color: widget.mutedColor),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: cs.outlineVariant),
+              ),
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(_error!,
+                style: const TextStyle(fontSize: 12, color: AppColors.fireRed)),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _busy ? null : _submit,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.fireRed,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: _busy
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(widget.alreadyConfirmed ? 'Perbarui Penilaian' : 'Konfirmasi & Beri Rating'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ActionBar extends StatelessWidget {
   final bool isEstimated;
   final bool isInvoiced;
@@ -567,8 +748,10 @@ class _ActionBar extends StatelessWidget {
     if (isEstimated) {
       context.push('/booking/$jobId');
     } else if (isInvoiced) {
-      // Payment-only mode — loads final_cost from DB, hides calendar/logistics
-      context.push('/checkout/$jobId?paymentOnly=true');
+      // The invoice is reviewed and approved here; payment follows that
+      // approval, so /checkout was the wrong door — the customer never saw
+      // the itemised invoice.
+      context.push('/invoice/$jobId');
     } else {
       context.push('/checkout/$jobId');
     }
@@ -681,7 +864,9 @@ class _StatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = status.replaceAll(RegExp(r'^\d+_'), '').replaceAll('_', ' ').toUpperCase();
+    // Status codes like "3_inspected" must never reach a customer; this is the
+    // same label map the admin panel and the notification bodies use.
+    final label = jobStatusLabel(status);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),

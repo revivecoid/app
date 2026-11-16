@@ -20,6 +20,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   bool _busy = false;
   String? _message;
 
+  /// The respondent is about to contribute photos and estimates to the model
+  /// training set, so the consent has to be explicit and has to be recorded
+  /// before the profile exists. Without this the training data had no owner
+  /// and no way to withdraw.
+  bool _consentGiven = false;
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +48,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!_consentGiven) {
+      setState(() => _message =
+          'Centang persetujuan penggunaan data untuk pelatihan model AI.');
+      return;
+    }
     setState(() {
       _busy = true;
       _message = null;
@@ -49,9 +60,14 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     try {
       await LearningRepository(Supabase.instance.client)
           .createRespondentProfile(_name.text);
+      // Record the consent next to the data it covers.
+      await Supabase.instance.client.rpc('record_consent', params: {
+        'p_doc': 'ai_learning',
+        'p_version': '1.0',
+      });
       await learningGate.refresh();
     } catch (_) {
-      setState(() => _message = 'Could not save your profile. Try again.');
+      setState(() => _message = 'Profil belum tersimpan. Coba lagi.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -62,13 +78,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.workspaceLight,
       appBar: AppBar(
-        title: const Text('Complete your profile'),
+        title: const Text('Lengkapi profil Anda'),
         actions: [
           TextButton(
             onPressed: _busy
                 ? null
                 : () => Supabase.instance.client.auth.signOut(),
-            child: const Text('Sign out'),
+            child: const Text('Keluar'),
           ),
         ],
       ),
@@ -85,14 +101,52 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 children: [
                   TextFormField(
                     controller: _name,
-                    decoration: const InputDecoration(labelText: 'Full name'),
+                    decoration: const InputDecoration(labelText: 'Nama lengkap'),
                     validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Required' : null,
+                        (v == null || v.trim().isEmpty) ? 'Wajib diisi' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.workspaceLight.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: AppColors.fireRed.withValues(alpha: 0.25)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          value: _consentGiven,
+                          onChanged: (v) =>
+                              setState(() => _consentGiven = v ?? false),
+                          title: const Text(
+                            'Saya setuju foto dan estimasi saya dipakai untuk '
+                            'meningkatkan model deteksi kerusakan re-V.',
+                            style: TextStyle(fontSize: 12.5),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Data dipakai untuk pelatihan model, tidak untuk '
+                          'pemasaran. Persetujuan ini tercatat dan dapat '
+                          'dicabut kapan saja lewat pengaturan privasi.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.black54,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 20),
                   FilledButton(
                     onPressed: _busy ? null : _save,
-                    child: const Text('Continue'),
+                    child: Text(_busy ? 'Menyimpan…' : 'Lanjutkan'),
                   ),
                   if (_message != null)
                     Padding(

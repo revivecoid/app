@@ -265,6 +265,7 @@ class CheckoutController extends StateNotifier<CheckoutState> {
 
     try {
       // Upload transfer proof if applicable
+      String? proofKey;
       if (state.paymentMethod == PaymentMethod.manualTransfer &&
           state.transferProof != null) {
         final fileExt = state.transferProof!.name.split('.').last.toLowerCase();
@@ -272,7 +273,8 @@ class CheckoutController extends StateNotifier<CheckoutState> {
         final bytes = await state.transferProof!.readAsBytes();
         final fileName = await R2Storage.uploadBytes(
           bytes,
-          scope: R2Scope.self,
+          scope: R2Scope.paymentProof,
+          jobId: state.jobId,
           ext: isPdf ? 'pdf' : 'jpg',
           contentType: isPdf ? 'application/pdf' : 'image/jpeg',
         );
@@ -281,10 +283,34 @@ class CheckoutController extends StateNotifier<CheckoutState> {
           'step_context': 'payment',
           'r2_file_key': fileName,
         });
+        proofKey = fileName;
       }
 
       if (state.paymentMethod == PaymentMethod.manualTransfer) {
-        // Manual transfer: inform customer, advance will happen after admin verifies
+        // The money arrives by transfer, so the customer cannot mark the job
+        // paid. What they can do is hand over the proof: the payment record
+        // goes to the admin queue, who checks the slip in R2 and confirms it.
+        //
+        // Before this, the proof was uploaded and nothing else happened — the
+        // admin queue never saw a payment, so the job sat in 3_inspected for
+        // ever.
+        final idempotencyKey =
+            'transfer_${state.jobId}_${DateTime.now().millisecondsSinceEpoch}';
+        final paymentResult = await _supabase.rpc('create_payment', params: {
+          'p_job_id': state.jobId,
+          'p_method': 'manual_transfer',
+          'p_idempotency_key': idempotencyKey,
+        });
+        final paymentId = paymentResult?['id'] as String?;
+        if (paymentId == null) {
+          throw Exception('Gagal membuat tagihan — coba lagi.');
+        }
+        if (proofKey != null) {
+          await _supabase.rpc('submit_payment_proof', params: {
+            'p_payment_id': paymentId,
+            'p_file_key': proofKey,
+          });
+        }
         state = state.copyWith(
           paymentStatus: PaymentStatus.manualTransferPending,
           isLoading: false,
@@ -293,8 +319,25 @@ class CheckoutController extends StateNotifier<CheckoutState> {
       }
 
       // B-01 fix: pelanggan tidak boleh langsung set 4_paid.
-      // Mock mode: create_payment → mock_settle_payment (admin harus approve di prod).
-      // C-38 fix: baca hasil RPC langsung, tidak mengandalkan realtime webhook.
+      // There is no payment gateway connected yet. The pilot collects money by
+      // manual transfer, and an admin confirms it against the real slip.
+      //
+      // The old code called mock_settle_payment here, which raises for any
+      // non-admin ("mock_autosettle is disabled"), so every customer who
+      // picked the gateway option saw "Payment failed". Faking a settlement
+      // would mark a job 4_paid with no money in it — never do that.
+      //
+      // The mock path stays available to admins and to the test suite, which
+      // is where a simulated settlement belongs.
+      final isAdmin = await _supabase.rpc('is_master_admin');
+      if (isAdmin != true) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage:
+              'Pembayaran online belum tersedia. Silakan transfer manual ke rekening yang tertera, lalu unggah bukti transfer.',
+        );
+        return;
+      }
 
       // 1. Buat payment record
       final idempotencyKey = '${state.jobId}_${DateTime.now().millisecondsSinceEpoch}';
@@ -326,7 +369,7 @@ class CheckoutController extends StateNotifier<CheckoutState> {
         isLoading: false,
         paymentStatus: PaymentStatus.failed,
         errorMessage:
-            'Payment failed to process. Please try again or contact support.',
+            'Pembayaran gagal diproses. Coba lagi atau hubungi tim re-V.',
       );
     }
   }
@@ -359,7 +402,8 @@ class CheckoutController extends StateNotifier<CheckoutState> {
 
           final fileName = await R2Storage.uploadBytes(
             bytes,
-            scope: R2Scope.self,
+            scope: R2Scope.paymentProof,
+            jobId: state.jobId,
             ext: isPdf ? 'pdf' : 'jpg',
             contentType: isPdf ? 'application/pdf' : 'image/jpeg',
           );

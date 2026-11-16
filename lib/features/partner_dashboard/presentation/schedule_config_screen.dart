@@ -46,19 +46,22 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
         return;
       }
 
-      final response = await Supabase.instance.client
-          .from('partner_schedules')
-          .select()
-          .eq('partner_id', _partnerId!)
-          .maybeSingle();
+      // Read through the RPC: partner_schedules is protected by partner-only
+      // RLS and has no row until the first save, so a direct select returned
+      // null and the screen always showed the hardcoded defaults.
+      final response = await Supabase.instance.client.rpc('partner_get_capacity');
+      final data = response is Map ? Map<String, dynamic>.from(response) : const <String, dynamic>{};
 
-      if (response != null && mounted) {
+      if (data['ok'] == true && mounted) {
         setState(() {
-          _standardWorkingDays = List<int>.from(response['standard_working_days'] ?? [1,2,3,4,5,6]);
-          _guaranteedSlotsPerDay = response['guaranteed_slots_per_day'] ?? 5;
-          // fast_track_enabled not loaded — column removed (C-10)
-          if (response['blacklisted_dates'] != null) {
-            _blacklistedDates = (response['blacklisted_dates'] as List)
+          if (data['working_days'] is List) {
+            _standardWorkingDays = List<int>.from(
+                (data['working_days'] as List).map((e) => int.parse(e.toString())));
+          }
+          _guaranteedSlotsPerDay =
+              int.tryParse('${data['slots_per_day'] ?? 5}') ?? 5;
+          if (data['blacklisted_dates'] is List) {
+            _blacklistedDates = (data['blacklisted_dates'] as List)
                 .map((d) => DateTime.parse(d.toString()))
                 .toList();
           }
@@ -92,7 +95,7 @@ class _ScheduleConfigScreenState extends ConsumerState<ScheduleConfigScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Schedule configuration saved.'),
+            content: Text('Jadwal dan kapasitas bengkel tersimpan.'),
             backgroundColor: AppColors.statusSuccess,
           ),
         );

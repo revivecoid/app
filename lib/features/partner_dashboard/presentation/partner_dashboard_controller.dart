@@ -42,6 +42,16 @@ class PartnerJobNode {
   /// form pre-fills as the initial per-panel figure.
   final Map<String, dynamic>? estimationResult;
 
+  /// Whether the workshop has uploaded a progress photo for this job. The
+  /// database refuses to move a job to 7_finished without one, so the action
+  /// button asks for the photo instead of offering a move that will fail.
+  final bool hasProgressPhoto;
+
+  /// Whether a condition photo was taken when the car was received. The
+  /// customer's own estimate photos do not count: without a shot of the car on
+  /// arrival there is no evidence if a new scratch appears later.
+  final bool hasIntakePhoto;
+
   PartnerJobNode({
     required this.id,
     required this.customerName,
@@ -51,6 +61,8 @@ class PartnerJobNode {
     required this.status,
     required this.admittedAt,
     this.latestPhotoUrl,
+    this.hasProgressPhoto = false,
+    this.hasIntakePhoto = false,
     this.contactPhone,
     this.profilePhone,
     this.profileEmail,
@@ -74,7 +86,12 @@ class PartnerJobNode {
         .toList();
   }
 
-  PartnerJobNode copyWith({String? status, String? latestPhotoUrl}) {
+  PartnerJobNode copyWith({
+    String? status,
+    String? latestPhotoUrl,
+    bool? hasProgressPhoto,
+    bool? hasIntakePhoto,
+  }) {
     return PartnerJobNode(
       id: id,
       customerName: customerName,
@@ -84,6 +101,8 @@ class PartnerJobNode {
       status: status ?? this.status,
       admittedAt: admittedAt,
       latestPhotoUrl: latestPhotoUrl ?? this.latestPhotoUrl,
+      hasProgressPhoto: hasProgressPhoto ?? this.hasProgressPhoto,
+      hasIntakePhoto: hasIntakePhoto ?? this.hasIntakePhoto,
       contactPhone: contactPhone,
       profilePhone: profilePhone,
       profileEmail: profileEmail,
@@ -213,7 +232,7 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
         initial_estimation_cost, estimation_result,
         profiles:customer_id (full_name, phone, email),
         vehicles:vehicle_id (make, model, license_plate),
-        repair_photos (r2_file_key, uploaded_at)
+        repair_photos (r2_file_key, uploaded_at, step_context)
       ''').eq('partner_id', state.partnerId).inFilter('status', [
         // 3_inspected must be listed: it is where a job waits while the customer
         // owes payment. Leaving it out dropped the row from client state, so an
@@ -228,6 +247,8 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
         final vehicle = job['vehicles'] as Map<String, dynamic>? ?? {};
         
         String? latestPhotoUrl;
+        var hasProgressPhoto = false;
+        var hasIntakePhoto = false;
         final photos = job['repair_photos'] as List?;
         if (photos != null && photos.isNotEmpty) {
           photos.sort((a, b) => DateTime.parse(b['uploaded_at'].toString()).compareTo(DateTime.parse(a['uploaded_at'].toString())));
@@ -235,6 +256,21 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
           // TODO: Ganti dengan await signedPhotoUrl(photos.first['r2_file_key'].toString())
           // Sementara: simpan file_key, biarkan UI request signed URL on-demand.
           latestPhotoUrl = photos.first['r2_file_key'].toString();
+          // A photo taken while the car was on the ramp or being worked on.
+          // Intake and inspection shots do not count as proof of the work.
+          hasProgressPhoto = photos.any((p) {
+            final ctx = p['step_context']?.toString() ?? '';
+            return ctx == 'in_progress' || ctx == 'progress' || ctx == 'finished';
+          });
+          // The condition photo is the one the workshop takes when the car
+          // arrives. The customer's own damage photos do not count.
+          hasIntakePhoto = photos.any((p) {
+            final ctx = p['step_context']?.toString() ?? '';
+            return ctx == 'booked' ||
+                ctx == 'admitted' ||
+                ctx == 'intake' ||
+                ctx == 'vehicle_intake';
+          });
         }
 
         return PartnerJobNode(
@@ -248,6 +284,8 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
                       DateTime.tryParse(job['created_at']?.toString() ?? '') ??
                       DateTime.now(), // C-82 fix: use status_changed_at (time of last transition), fallback to created_at
           latestPhotoUrl: latestPhotoUrl,
+          hasProgressPhoto: hasProgressPhoto,
+          hasIntakePhoto: hasIntakePhoto,
           contactPhone: job['contact_phone']?.toString(),
           profilePhone: profile['phone']?.toString(),
           profileEmail: profile['email']?.toString(),
@@ -395,7 +433,14 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
       final jobIndex = state.activeJobs.indexWhere((j) => j.id == jobId);
       if (jobIndex != -1) {
         final updated = List<PartnerJobNode>.from(state.activeJobs);
-        updated[jobIndex] = updated[jobIndex].copyWith(latestPhotoUrl: publicUrl);
+        updated[jobIndex] = updated[jobIndex].copyWith(
+          latestPhotoUrl: publicUrl,
+          hasProgressPhoto: true,
+          // A photo taken while the job still sat in 3_booked is the condition
+          // shot; a photo taken later is not.
+          hasIntakePhoto: updated[jobIndex].hasIntakePhoto ||
+              currentContext == '3_booked',
+        );
         state = state.copyWith(
           activeJobs: updated,
           isLoading: false,

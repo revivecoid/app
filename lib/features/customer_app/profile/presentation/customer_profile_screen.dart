@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../notifications/application/notifications_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/jobs/job_status.dart';
 import '../../../../core/providers/theme_provider.dart';
 import 'package:re_v/l10n/app_localizations.dart';
 import 'package:re_v/core/format/rupiah.dart';
@@ -99,12 +100,9 @@ class CustomerProfileScreen extends ConsumerWidget {
 
 
   String _humanStatus(String raw) {
-    return raw
-        .replaceAll(RegExp(r'^\d+_'), '')
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
-        .join(' ');
+    // One label map shared with the admin panel and the notification bodies;
+    // "4_paid" used to be shown as "Paid" in English.
+    return jobStatusLabel(raw);
   }
 
   // ── Role badge helpers ────────────────────────────────────────────────────
@@ -1371,16 +1369,12 @@ class CustomerProfileScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text(
-                              'Guarantee certificate coming soon'),
-                          behavior: SnackBarBehavior.floating),
-                    );
-                  },
-                  icon: const Icon(Icons.verified_outlined, size: 15),
-                  label: const Text('Guarantee',
+                  // There is no guarantee programme and no downloadable tax
+                  // receipt; what the customer can actually open is the
+                  // invoice for this job.
+                  onPressed: () => context.push('/invoice/${job['id']}'),
+                  icon: const Icon(Icons.receipt_long_outlined, size: 15),
+                  label: const Text('Invoice',
                       style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -1500,15 +1494,9 @@ class CustomerProfileScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Tax receipt download coming soon'),
-                          behavior: SnackBarBehavior.floating),
-                    );
-                  },
+                  onPressed: () => context.push('/invoice/${job['id']}'),
                   icon: const Icon(Icons.receipt_long_outlined, size: 15),
-                  label: const Text('Tax Receipt',
+                  label: const Text('Invoice',
                       style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -1522,16 +1510,9 @@ class CustomerProfileScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text(
-                              'Guarantee certificate coming soon'),
-                          behavior: SnackBarBehavior.floating),
-                    );
-                  },
-                  icon: const Icon(Icons.verified_outlined, size: 15),
-                  label: const Text('Guarantee',
+                  onPressed: () => context.push('/invoice/${job['id']}'),
+                  icon: const Icon(Icons.receipt_long_outlined, size: 15),
+                  label: const Text('Invoice',
                       style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -1595,47 +1576,104 @@ class CustomerProfileScreen extends ConsumerWidget {
             _divider(),
           ],
           _tile(context,
-            icon: Icons.shield,
-            iconColor: AppColors.primaryContainer,
-            title: 'Saved Insurance Policies',
-            subtitle: 'Link your insurance for claim-backed services',
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Insurance module coming soon'),
-                  behavior: SnackBarBehavior.floating),
-            ),
-          ),
-          _divider(),
-          _tile(context,
-            icon: Icons.credit_card,
+            icon: Icons.privacy_tip_outlined,
             iconColor: cs.onSurface,
-            title: 'Payment Methods',
-            subtitle: 'Add cards, e-wallets, or bank accounts',
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Payment methods coming soon'),
-                  behavior: SnackBarBehavior.floating),
-            ),
+            title: 'Privasi Data',
+            subtitle: 'Persetujuan penggunaan data untuk pelatihan AI',
+            onTap: () => _openPrivacy(context),
           ),
           _divider(),
           _tile(context,
             icon: Icons.notifications_active_outlined,
             iconColor: AppColors.fireRed,
             title: 'Pengaturan Notifikasi',
-            subtitle: 'In-app, Email & WhatsApp booking updates',
+            subtitle: 'Pembaruan booking lewat aplikasi, email & WhatsApp',
             onTap: () => context.push('/notification-settings'),
           ),
           _divider(),
           _tile(context,
             icon: Icons.help_center,
             iconColor: cs.onSurface,
-            title: 'Workshop Concierge & FAQ',
-            subtitle: '24/7 paint warranty & towing hotlines',
+            title: 'Pusat Bantuan & FAQ',
+            subtitle: 'Pertanyaan umum, kontak bengkel, dan bantuan',
             onTap: () => context.push('/support'),
           ),
         ],
       ),
     );
+  }
+
+  /// The consent screen for AI training data promises the customer can
+  /// withdraw at any time, so the tile that makes that true lives here.
+  ///
+  /// This screen is a ConsumerWidget, so there is no `State.mounted` to
+  /// check; `context.mounted` is the equivalent guard.
+  Future<void> _openPrivacy(BuildContext context) async {
+    final client = Supabase.instance.client;
+    bool granted;
+    try {
+      final res = await client.rpc('has_consent', params: {
+        'p_doc': 'ai_learning',
+        'p_version': '1.0',
+      });
+      granted = res == true;
+    } catch (_) {
+      granted = false;
+    }
+    if (!context.mounted) return;
+
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Privasi Data'),
+        content: Text(
+          granted
+              ? 'Anda mengizinkan foto dan penilaian Anda dipakai untuk '
+                  'melatih model deteksi kerusakan re-V. Data yang sudah '
+                  'dikirim akan dikeluarkan dari pelatihan berikutnya bila '
+                  'izin dicabut.'
+              : 'Anda belum memberikan izin penggunaan data untuk pelatihan '
+                  'model. Data Anda tidak dipakai untuk pelatihan.',
+          style: const TextStyle(fontSize: 13.5, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Tutup'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(granted ? 'Cabut izin' : 'Beri izin'),
+          ),
+        ],
+      ),
+    );
+    if (changed != true) return;
+
+    try {
+      if (granted) {
+        await client.rpc('revoke_consent', params: {
+          'p_doc': 'ai_learning',
+          'p_version': '1.0',
+        });
+      } else {
+        await client.rpc('record_consent', params: {
+          'p_doc': 'ai_learning',
+          'p_version': '1.0',
+        });
+      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(granted ? 'Izin dicabut.' : 'Izin tercatat.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Gagal menyimpan perubahan. Coba lagi.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
   }
 
   Widget _tile(BuildContext context, {

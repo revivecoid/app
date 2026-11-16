@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/theme_provider.dart';
 import '../../../core/jobs/job_status.dart'; // S-08 fix
+import '../../../core/services/r2_storage.dart';
 import 'admin_dashboard_controller.dart';
 
 part 'desktop_parts/sidebar.dart';
@@ -120,15 +121,13 @@ class _MasterAdminDesktopState
               onClose: () =>
                   setState(() => _verifyingJob = null),
               onApprove: () async {
-                // C-04 fix: use admin_review_payment RPC via admin_invoice_review flow
-                // For now: mock_settle_payment if payment exists, else admin_set_job_status
-                await controller.overrideJobStatus(
-                    _verifyingJob!.id, '4_paid');
+                // The modal writes the payment itself (admin_review_payment or
+                // admin_record_manual_payment). All that is left is to close
+                // and refresh — moving the job status here without a payment
+                // row is what left invoices unpaid.
                 setState(() => _verifyingJob = null);
               },
               onReject: () async {
-                // C-04 fix: reject should not revert to 3_booked — keep at 3_inspected
-                // Payment stays 'rejected'; admin notes why
                 setState(() => _verifyingJob = null);
               },
             ),
@@ -139,32 +138,30 @@ class _MasterAdminDesktopState
 
   Widget _buildContent(ColorScheme cs, AdminDashboardState state,
       AdminDashboardController controller) {
-    switch (_activeNavIndex) {
-      case 0:
+    // Keyed on the label, not on the index. The two lists drifted apart, so
+    // "Workshop Settings & Quotas" opened the assignment screen and "Assign
+    // Jobs Hub" opened the customer list, and the workshop settings could not
+    // be opened at all. Route-driven items push their own route and never
+    // reach this switch; the placeholder names the page instead.
+    final label = _navItems[_activeNavIndex].label;
+    switch (label) {
+      case 'Job Board / Pipeline':
         return _OpsMatrixContent(
           cs: cs,
           state: state,
           controller: controller,
           onVerify: (job) => setState(() => _verifyingJob = job),
         );
-      case 1:
-        // Partner Assessment is route-driven (pushes /admin-central/partners);
-        // this slot is never selected, but keep it as a safe fallback.
+      case 'Workshop Settings & Quotas':
         return _WorkshopSettingsContent(
             cs: cs, state: state, controller: controller);
-      case 2:
-        return _WorkshopSettingsContent(
-            cs: cs, state: state, controller: controller);
-      case 3:
+      case 'Assign Jobs Hub':
         return _AssignJobsContent(
             cs: cs, state: state, controller: controller);
-      case 4:
+      case 'Customer Database':
         return _CustomerCrmContent(cs: cs, state: state);
       default:
-        return _PlaceholderContent(
-          cs: cs,
-          label: _navItems[_activeNavIndex].label,
-        );
+        return _PlaceholderContent(cs: cs, label: label);
     }
   }
 }

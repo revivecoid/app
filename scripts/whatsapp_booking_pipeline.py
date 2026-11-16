@@ -306,6 +306,15 @@ def upload_photo(url, key, user_id, photo_path):
 # Vision estimation
 # ---------------------------------------------------------------------------
 
+class EstimationUnavailable(Exception):
+    """Raised when the visual estimate cannot be produced.
+
+    The pipeline must never invent a price. An order filed with a made-up
+    estimate is worse than no order: the customer is quoted a number no
+    mechanic agreed to, and the invoice later disagrees with it.
+    """
+
+
 def run_vision_estimation(gemini_key, photo_paths):
     print("Running vision estimation...")
     image_parts = []
@@ -344,17 +353,17 @@ def run_vision_estimation(gemini_key, photo_paths):
             elif "```" in text:
                 text = text.split("```")[1].split("```")[0]
             parsed = json.loads(text.strip())
+            panels = (parsed.get("assessment") or {}).get("damaged_panels_detail") or []
+            if not panels:
+                raise EstimationUnavailable(
+                    "model returned no damaged panels")
             print("  AI Estimation Done.")
             return parsed
+    except EstimationUnavailable:
+        raise
     except Exception as e:
         print("  Gemini API error:", e)
-        return {
-            "assessment": {
-                "damaged_panels_detail": [
-                    {"panel_name": "Bumper Depan", "panel_severity": "sedang"}
-                ]
-            }
-        }
+        raise EstimationUnavailable(str(e)) from e
 
 
 # ---------------------------------------------------------------------------
@@ -371,6 +380,7 @@ def calculate_cost(url, key, estimation):
         rule_map = {}
 
     total = 0
+    unpriced = []
     panels = estimation.get("assessment", {}).get("damaged_panels_detail", [])
     for p in panels:
         name = p.get("panel_name", "").lower()
@@ -382,17 +392,26 @@ def calculate_cost(url, key, estimation):
                     else 1.0)
             cost = int(rule["base_rate"] * mult)
         else:
-            base = 500000
-            mult = 1.5 if sev == "sedang" else 2.0 if sev == "berat" else 1.0
-            cost = int(base * mult)
+            # No rate on file. Say so instead of inventing a number: the customer
+            # gets "harga menyusul" and a human quotes it.
+            cost = None
+            unpriced.append(p.get("panel_name", "?"))
         p["calculated_cost"] = cost
-        total += cost
+        if cost is not None:
+            total += cost
+
+    if total <= 0:
+        raise EstimationUnavailable(
+            "no priced panels (unpriced: %s)" % (", ".join(unpriced) or "none"))
 
     estimation["financial_estimation"] = {
         "calculated_base_cost": total,
         "pricing_source": "live_db",
+        "unpriced_panels": unpriced,
     }
     print(f"  Total Estimated Cost: Rp {total:,}")
+    if unpriced:
+        print(f"  Unpriced panels (quote later): {', '.join(unpriced)}")
     return total
 
 
@@ -401,15 +420,13 @@ def calculate_cost(url, key, estimation):
 # ---------------------------------------------------------------------------
 
 def assign_slot_and_insert(url, key, user_id, phone, total_cost, estimation, photo_keys):
-    print("Assigning slot and inserting job...")
-    partners = _supabase_req(url, key, "GET", "/partners?status=eq.active&limit=1")
-    partner_id = partners[0]["id"] if partners else None
+    print("Creating job (assignment is left to auto-assign / admin)...")
 
     vehicle_payload = {
         "customer_id": user_id,
-        "make": "Unknown",
-        "model": "Chatbot Intake",
-        "year": 2020,
+        "make": "Belum diisi",
+        "model": "Input WhatsApp",
+        "year": None,
         "license_plate": f"WA-{phone[-4:]}",
     }
     v_req = urllib.request.Request(
@@ -430,7 +447,6 @@ def assign_slot_and_insert(url, key, user_id, phone, total_cost, estimation, pho
     job_payload = {
         "customer_id": user_id,
         "vehicle_id": vehicle_id,
-        "partner_id": partner_id,
         "initial_estimation_cost": total_cost,
         "estimation_result": estimation,
         "status": "2_estimated",
@@ -456,9 +472,8 @@ def assign_slot_and_insert(url, key, user_id, phone, total_cost, estimation, pho
     for pk in photo_keys:
         _supabase_req(url, key, "POST", "/repair_photos", payload={
             "job_id": job_id,
-            "file_key": pk,
+            "r2_file_key": pk,
             "step_context": "estimate",
-            "uploaded_by": user_id,
         })
 
     return job_id
@@ -512,22 +527,31 @@ def main():
                 print("Error: No photos provided for booking.", file=sys.stderr)
                 return 1
 
-            photo_keys = []
+            existing = [p for p in photo_paths if os.path.exists(p)]
             for p in photo_paths:
-                if not os.path.exists(p):
+                if p not in existing:
                     print(f"Warning: {p} not found. Skipping.")
-                    continue
+
+            if not existing:
+                print("Error: No valid photos found.", file=sys.stderr)
+                return 1
+
+            # Estimate first. Uploading before the model answers leaves orphaned
+            # objects behind every time estimation fails, and it costs bandwidth
+            # for a job that never gets created.
+            estimation = run_vision_estimation(gemini_key, existing)
+            total_cost = calculate_cost(url, key, estimation)
+
+            photo_keys = []
+            for p in existing:
                 _, p_key = upload_photo(url, key, profile["id"], p)
                 photo_keys.append(p_key)
 
             if not photo_keys:
-                print("Error: No valid photos uploaded.", file=sys.stderr)
+                print("Error: No photos uploaded.", file=sys.stderr)
                 return 1
 
-            estimation = run_vision_estimation(gemini_key, photo_paths)
             estimation["photo_keys"] = photo_keys
-
-            total_cost = calculate_cost(url, key, estimation)
             job_id = assign_slot_and_insert(
                 url, key, profile["id"], profile["phone"],
                 total_cost, estimation, photo_keys
@@ -539,6 +563,14 @@ def main():
             print("\n--- PIPELINE SUCCESS ---")
             print(f"Job ID:     {job_id}")
             print(f"Estimation: Rp {total_cost:,}")
+            print("Assignment: menunggu auto-assign / admin")
+
+        except EstimationUnavailable as e:
+            print(f"ESTIMATE_UNAVAILABLE: {e}", file=sys.stderr)
+            print("No order was created. Tell the customer the estimate could not "
+                  "be produced automatically and that the case goes to the re-V "
+                  "team for a manual quote.", file=sys.stderr)
+            return 2
 
         except Exception as e:
             print(f"Pipeline Failed: {e}", file=sys.stderr)

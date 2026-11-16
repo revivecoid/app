@@ -165,24 +165,34 @@ class _BookingSchedulingScreenState
       // 3. Auto-assign picks partner AND transitions to 3_booked atomically.
       // L-04 fix: advance_job_status 2→3_booked removed; only book_slot/auto-assign
       // may create a 3_booked job. execute_auto_assign now calls transition_job internally.
+      //
+      // The RPC raises when no workshop could be attached (auto-assign switched
+      // off, no partner in the area, no free capacity, holiday). The old code
+      // swallowed that and still told the customer "Booking confirmed!", which is
+      // how bookings ended up with no partner. Keep the order, but say what is
+      // actually true: it is recorded and waiting for an admin to assign.
+      String? assignNote;
       try {
         final res = await _sb.rpc('execute_auto_assign', params: {'p_job_id': widget.jobId});
-        debugPrint('[AutoAssign] Result: $res');
+        debugPrint('[AutoAssign] Assigned, partner=$res');
       } catch (e) {
-        debugPrint('[AutoAssign] Engine disabled or no eligible partner (non-fatal): $e');
+        final raw = e.toString();
+        debugPrint('[AutoAssign] No workshop attached (non-fatal): $raw');
+        assignNote = raw.contains('disabled')
+            ? 'Pesanan Anda tercatat. Tim re-V akan menugaskan bengkel dan mengabari Anda.'
+            : 'Belum ada bengkel yang bisa mengambil jadwal itu. Tim re-V akan menugaskan bengkel terdekat dan mengabari Anda.';
       }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            _deliveryType == 'pickup'
-                ? 'Booking confirmed! We will contact you on $contactPhone to '
-                    'arrange collection of your vehicle.'
-                : 'Booking confirmed! Drop off your vehicle on the selected date. '
-                    "We'll notify you once inspection is complete."),
-        backgroundColor: const Color(0xFF059669),
-        duration: const Duration(seconds: 4),
+        content: Text(assignNote ??
+            (_deliveryType == 'pickup'
+                ? 'Booking dikonfirmasi. Kami menghubungi Anda di $contactPhone untuk menjadwalkan penjemputan kendaraan.'
+                : 'Booking dikonfirmasi. Antar kendaraan Anda pada tanggal yang dipilih; kami kabari setelah inspeksi selesai.')),
+        backgroundColor:
+            assignNote != null ? const Color(0xFFB45309) : const Color(0xFF059669),
+        duration: Duration(seconds: assignNote != null ? 7 : 4),
       ));
 
       context.go('/');

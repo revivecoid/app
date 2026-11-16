@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/utils/session_health.dart';
+import '../../../core/jobs/job_status.dart';
 import '../ops_access.dart';
 
 final floorJobsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -87,7 +88,7 @@ class OpsFloorScreen extends ConsumerWidget {
               final job = jobs[index];
               final vehicle = job['vehicles'];
               final status = job['status'] as String? ?? '';
-              final statusLabel = status.replaceAll(RegExp(r'^\d+_'), '').replaceAll('_', ' ').toUpperCase();
+              final statusLabel = jobStatusLabel(status);
               final statusColor = status == '5_admitted'
                   ? Colors.blue.shade700
                   : status == '7_finished'

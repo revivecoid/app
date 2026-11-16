@@ -5,6 +5,7 @@ import '../core/theme/app_theme.dart';
 import 'data/learning_gate.dart';
 import 'presentation/auth_screen.dart';
 import 'presentation/complete_profile_screen.dart';
+import 'presentation/consent_screen.dart';
 import 'presentation/review_screen.dart';
 import 'presentation/scan_screen.dart';
 
@@ -37,6 +38,7 @@ final GoRouter _router = GoRouter(
     final path = state.matchedLocation;
     final onAuth = path == '/auth';
     final onProfile = path == '/complete-profile';
+    final onConsent = path == '/consent';
 
     switch (learningGate.status) {
       case GateStatus.loading:
@@ -46,8 +48,10 @@ final GoRouter _router = GoRouter(
         return onAuth ? null : '/auth';
       case GateStatus.needsProfile:
         return onProfile ? null : '/complete-profile';
+      case GateStatus.needsConsent:
+        return onConsent ? null : '/consent';
       case GateStatus.ready:
-        return (onAuth || onProfile) ? '/' : null;
+        return (onAuth || onProfile || onConsent) ? '/' : null;
     }
   },
   routes: [
@@ -56,6 +60,10 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/complete-profile',
       builder: (context, state) => const CompleteProfileScreen(),
+    ),
+    GoRoute(
+      path: '/consent',
+      builder: (context, state) => const ConsentScreen(),
     ),
     GoRoute(
       path: '/review',

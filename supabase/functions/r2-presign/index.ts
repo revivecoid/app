@@ -32,7 +32,9 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // of the partner that owns the path. Checks run as the caller through the same
 // SQL helpers the RLS policies use, so the DB stays the source of truth.
 const PARTNER_PREFIXES = new Set(["facility", "partners", "ops"]);
-const PARTNER_ROLES = ["owner", "mechanic"];
+// staff is a real membership role (see the payments policy) and was missing
+// here, so workshop staff could not open the photos of the jobs they work on.
+const PARTNER_ROLES = ["owner", "mechanic", "staff"];
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -64,7 +66,33 @@ async function canRead(token: string, uid: string, key: string): Promise<boolean
   const { data: isAdmin, error: adminErr } = await userClient.rpc("is_master_admin");
   if (!adminErr && isAdmin === true) return true;
 
-  const [prefix, partnerId] = key.split("/");
+  const parts = key.split("/");
+  const [prefix, partnerId, jobId] = parts;
+
+  // Progress photos: ops/<partner_id>/<job_id>/<stage>/<file>. The customer
+  // follows their own vehicle from the app, so the owner of the job must be
+  // able to open them — partner membership alone used to block them, and the
+  // tracking screen simply showed no photos at all.
+  if (prefix === "ops" && isUuid(jobId ?? "")) {
+    const { data: owns, error: ownsErr } = await userClient.rpc("customer_owns_job", {
+      p_job_id: jobId,
+    });
+    if (!ownsErr && owns === true) return true;
+  }
+
+  // Payment proofs: jobs/<job_id>/payment_proof/<file>. The customer uploads
+  // the slip of the manual transfer; an admin has to open it to confirm the
+  // payment, so both sides may read it.
+  if (prefix === "jobs" && isUuid(jobId ?? "")) {
+    const { data: owns, error: ownsErr } = await userClient.rpc("customer_owns_job", {
+      p_job_id: jobId,
+    });
+    if (!ownsErr && owns === true) return true;
+  }
+
+  // Intake photos taken by the WhatsApp bot: ops/chatbot/<customer_uid>/...
+  if (prefix === "ops" && partnerId === "chatbot" && parts[2] === uid) return true;
+
   if (PARTNER_PREFIXES.has(prefix) && isUuid(partnerId ?? "")) {
     // Parameter names must match the SQL signature: (p_org_id, p_roles).
     const { data, error } = await userClient.rpc("has_partner_membership", {
@@ -288,6 +316,23 @@ async function resolveUploadDir(
         return json({ error: "Invalid doc type" }, 400, origin);
       }
       return `${uid}/partner-applications/${docType}`;
+    }
+    case "paymentProof": {
+      // The customer uploads the slip of a manual transfer. The key must sit
+      // under the job, because submit_payment_proof only accepts
+      // 'jobs/<job_id>/payment_proof/...' and the admin opens the file from
+      // there.
+      const jobId = body.job_id ?? "";
+      if (!isUuid(jobId)) {
+        return json({ error: "Invalid job" }, 400, origin);
+      }
+      const { data: owns, error: ownsErr } = await asCaller(token).rpc("customer_owns_job", {
+        p_job_id: jobId,
+      });
+      if (ownsErr || owns !== true) {
+        return json({ error: "Forbidden" }, 403, origin);
+      }
+      return `jobs/${jobId}/payment_proof`;
     }
     case "partnerDocs":
     case "partnerFacility": {

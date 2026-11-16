@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/services/r2_storage.dart';
 import '../../../core/widgets/signed_image.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/jobs/job_status.dart';
 import '../../../core/widgets/rev_app_bar.dart';
 import 'admin_dashboard_controller.dart';
 import 'admin_partner_profile_controller.dart';
@@ -380,6 +383,26 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
     );
   }
 
+  /// Opens a partner document from R2 in the browser. The button existed with
+  /// an empty handler, so an admin could not look at the NIB/NPWP that was
+  /// uploaded for verification.
+  Future<void> _openDocument(String key, String label) async {
+    try {
+      final url = await R2Storage.signedUrl(key);
+      if (url == null || url.isEmpty) {
+        throw StateError('URL dokumen tidak tersedia');
+      }
+      final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      if (!ok) throw StateError('Browser menolak membuka tautan');
+    } catch (e) {
+      debugPrint('[PartnerProfile] open $label: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal membuka dokumen $label: $e')),
+      );
+    }
+  }
+
   Widget _buildDocumentCard(Map<String, dynamic> p, Color surfaceColor, Color textColor) {
     final docs = [
       ('NIB', 'nib_file_key'),
@@ -406,8 +429,10 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
                   const Spacer(),
                   if (hasDoc)
                     TextButton(
-                      onPressed: () {},
-                      child: const Text('View', style: TextStyle(color: AppColors.fireRed)),
+                      onPressed: () =>
+                          _openDocument(p[doc.$2].toString(), doc.$1),
+                      child: const Text('View',
+                          style: TextStyle(color: AppColors.fireRed)),
                     ),
                 ],
               ),
@@ -512,7 +537,7 @@ class _AdminPartnerProfileScreenState extends ConsumerState<AdminPartnerProfileS
     final vehicle = job['vehicles'] as Map<String, dynamic>? ?? {};
     final profile = job['profiles'] as Map<String, dynamic>? ?? {};
     final status = job['status']?.toString() ?? '';
-    final statusLabel = status.replaceAll(RegExp(r'^\d+_'), '').replaceAll('_', ' ').toUpperCase();
+    final statusLabel = jobStatusLabel(status);
     final statusColor = _statusColor(status);
     return Card(
       color: surfaceColor,

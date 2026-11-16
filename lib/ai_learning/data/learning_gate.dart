@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-enum GateStatus { loading, signedOut, needsProfile, ready, error }
+enum GateStatus { loading, signedOut, needsProfile, needsConsent, ready, error }
 
 /// Tracks whether the current session can use the learning app:
 /// signed in AND has a row in ai_learning_respondents.
@@ -33,7 +33,17 @@ class LearningGate extends ChangeNotifier {
           .select('user_id')
           .eq('user_id', user.id)
           .maybeSingle();
-      _set(row == null ? GateStatus.needsProfile : GateStatus.ready);
+      if (row == null) {
+        _set(GateStatus.needsProfile);
+        return;
+      }
+      // Consent is required before the app accepts photos: the database
+      // refuses a submission without a live consent_records row.
+      final consented = await _client.rpc('has_consent', params: {
+        'p_doc': 'ai_learning',
+        'p_version': '1.0',
+      });
+      _set(consented == true ? GateStatus.ready : GateStatus.needsConsent);
     } catch (_) {
       _set(GateStatus.error);
     }

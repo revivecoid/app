@@ -46,6 +46,17 @@ class _AdminInvoiceReviewScreenState
   List<Map<String, dynamic>> _awaitingAdmission = [];
   final Set<String> _busy = {};
 
+  // Payment settings (payment_config, row id = 1). The customer invoice page
+  // reads this row to show which methods are on and which account to transfer
+  // to, so it has to be editable from here.
+  Map<String, dynamic>? _paymentConfig;
+  bool _manualTransfer = true;
+  bool _onlinePayment = false;
+  final _bankNameCtrl = TextEditingController();
+  final _accountNumberCtrl = TextEditingController();
+  final _accountHolderCtrl = TextEditingController();
+  bool _savingPayment = false;
+
   static const _amber = Color(0xFFB45309);
   static const _green = Color(0xFF059669);
   static const _red = Color(0xFFB91C1C);
@@ -92,10 +103,42 @@ class _AdminInvoiceReviewScreenState
           .order('created_at', ascending: true)
           .limit(100);
 
+      // Payment settings. The row may be missing on a fresh database, so a
+      // failure here must not take the whole screen down.
+      Map<String, dynamic>? paymentConfig;
+      try {
+        final cfg = await _supabase
+            .from('payment_config')
+            .select(
+                'id, online_enabled, manual_transfer_enabled, bank_accounts, currency')
+            .eq('id', 1)
+            .maybeSingle();
+        paymentConfig = cfg;
+      } catch (e) {
+        debugPrint('[InvoiceReview] payment_config unavailable: $e');
+      }
+
       if (!mounted) return;
       setState(() {
         _invoices = List<Map<String, dynamic>>.from(invoices);
         _awaitingAdmission = List<Map<String, dynamic>>.from(booked);
+        _paymentConfig = paymentConfig;
+        if (paymentConfig != null) {
+          _manualTransfer = paymentConfig['manual_transfer_enabled'] != false;
+          _onlinePayment = paymentConfig['online_enabled'] == true;
+          final banks = paymentConfig['bank_accounts'];
+          final accounts = banks is List ? banks : const [];
+          if (accounts.isNotEmpty && accounts.first is Map) {
+            final first = accounts.first as Map;
+            _bankNameCtrl.text = first['bank']?.toString() ?? '';
+            _accountNumberCtrl.text = first['account_number']?.toString() ?? '';
+            _accountHolderCtrl.text = first['account_holder']?.toString() ?? '';
+          } else {
+            _bankNameCtrl.clear();
+            _accountNumberCtrl.clear();
+            _accountHolderCtrl.clear();
+          }
+        }
         _loading = false;
         _error = null;
       });
@@ -197,7 +240,7 @@ class _AdminInvoiceReviewScreenState
     final cs = Theme.of(context).colorScheme;
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: cs.surface,
         appBar: const ReVAppBar(
@@ -224,6 +267,7 @@ class _AdminInvoiceReviewScreenState
                             Tab(
                               text: 'Admission (${_awaitingAdmission.length})',
                             ),
+                            const Tab(text: 'Pembayaran'),
                           ],
                         ),
                       ),
@@ -240,6 +284,11 @@ class _AdminInvoiceReviewScreenState
                               color: AppColors.fireRed,
                               child: _admissionList(cs),
                             ),
+                            RefreshIndicator(
+                              onRefresh: _fetch,
+                              color: AppColors.fireRed,
+                              child: _paymentSettings(cs),
+                            ),
                           ],
                         ),
                       ),
@@ -247,6 +296,148 @@ class _AdminInvoiceReviewScreenState
                   ),
       ),
     );
+  }
+
+  // ── payment settings ───────────────────────────────────────────────────────
+
+  /// Where the destination account for a manual transfer is set. It was empty
+  /// in the database and there was no screen that could write it, so every
+  /// customer was told to "contact Revive for payment instructions" while the
+  /// admin had no way to fix it.
+  Widget _paymentSettings(ColorScheme cs) {
+    final missing = _paymentConfig == null;
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (missing)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _amber.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _amber.withValues(alpha: 0.35)),
+            ),
+            child: Text(
+              'Baris konfigurasi pembayaran tidak ditemukan atau tidak bisa '
+              'dibaca. Periksa policy payment_config.',
+              style: TextStyle(fontSize: 12, color: cs.onSurface),
+            ),
+          ),
+        Text('Metode pembayaran',
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: cs.onSurface)),
+        const SizedBox(height: 6),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          value: _manualTransfer,
+          title: Text('Transfer manual',
+              style: TextStyle(fontSize: 12.5, color: cs.onSurface)),
+          subtitle: Text(
+              'Pelanggan transfer ke rekening di bawah lalu mengirim bukti ke tim Revive.',
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+          onChanged: (v) => setState(() => _manualTransfer = v),
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          value: _onlinePayment,
+          title: Text('Pembayaran online',
+              style: TextStyle(fontSize: 12.5, color: cs.onSurface)),
+          subtitle: Text(
+              'Gateway pembayaran belum terhubung. Selama ini aktif, pelanggan '
+              'melihat permintaan transfer manual.',
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+          onChanged: (v) => setState(() => _onlinePayment = v),
+        ),
+        const SizedBox(height: 10),
+        Text('Rekening tujuan transfer',
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: cs.onSurface)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _bankNameCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Nama bank',
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _accountNumberCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Nomor rekening',
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _accountHolderCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Atas nama',
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+        ),
+        const SizedBox(height: 14),
+        FilledButton.icon(
+          onPressed: _savingPayment ? null : _savePaymentConfig,
+          icon: _savingPayment
+              ? const SizedBox(
+                  width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.save_outlined, size: 16),
+          label: Text(_savingPayment ? 'Menyimpan…' : 'Simpan pengaturan pembayaran'),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Rekening ini yang tampil di halaman invoice pelanggan. Kosongkan '
+          'nomor rekening untuk menyembunyikan metode transfer — pelanggan lalu '
+          'melihat permintaan menghubungi tim Revive.',
+          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, height: 1.45),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _savePaymentConfig() async {
+    setState(() => _savingPayment = true);
+    final number = _accountNumberCtrl.text.trim();
+    final accounts = <Map<String, String>>[
+      if (number.isNotEmpty)
+        {
+          'bank': _bankNameCtrl.text.trim(),
+          'account_number': number,
+          'account_holder': _accountHolderCtrl.text.trim(),
+        }
+    ];
+    try {
+      await _supabase.from('payment_config').update({
+        'manual_transfer_enabled': _manualTransfer,
+        'online_enabled': _onlinePayment,
+        'bank_accounts': accounts,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', 1);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Pengaturan pembayaran disimpan.'),
+        backgroundColor: _green,
+      ));
+      await _fetch();
+    } catch (e) {
+      debugPrint('[InvoiceReview] save payment config: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Gagal menyimpan pengaturan: $e'),
+        backgroundColor: _red,
+      ));
+    } finally {
+      if (mounted) setState(() => _savingPayment = false);
+    }
   }
 
   bool _needsAction(Map<String, dynamic> inv) =>

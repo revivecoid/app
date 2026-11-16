@@ -78,31 +78,24 @@ class _PartnerStaffManagementScreenState extends ConsumerState<PartnerStaffManag
     });
 
     try {
-      final result = await Supabase.instance.client.rpc('add_partner_staff', params: {
-        'staff_email': email,
-        'staff_role': _selectedRole,
+      // Parameter names must match the SQL signature exactly:
+      // add_partner_staff(p_staff_email text, p_staff_role text). Sending
+      // staff_email/staff_role made PostgREST answer PGRST202 ("function not
+      // found"), so adding a staff member never worked.
+      await Supabase.instance.client.rpc('add_partner_staff', params: {
+        'p_staff_email': email,
+        'p_staff_role': _selectedRole,
       });
 
-      // The RPC now returns JSONB with { success, error?, user_id?, full_name?, role? }
-      final Map<String, dynamic> response = result is Map<String, dynamic>
-          ? result
-          : (result is String ? {} : {});
-
-      final success = response['success'] == true;
-
-      if (success) {
-        setState(() {
-          _message = 'Successfully added ${response['full_name'] ?? email} as ${_selectedRole == 'partner_staff' ? 'Staff' : 'Driver'}!';
-          _isError = false;
-          _emailController.clear();
-        });
-        _loadStaff();
-      } else {
-        setState(() {
-          _message = response['error']?.toString() ?? 'Failed to add staff member. Please try again.';
-          _isError = true;
-        });
-      }
+      // The RPC returns void — no exception is the only success signal.
+      if (!mounted) return;
+      setState(() {
+        _message =
+            'Berhasil menambahkan $email sebagai ${_selectedRole == 'partner_staff' ? 'Staf' : 'Driver'}.';
+        _isError = false;
+        _emailController.clear();
+      });
+      _loadStaff();
     } catch (e) {
       setState(() {
         _message = 'Error: ${e.toString().replaceAll('PostgrestException', '').trim()}';

@@ -106,6 +106,45 @@ class PartnerJobActionControl extends StatelessWidget {
     }
 
     final admits = job.status == '3_booked';
+
+    // Receiving the car: the condition photo is the evidence that the car
+    // arrived as described. Without it there is nothing to compare a later
+    // scratch against, so the button asks for the shot first.
+    if (admits && !job.hasIntakePhoto) {
+      return ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: cs.surface,
+          padding: _pad,
+          shape: RoundedRectangleBorder(borderRadius: _radius),
+          elevation: 0,
+        ),
+        icon: Icon(Icons.photo_camera_outlined, size: _iconSize),
+        label: Text('Ambil Foto Kondisi',
+            style: TextStyle(fontSize: _fontSize, fontWeight: FontWeight.bold)),
+        onPressed: () => controller.captureAndUploadProgressPhoto(job.id, job.status),
+      );
+    }
+
+    // Finishing the work requires a progress photo: the database refuses
+    // 6_in_progress -> 7_finished without one, so the button asks for the
+    // photo first instead of offering a move that would be rejected.
+    if (job.status == '6_in_progress' && !job.hasProgressPhoto) {
+      return ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: cs.surface,
+          padding: _pad,
+          shape: RoundedRectangleBorder(borderRadius: _radius),
+          elevation: 0,
+        ),
+        icon: Icon(Icons.photo_camera_outlined, size: _iconSize),
+        label: Text('Ambil Foto Progres',
+            style: TextStyle(fontSize: _fontSize, fontWeight: FontWeight.bold)),
+        onPressed: () => controller.captureAndUploadProgressPhoto(job.id, job.status),
+      );
+    }
+
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
