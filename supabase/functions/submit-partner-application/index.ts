@@ -7,6 +7,7 @@ import {
   sha256hex,
 } from '../_shared/partner_otp.ts'
 import { queueOtp } from '../_shared/partner_otp_delivery.ts'
+import { validateEmail } from '../_shared/email.ts'
 
 // ── SEC-06: the only path that may create a partner application ───────────────
 // partner_applications carried an INSERT policy of `true` for roles {public}, so
@@ -33,8 +34,6 @@ const REQUIRED = ['entity_name', 'shop_name', 'owner_name', 'email', 'phone', 'a
 
 /** Legal documents, keyed exactly as the form names its picker slots. */
 const DOC_TYPES = ['nib', 'npwp', 'siup', 'ktp'] as const
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function bad(message: string, status = 400) {
   return new Response(JSON.stringify({ error: message }), {
@@ -81,8 +80,12 @@ serve(async (req) => {
       return bad(`Missing required field(s): ${missing.join(', ')}`)
     }
 
-    const email = String(payload.email).trim().toLowerCase()
-    if (!EMAIL_RE.test(email)) return bad('Invalid email address')
+    // The old check was /^[^\s@]+@[^\s@]+\.[^\s@]+$/ — loose enough to accept
+    // "a@b.c", "a@x..com" or "a@-x.com". The address becomes the applicant's
+    // login identity, so it has to be a real mailbox.
+    const emailCheck = validateEmail(String(payload.email ?? ''))
+    if (!emailCheck.ok) return bad(emailCheck.error)
+    const email = emailCheck.email
 
     // ── 2. Evidence must belong to the caller ──────────────────────────────────
     // Each key is a storage path inside the private 'revive-photos' bucket. The

@@ -13,6 +13,7 @@ import '../../../core/l10n/app_localizations_extension.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/document_picker.dart';
 import '../../../core/utils/guest_session.dart';
+import '../../../core/utils/validators.dart';
 import '../../../core/widgets/rev_app_bar.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -323,6 +324,14 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
       return;
     }
 
+    // Page 1 is not part of the submitted form's validation, so the contact
+    // fields are checked here — before any upload starts.
+    final email = normaliseEmail(_emailCtrl.text);
+    if (!isValidEmail(email)) {
+      setState(() => _submitError = 'Email tidak valid. Kembali ke halaman 1 dan perbaiki formatnya.');
+      return;
+    }
+
     void stage(String s) { if (mounted) setState(() => _submitStage = s); }
     setState(() { _isSubmitting = true; _submitError = null; _submitStage = 'Memulai sesi aman…'; });
 
@@ -396,7 +405,7 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
             'entity_name': _entityNameCtrl.text.trim(),
             'shop_name': _brandNameCtrl.text.trim(),
             'owner_name': _picCtrl.text.trim(),
-            'email': _emailCtrl.text.trim(),
+            'email': email,
             'phone': _phoneCtrl.text.trim(),
             'address': _legalAddressCtrl.text.trim(),
             'workshop_address': _sameAsLegal
@@ -634,7 +643,7 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
             required: true, keyboardType: TextInputType.emailAddress,
             validator: (v) {
               if (v == null || v.trim().isEmpty) return l.partnerRegEmailRequired;
-              if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v.trim())) return l.partnerRegEmailInvalid;
+              if (!isValidEmail(v)) return l.partnerRegEmailInvalid;
               return null;
             }),
         const SizedBox(height: 20),

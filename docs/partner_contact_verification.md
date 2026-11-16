@@ -50,6 +50,46 @@ cosmetic, the edge functions re-check every value.
 - `_shared/partner_otp.ts` — the pure policy (normalisation, code generation,
   hashing, resend/verify decisions) with unit tests in `partner_otp_test.ts`.
 
+## Getting back in from another device
+
+The application is filed from an anonymous (guest) session, so the guest's uid
+is the `submitted_by` link. On the same device that session still exists and
+everything works. On a second device the applicant signs in:
+
+- **Magic link (passwordless).** The status page shows an access panel when
+  there is no session: an email field and "Kirim tautan login". It calls
+  `signInWithOtp(email: …, shouldCreateUser: false, emailRedirectTo:
+  '${Uri.base.origin}/#/auth/callback')` — the app's own constant callback,
+  which is in Supabase's allow-list and which the router already exchanges
+  (`readAuthCode` → `exchangeCodeForSession`). `shouldCreateUser: false` keeps
+  the endpoint from being a free account factory.
+- **Email + password.** The welcome email carries the credentials; `/login`
+  accepts them and the router sends a `partner_applicant` straight back to the
+  status page.
+
+Both need the applicant policy to allow reading their own row by identity, not
+only by the guest uid:
+
+```sql
+submitted_by = auth.uid()
+or auth_user_id = auth.uid()
+or (email is not null and lower(email) = lower(coalesce(auth.email(), '')))
+```
+
+(migration `20261116140000_partner_applicant_read_policy.sql`). The challenge
+rows in `partner_contact_otps` stay service-role only — the client never sees
+a code hash.
+
+## Address validation
+
+`supabase/functions/_shared/email.ts` (server) and
+`lib/core/utils/validators.dart` (client) hold the same rule: a local part, one
+`@`, a dotted domain and a TLD of at least two letters, 254 characters max, and
+the address is lower-cased. The previous server check
+(`/^[^\s@]+@[^\s@]+\.[^\s@]+$/`) accepted `a@b.c`, `a@x..com` and `a@-x.com`.
+The address is the applicant's login identity, so a typo there locks them out
+of the dashboard and of the OTP.
+
 ## Storage notes
 
 - Phone numbers are stored as MSISDN without `+` (`628…`) so the WhatsApp JID and

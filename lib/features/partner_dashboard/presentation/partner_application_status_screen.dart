@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/validators.dart';
 import '../../../core/widgets/rev_app_bar.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -30,6 +31,16 @@ class _PartnerApplicationStatusScreenState
   bool _loading = true;
   String? _error;
 
+  // ── access panel (no session yet) ─────────────────────────────────────────
+  /// The applicant files from a guest session, but the dashboard has to work on
+  /// a second device too. Without a session we offer a magic link (passwordless)
+  /// and the sign-in screen (the welcome email carries the credentials).
+  final _accessEmailCtrl = TextEditingController();
+  bool _sendingLink = false;
+  String? _accessMsg;
+  String? _accessError;
+  StreamSubscription<AuthState>? _authSub;
+
   // ── contact verification ──────────────────────────────────────────────────
   final _waCodeCtrl = TextEditingController();
   final _emailCodeCtrl = TextEditingController();
@@ -42,11 +53,18 @@ class _PartnerApplicationStatusScreenState
   void initState() {
     super.initState();
     _load();
+    // A magic link lands with the session in the URL fragment; the router
+    // exchanges it, so the only thing left to do here is reload.
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((event) {
+      if (event.event == AuthChangeEvent.signedIn) _load();
+    });
   }
 
   @override
   void dispose() {
     _ticker?.cancel();
+    _authSub?.cancel();
+    _accessEmailCtrl.dispose();
     _waCodeCtrl.dispose();
     _emailCodeCtrl.dispose();
     super.dispose();
@@ -55,7 +73,12 @@ class _PartnerApplicationStatusScreenState
   Future<void> _load() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
-      if (mounted) setState(() { _loading = false; _error = 'Sesi tidak valid. Buka ulang halaman ini.'; });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = null;
+        });
+      }
       return;
     }
 
@@ -110,8 +133,136 @@ class _PartnerApplicationStatusScreenState
           : _error != null
               ? _buildError(t)
               : _app == null
-                  ? _buildNotFound(t)
+                  ? (_hasSession ? _buildNotFound(t) : _buildAccessPanel(t))
                   : _buildStatus(t, narrow),
+    );
+  }
+
+  // ── Access panel (no session) ─────────────────────────────────────────────
+  bool get _hasSession => Supabase.instance.client.auth.currentUser != null;
+
+  /// Passwordless entry: a magic link to the address on file. `shouldCreateUser`
+  /// is false — the address must already belong to an account, otherwise this
+  /// endpoint becomes a free account factory.
+  Future<void> _sendLoginLink() async {
+    final email = normaliseEmail(_accessEmailCtrl.text);
+    if (!isValidEmail(email)) {
+      setState(() {
+        _accessMsg = null;
+        _accessError = 'Email tidak valid. Gunakan format nama@bengkel.co.id';
+      });
+      return;
+    }
+    setState(() {
+      _sendingLink = true;
+      _accessMsg = null;
+      _accessError = null;
+    });
+    try {
+      await Supabase.instance.client.auth.signInWithOtp(
+        email: email,
+        shouldCreateUser: false,
+        // The app's own constant callback — it is in Supabase's allow-list and
+        // the router already exchanges the code there.
+        emailRedirectTo: '${Uri.base.origin}/#/auth/callback',
+      );
+      if (!mounted) return;
+      setState(() {
+        _sendingLink = false;
+        _accessMsg = 'Tautan login dikirim ke $email. Buka tautan itu untuk '
+            'melihat pengajuan Anda di perangkat ini.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _sendingLink = false;
+        _accessError = 'Gagal mengirim tautan ($e). Gunakan email + kata sandi '
+            'dari email yang kami kirim saat pendaftaran.';
+      });
+    }
+  }
+
+  Widget _buildAccessPanel(ThemeData t) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Icon(Icons.lock_person_outlined,
+                  size: 56, color: t.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
+              const SizedBox(height: 16),
+              Text('Masuk untuk melihat pengajuan',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.bold, color: t.colorScheme.onSurface)),
+              const SizedBox(height: 8),
+              Text(
+                'Kode verifikasi dikirim ke WhatsApp dan email setelah pendaftaran '
+                'dikirim. Untuk membuka pengajuan dari perangkat lain, masuk dengan '
+                'email yang sama dengan saat pendaftaran.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: t.colorScheme.onSurfaceVariant, height: 1.5),
+              ),
+              const SizedBox(height: 22),
+              TextField(
+                controller: _accessEmailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Email pendaftaran',
+                  filled: true,
+                  fillColor: t.brightness == Brightness.dark
+                      ? const Color(0xFF18191C)
+                      : t.colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _sendingLink ? null : _sendLoginLink,
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryContainer,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14)),
+                child: _sendingLink
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Kirim tautan login', style: TextStyle(fontSize: 12)),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () => context.go(
+                    '/login?returnTo=${Uri.encodeComponent('/partner/application-status')}'),
+                style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14)),
+                child: const Text('Masuk dengan email & kata sandi',
+                    style: TextStyle(fontSize: 12)),
+              ),
+              if (_accessMsg != null) ...[
+                const SizedBox(height: 14),
+                Text(_accessMsg!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF10B981))),
+              ],
+              if (_accessError != null) ...[
+                const SizedBox(height: 14),
+                Text(_accessError!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: t.colorScheme.error)),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 
