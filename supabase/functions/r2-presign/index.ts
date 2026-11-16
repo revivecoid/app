@@ -372,16 +372,22 @@ serve(async (req) => {
     const encoded = body.content_base64 ?? "";
     if (!encoded) return json({ error: "Missing content_base64" }, 400, origin);
 
-    let bytes: Uint8Array;
+    let decoded: Uint8Array;
     try {
-      bytes = base64Decode(encoded);
+      decoded = base64Decode(encoded);
     } catch {
       return json({ error: "Invalid base64" }, 400, origin);
     }
-    if (bytes.length === 0) return json({ error: "Empty file" }, 400, origin);
-    if (bytes.length > MAX_RELAY_BYTES) {
+    if (decoded.length === 0) return json({ error: "Empty file" }, 400, origin);
+    if (decoded.length > MAX_RELAY_BYTES) {
       return json({ error: "File too large" }, 413, origin);
     }
+    // fetch() wants an ArrayBuffer-backed BodyInit; a Uint8Array view over a
+    // possibly-shared buffer is rejected by deno check.
+    const payload = decoded.buffer.slice(
+      decoded.byteOffset,
+      decoded.byteOffset + decoded.byteLength,
+    ) as ArrayBuffer;
 
     const contentType = body.content_type ?? "image/jpeg";
     if (!/^(image\/[a-z0-9.+-]{1,30}|application\/pdf)$/.test(contentType)) {
@@ -393,12 +399,12 @@ serve(async (req) => {
     const put = await fetch(url, {
       method: "PUT",
       headers: { "Content-Type": contentType },
-      body: bytes,
+      body: payload,
     });
     if (!put.ok) {
       return json({ error: `R2 upload failed (${put.status})` }, 502, origin);
     }
-    return json({ key, size: bytes.length }, 200, origin);
+    return json({ key, size: decoded.length }, 200, origin);
   }
 
   if (body.action === "read") {
