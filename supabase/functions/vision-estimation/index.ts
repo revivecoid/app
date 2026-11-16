@@ -8,6 +8,13 @@ import {
   REPLACE_ONLY_DAMAGE_TYPES,
   REPLACE_ONLY_SEVERITIES,
 } from "../_shared/repair_policy.ts";
+// Few-shot context from finished jobs + reviewer rejections (no model training)
+import {
+  buildTrainingContext,
+  extractPhotoKeys,
+  type PanelCorrection,
+  type TrainingCase,
+} from "../_shared/training_context.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -102,6 +109,54 @@ interface LivePricingRule {
   base_rate: number;
   severity_min: number; // sedang (medium) multiplier
   severity_max: number; // berat  (heavy)  multiplier
+}
+
+// ── Few-shot context: finished jobs (ai_training_context) + reviewer rejections ──
+interface TrainingContextLoad {
+  text: string;
+  usedCaseIds: string[];
+  usedCorrections: number;
+}
+
+async function loadTrainingContext(terms: string[]): Promise<TrainingContextLoad> {
+  try {
+    const [casesRes, correctionsRes] = await Promise.all([
+      supabase
+        .from("ai_training_context")
+        .select("id, car_make_model, damage_description, resolved_actual_cost, created_at")
+        .eq("is_active_context", true)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("ai_learning_panel_reviews")
+        .select("panel_name, ai_severity, comment")
+        .eq("verdict", false)
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]);
+
+    if (casesRes.error) {
+      console.warn("[vision-estimation] ai_training_context fetch failed:", casesRes.error.message);
+    }
+    if (correctionsRes.error) {
+      console.warn("[vision-estimation] panel review fetch failed:", correctionsRes.error.message);
+    }
+
+    const context = buildTrainingContext({
+      cases: (casesRes.data ?? []) as TrainingCase[],
+      corrections: (correctionsRes.data ?? []) as PanelCorrection[],
+      terms,
+    });
+    return {
+      text: context.text,
+      usedCaseIds: context.usedCaseIds,
+      usedCorrections: context.usedCorrections,
+    };
+  } catch (err) {
+    // Context is an enhancement: never fail an estimate because of it.
+    console.warn("[vision-estimation] few-shot context skipped:", err);
+    return { text: "", usedCaseIds: [], usedCorrections: 0 };
+  }
 }
 
 // ── Fetches live pricing rules from DB; gracefully falls back to hardcoded map ──
@@ -306,14 +361,23 @@ serve(async (req) => {
       }
     }
 
-    // Load AI config + live pricing rules in parallel for minimum latency
-    const [{ data: configs, error: configError }, liveRules] = await Promise.all([
+    // Load AI config, live pricing rules and the few-shot context in parallel
+    // for minimum latency
+    const trainingTerms: string[] = Array.isArray(selectedPanels)
+      ? selectedPanels.map((p: unknown) => String(p))
+      : [];
+    const [
+      { data: configs, error: configError },
+      liveRules,
+      training,
+    ] = await Promise.all([
       supabase
         .from("ai_config")
         .select("*")
         .eq("is_active", true)
         .order("priority_order", { ascending: true }),
       loadPricingRules(),
+      loadTrainingContext(trainingTerms),
     ]);
 
     if (configError || !configs || configs.length === 0) {
@@ -386,6 +450,11 @@ Return precise counts for dents, scratches, and broken panels in EXACTLY this JS
 }
 CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The severity field MUST be "panel_severity" (not "severity"). Only use values "ringan", "sedang", or "berat" for severity. pergantian_sparepart MUST be present as an array.`;
 
+    // Few-shot context goes before the instructions: real finished jobs give the
+    // model the workshop's actual price level and item proportions. Plain prompt
+    // text, so it works with whichever model the cascade picks.
+    const promptWithContext = training.text ? `${training.text}\n\n${masterPrompt}` : masterPrompt;
+
     let estimationResult = null;
     let usedModel = "";
     let usedEngineId = -1;
@@ -404,12 +473,12 @@ CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The sev
           : "";
 
         if (provider.includes("google") || provider.includes("gemini")) {
-          estimationResult = await callGoogleGemini(photoUrls, masterPrompt, configData.model_name, rowKey || googleApiKey);
+          estimationResult = await callGoogleGemini(photoUrls, promptWithContext, configData.model_name, rowKey || googleApiKey);
         } else if (provider.includes("groq")) {
-          estimationResult = await callOpenAICompatible(photoUrls, masterPrompt, configData.model_name, rowKey || groqApiKey, configData.api_base_url);
+          estimationResult = await callOpenAICompatible(photoUrls, promptWithContext, configData.model_name, rowKey || groqApiKey, configData.api_base_url);
         } else if (provider.includes("openai") || provider.includes("router") || provider.includes("broadandbright") || provider.includes("9router")) {
           // Covers OpenAI, OpenRouter, 9Router-style gateways, and broadandbright
-          estimationResult = await callOpenAICompatible(photoUrls, masterPrompt, configData.model_name, rowKey || openaiApiKey, configData.api_base_url);
+          estimationResult = await callOpenAICompatible(photoUrls, promptWithContext, configData.model_name, rowKey || openaiApiKey, configData.api_base_url);
         } else {
           throw new Error(`Unsupported model provider: ${provider}`);
         }
@@ -567,6 +636,19 @@ CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The sev
             note: "Penggantian panel quarter dilas menyatu dengan Side Roof, Trisplang, opening bagasi, dan Inner Quarter — pembongkaran, pengelasan, dan pengecatan panel tersebut termasuk dalam jasa.",
           };
         }
+
+        // Provenance for the training corpus: which past cases the model was
+        // shown, plus the durable R2 keys of the photos it judged. The keys let
+        // a finished job be reused as a labelled training pair later.
+        finalCostEstimation.training_context = {
+          cases: training.usedCaseIds.length,
+          corrections: training.usedCorrections,
+          case_ids: training.usedCaseIds,
+        };
+        finalCostEstimation.source_photos = {
+          keys: extractPhotoKeys(photoUrls),
+          count: photoUrls.length,
+        };
         
     } catch (e: any) {
         // L-03 fix: parse fail = hard failure, not success with null structuredData
