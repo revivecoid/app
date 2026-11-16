@@ -130,7 +130,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
+                        const Text(
                           'Data dipakai untuk pelatihan model, tidak untuk '
                           'pemasaran. Persetujuan ini tercatat dan dapat '
                           'dicabut kapan saja lewat pengaturan privasi.',
