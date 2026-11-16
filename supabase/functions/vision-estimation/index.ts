@@ -2,6 +2,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 // PERF-09 FIX: Use standard library base64 encoder instead of byte-by-byte loop
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+// Business rules applied after the model answers (replace-only, quarter panel)
+import {
+  applyEstimatorPolicies,
+  REPLACE_ONLY_DAMAGE_TYPES,
+  REPLACE_ONLY_SEVERITIES,
+} from "../_shared/repair_policy.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -127,11 +133,19 @@ async function loadPricingRules(): Promise<LivePricingRule[]> {
 }
 
 // ── Deterministic cost engine — uses live DB rules, not hardcoded map ──
+interface CostResult {
+  total: number;
+  /** Derived policy items that have no pricing_rules row yet. */
+  pendingPricing: string[];
+}
+
 function calculateDeterministicCost(
   structuredData: any,
   rules: LivePricingRule[]
-): number {
-  if (!structuredData?.assessment?.damaged_panels_detail) return 0;
+): CostResult {
+  if (!structuredData?.assessment?.damaged_panels_detail) {
+    return { total: 0, pendingPricing: [] };
+  }
 
   // L-10 fix: closed severity list — unknown value = berat (fail-safe, not ringan)
   const VALID_SEVERITIES = new Set(['ringan', 'sedang', 'berat']);
@@ -156,19 +170,43 @@ function calculateDeterministicCost(
   }
 
   let totalCost = 0;
+  const pendingPricing: string[] = [];
   for (const [name, { severity, panel }] of panelMap) {
     // C-34 fix: case-insensitive lookup via normalized name
     const normName = name.toLowerCase();
     const rule = [...ruleMap.entries()].find(([k]) => k.toLowerCase() === normName)?.[1];
-    if (!rule) {
+    const isDerivedItem = panel.derived === true;
+    // A derived labour line with no rule (or a zero placeholder price) stays on
+    // the estimate unpriced: never silently dropped, never shown as Rp0.
+    if (!rule || (isDerivedItem && rule.base_rate <= 0)) {
+      if (isDerivedItem) {
+        // Derived policy items (quarter-replacement labour/paint) stay on the
+        // estimate with cost 0 until a pricing_rules row exists for the exact
+        // name. Dropping them would hide mandatory work from the customer.
+        panel.calculated_cost = 0;
+        panel.pricing_pending = true;
+        pendingPricing.push(name);
+        const derivedOrig = structuredData.assessment.damaged_panels_detail.find(
+          (p: any) => (p.panel_name ?? '').trim().toLowerCase() === normName
+        );
+        if (derivedOrig) {
+          derivedOrig.calculated_cost = 0;
+          derivedOrig.pricing_pending = true;
+        }
+        continue;
+      }
       // Unknown panel — skip with log, no fallback price (C-34: don't price silently)
       console.warn(`[pricing] Unknown panel skipped: "${name}"`);
       continue;
     }
 
+    // Labour/paint lines added by policy are flat: the workshop sets the price
+    // directly, with no severity multiplier stacked on top.
     let multiplier = 1.0;
-    if (severity === 'sedang') multiplier = rule?.severity_min ?? 1.5;
-    else if (severity === 'berat') multiplier = rule?.severity_max ?? 2.0;
+    if (panel.derived !== true) {
+      if (severity === 'sedang') multiplier = rule?.severity_min ?? 1.5;
+      else if (severity === 'berat') multiplier = rule?.severity_max ?? 2.0;
+    }
 
     const panelCost = Math.round(rule.base_rate * multiplier);
     panel.calculated_cost = panelCost;
@@ -182,9 +220,10 @@ function calculateDeterministicCost(
       origPanel.calculated_cost = panelCost;
       origPanel.applied_multiplier = multiplier;
       origPanel.panel_severity = severity;
+      if (panel.pricing_pending === true) origPanel.pricing_pending = true;
     }
   }
-  return totalCost;
+  return { total: totalCost, pendingPricing };
 }
 
 
@@ -296,6 +335,11 @@ Valid panel & repair item names are:
 
 For each repair item, classify panel_severity into 'ringan', 'sedang', or 'berat'. Specify damage_type ('scratch', 'dent', or 'broken').
 Set requires_replacement to true if the panel/component is severely deformed/crushed and cannot be economically repaired by hammer/straightening.
+
+REPAIR POLICY (mandatory):
+- Severe deformation (panel_severity 'berat' with damage_type 'dent') or any broken/cracked/punctured part (damage_type 'broken') has NO repair option: set requires_replacement to true. Replacement only.
+- A deep scratch without deformation stays repairable (repaint), even when you classify it 'berat'.
+- If you set requires_replacement to true on Quarter RH or Quarter LH, do NOT add disassembly, welding, or paint lines yourself. The system appends the mandatory quarter-replacement labour automatically (Bongkar Quarter, Las Quarter, and paint on Side Roof, Trisplang, Inner Quarter, opening bagasi).
 
 2. VISIBLE BROKEN REPLACEMENT PARTS (Pergantian Sparepart):
 In the pergantian_sparepart array, list EVERY component that is visibly broken, shattered, severed, cracked, punctured, or bent beyond repair in the photos.
@@ -498,11 +542,31 @@ CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The sev
           }
         }
 
-        const calculatedCost = calculateDeterministicCost(finalCostEstimation, liveRules);
+        // Business rules run before costing: they can force replacement-only and
+        // append the quarter-replacement labour/paint lines, and the cost engine
+        // must see that final panel list.
+        const policy = applyEstimatorPolicies(finalCostEstimation);
+        const { total: calculatedCost, pendingPricing } = calculateDeterministicCost(finalCostEstimation, liveRules);
         finalCostEstimation.financial_estimation = finalCostEstimation.financial_estimation || {};
         finalCostEstimation.financial_estimation.calculated_base_cost = calculatedCost;
         finalCostEstimation.financial_estimation.pricing_source = "live_db";
         finalCostEstimation.financial_estimation.spare_parts_status = "Ketersediaan dan harga sparepart masih membutuhkan konfirmasi dari vendor";
+        finalCostEstimation.financial_estimation.repair_policy = {
+          replace_only_severities: REPLACE_ONLY_SEVERITIES,
+          replace_only_damage_types: REPLACE_ONLY_DAMAGE_TYPES,
+          replace_only_panels: policy.replaceOnlyPanels,
+        };
+        if (pendingPricing.length > 0) {
+          finalCostEstimation.financial_estimation.pricing_pending_items = pendingPricing;
+        }
+        if (policy.quarterSides.length > 0) {
+          finalCostEstimation.financial_estimation.quarter_replacement = {
+            applied: true,
+            sides: policy.quarterSides,
+            labour_items: policy.derivedItems,
+            note: "Penggantian panel quarter dilas menyatu dengan Side Roof, Trisplang, opening bagasi, dan Inner Quarter — pembongkaran, pengelasan, dan pengecatan panel tersebut termasuk dalam jasa.",
+          };
+        }
         
     } catch (e: any) {
         // L-03 fix: parse fail = hard failure, not success with null structuredData

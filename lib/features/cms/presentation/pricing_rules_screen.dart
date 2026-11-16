@@ -84,6 +84,22 @@ List<_Section> _defaultSections() => [
       _Section(title: 'Lainnya', items: [
         _PricingItem(key: 'cover', label: 'Cover', basePrice: 286000),
       ]),
+      // Quarter replacement drags welded adjoining panels into the job. The
+      // estimator adds these lines automatically; set the price here when the
+      // workshop decides it (0 = still pending, shown as "Harga menyusul").
+      _Section(title: 'Jasa Penggantian Quarter', items: [
+        _PricingItem(key: 'LABOR_BONGKAR_QUARTER_RH', label: 'Bongkar Quarter RH', basePrice: 0, sedangMultiplier: 1.0, beratMultiplier: 1.0),
+        _PricingItem(key: 'LABOR_LAS_QUARTER_RH', label: 'Las Quarter RH', basePrice: 0, sedangMultiplier: 1.0, beratMultiplier: 1.0),
+        _PricingItem(key: 'LABOR_CAT_SIDE_ROOF_RH', label: 'Cat Side Roof RH', basePrice: 0, sedangMultiplier: 1.0, beratMultiplier: 1.0),
+        _PricingItem(key: 'LABOR_CAT_TRISPLANG_RH', label: 'Cat Trisplang RH', basePrice: 0, sedangMultiplier: 1.0, beratMultiplier: 1.0),
+        _PricingItem(key: 'LABOR_CAT_INNER_QUARTER_RH', label: 'Cat Inner Quarter RH', basePrice: 0, sedangMultiplier: 1.0, beratMultiplier: 1.0),
+        _PricingItem(key: 'LABOR_BONGKAR_QUARTER_LH', label: 'Bongkar Quarter LH', basePrice: 0, sedangMultiplier: 1.0, beratMultiplier: 1.0),
+        _PricingItem(key: 'LABOR_LAS_QUARTER_LH', label: 'Las Quarter LH', basePrice: 0, sedangMultiplier: 1.0, beratMultiplier: 1.0),
+        _PricingItem(key: 'LABOR_CAT_SIDE_ROOF_LH', label: 'Cat Side Roof LH', basePrice: 0, sedangMultiplier: 1.0, beratMultiplier: 1.0),
+        _PricingItem(key: 'LABOR_CAT_TRISPLANG_LH', label: 'Cat Trisplang LH', basePrice: 0, sedangMultiplier: 1.0, beratMultiplier: 1.0),
+        _PricingItem(key: 'LABOR_CAT_INNER_QUARTER_LH', label: 'Cat Inner Quarter LH', basePrice: 0, sedangMultiplier: 1.0, beratMultiplier: 1.0),
+        _PricingItem(key: 'LABOR_CAT_OPENING_BAGASI', label: 'Cat Opening Bagasi', basePrice: 0, sedangMultiplier: 1.0, beratMultiplier: 1.0),
+      ]),
     ];
 
 // ─── Formatter ────────────────────────────────────────────────────────────────

@@ -67,6 +67,9 @@ jobs:
             deno lint "$fn"
           done
 
+      - name: Test Edge Function policies
+        run: deno test supabase/functions/_shared/
+
   # ── Migrations lint ─────────────────────────────────────────────────────────
   migrations:
     name: Migration hygiene

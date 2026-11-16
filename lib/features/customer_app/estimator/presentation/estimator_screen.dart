@@ -913,6 +913,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
     final totalCost = _structuredData?['financial_estimation']?['calculated_base_cost'] ?? 0;
     final omittedPanels = _omittedSelectedPanels(panels);
     final replacementParts = parsePergantianSparepart(_structuredData);
+    final financial = _structuredData?['financial_estimation'] as Map<String, dynamic>?;
+    final quarterReplacement = financial?['quarter_replacement'] as Map<String, dynamic>?;
+    final pendingPricing = (financial?['pricing_pending_items'] as List<dynamic>? ?? const []);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1003,7 +1006,10 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(panel['panel_name']?.toString() ?? '-', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
-                                Text(formatRupiah(panel['calculated_cost']), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface))),
+                                Text(
+                                  panel['pricing_pending'] == true ? 'Harga menyusul' : formatRupiah(panel['calculated_cost']),
+                                  style: TextStyle(fontSize: panel['pricing_pending'] == true ? 12 : 14, fontWeight: FontWeight.bold, fontStyle: panel['pricing_pending'] == true ? FontStyle.italic : FontStyle.normal, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface)),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 6),
@@ -1044,6 +1050,21 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                                 ),
                               ],
                             ),
+                            // ── Action chips: perbaikan vs penggantian ──
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: _panelActionChips(panel),
+                            ),
+                            if ((panel['action_reason'] ?? '').toString().isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Text(
+                                  panel['action_reason'].toString(),
+                                  style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+                                ),
+                              ),
                             // ── Spare parts estimation per panel ──
                             SparePartsPanel(
                               parts: parseSpareParts(panel as Map<String, dynamic>),
@@ -1056,6 +1077,9 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
 
                     // Flagged panels the AI could not see or assess
                     ..._buildOmittedPanelWidgets(omittedPanels, isDark),
+
+                    if (quarterReplacement != null && quarterReplacement['applied'] == true)
+                      _buildQuarterReplacementNotice(quarterReplacement, isDark),
 
                     const SizedBox(height: 8),
                     Container(
@@ -1071,7 +1095,12 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Subtotal Jasa Perbaikan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
-                              Text('Belum termasuk sparepart (konfirmasi vendor)', style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant))),
+                              Text(
+                                pendingPricing.isEmpty
+                                    ? 'Belum termasuk sparepart (konfirmasi vendor)'
+                                    : 'Belum termasuk sparepart & ${pendingPricing.length} item jasa yang harganya menyusul',
+                                style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+                              ),
                             ],
                           ),
                           Text(formatRupiah(totalCost), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.fireRed)),
@@ -1092,6 +1121,83 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
             isDark: isDark,
           ),
       ],
+    );
+  }
+
+  /// Chips that state what the estimator decided for this panel: repair,
+  /// replacement, or a derived labour line that still needs a price.
+  List<Widget> _panelActionChips(Map<String, dynamic> panel) {
+    final chips = <Widget>[];
+    final action = (panel['recommended_action'] ?? '').toString().toLowerCase();
+    final isDerived = panel['derived'] == true;
+    final repairAllowed = panel['repair_allowed'] != false;
+
+    Widget chip(String label, Color color) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
+        );
+
+    if (isDerived) {
+      chips.add(chip('Jasa Tambahan', Colors.purple[400]!));
+    } else if (action == 'replace') {
+      chips.add(chip(repairAllowed ? 'Ganti Panel' : 'Hanya Ganti', Colors.red[700]!));
+    } else if (action == 'repair') {
+      chips.add(chip('Perbaikan', Colors.green[700]!));
+    }
+
+    if (panel['pricing_pending'] == true) {
+      chips.add(chip('Harga menyusul', Colors.orange[800]!));
+    }
+
+    return chips;
+  }
+
+  /// Explains why a Quarter replacement pulled extra welded panels into the job.
+  Widget _buildQuarterReplacementNotice(Map<String, dynamic> quarter, bool isDark) {
+    final sides = (quarter['sides'] as List<dynamic>? ?? const []).join(' & ');
+    final items = (quarter['labour_items'] as List<dynamic>? ?? const []).cast<String>();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.local_fire_department, size: 18, color: Colors.orange[800]),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Penggantian Panel Quarter${sides.isEmpty ? '' : ' ($sides)'}',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            quarter['note']?.toString() ?? '',
+            style: TextStyle(fontSize: 11, color: (isDark ? AppColors.onSurfaceVariant : Theme.of(context).colorScheme.onSurfaceVariant)),
+          ),
+          if (items.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              items.join(' • '),
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.orange[800]),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -1376,7 +1482,7 @@ class _EstimatorScreenState extends ConsumerState<EstimatorScreen> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  formatRupiah(cost),
+                                  panel['pricing_pending'] == true ? 'Harga menyusul' : formatRupiah(cost),
                                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: (isDark ? AppColors.onSurface : Theme.of(context).colorScheme.onSurface)),
                                 ),
                                 const SizedBox(height: 2),
