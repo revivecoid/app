@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
-import 'package:re_v/l10n/app_localizations.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../presentation/partner_shell_screen.dart';
 import '../../presentation/partner_dashboard_controller.dart';
@@ -94,7 +93,7 @@ class PartnerSettingsScreen extends ConsumerWidget {
                     ],
                     selected: {currentLocale.languageCode},
                     onSelectionChanged: (val) {
-                      ref.read(localeProvider.notifier).state = Locale(val.first);
+                      ref.read(localeProvider.notifier).setLocale(Locale(val.first));
                     },
                     style: ButtonStyle(
                       backgroundColor: WidgetStateProperty.resolveWith((states) {
