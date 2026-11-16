@@ -6,7 +6,6 @@ import '../../notifications/application/notifications_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/jobs/job_status.dart';
 import '../../../../core/providers/theme_provider.dart';
-import 'package:re_v/l10n/app_localizations.dart';
 import 'package:re_v/core/format/rupiah.dart';
 import '../../../../core/widgets/app_settings_sheet.dart';
 import 'vehicle_registration_modal.dart';
