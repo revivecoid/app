@@ -8,8 +8,11 @@ burn resources.
 
 1. The applicant fills the registration form. **No code is sent yet.** The
    "Kirim OTP" buttons are gone; the phone and email are plain fields.
-2. Every file is uploaded **the moment it is picked** (`<uid>/partner-applications/<doc_type>/…`).
-   A failed file is retried on its own; the rest of the form is unaffected.
+2. Files are held in memory while the form is filled — **nothing is uploaded
+   before submit**. At submit one guest session is pinned and every file goes to
+   `<uid>/partner-applications/<doc_type>/…` under it, so the keys always match
+   the uid `submit-partner-application` checks. A picked file that is replaced
+   leaves no orphan because no object was ever written.
 3. `submit-partner-application` files the row, normalises the phone to MSISDN
    (`62…`), and creates one challenge per channel in `partner_contact_otps`.
    Each challenge gets a 6-digit code and a row in `notification_outbox`

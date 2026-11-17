@@ -235,6 +235,50 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
 
   String _mb(int bytes) => (bytes / (1024 * 1024)).toStringAsFixed(1);
 
+  /// Pins the session that owns every uploaded file and returns its uid.
+  ///
+  /// `/partner/register` is a public route, so a visitor can reach it with no
+  /// session at all. Uploads only happen at submit, so the guest session is
+  /// started here, immediately before the first PUT, and every file in that
+  /// submit is stored under the same uid — which is exactly the prefix
+  /// `submit-partner-application` checks.
+  ///
+  /// If the uid changed between two submit attempts, keys left over from the
+  /// first belong to the previous uid — `submit-partner-application` rejects
+  /// those with "does not belong to this session" — so they are dropped and the
+  /// retained bytes are uploaded again under the new owner.
+  Future<String> _ensureUploadSession() async {
+    final uid = await GuestSession.ensure();
+    if (uid == null) {
+      throw Exception(
+          'Gagal memulai sesi upload. Periksa koneksi lalu coba lagi.');
+    }
+    if (_uploadUid != null && _uploadUid != uid) {
+      void drop() {
+        for (var i = 0; i < _facilityPhotoKeys.length; i++) {
+          _facilityPhotoKeys[i] = null;
+          if (_facilityUpload[i] == _UploadState.uploaded) {
+            _facilityUpload[i] = _UploadState.idle;
+          }
+        }
+        for (final k in _docKeys.keys) {
+          _docKeys[k] = null;
+          if (_docUpload[k] == _UploadState.uploaded) {
+            _docUpload[k] = _UploadState.idle;
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(drop);
+      } else {
+        drop();
+      }
+    }
+    _uploadUid = uid;
+    return uid;
+  }
+
   /// Uploads facility photo [i] and stores its key. Safe to call twice: the
   /// second call simply replaces the key with the newer object.
   Future<void> _uploadPhoto(int i) async {
@@ -242,6 +286,7 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
     if (bytes == null || !mounted) return;
     setState(() => _facilityUpload[i] = _UploadState.uploading);
     try {
+      await _ensureUploadSession();
       final key = await R2Storage.uploadBytes(
         bytes,
         scope: R2Scope.partnerApplication,
@@ -268,6 +313,7 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
     final name = (_docFileNames[slot] ?? '').toLowerCase();
     final isPdf = name.endsWith('.pdf');
     try {
+      await _ensureUploadSession();
       final key = await R2Storage.uploadBytes(
         bytes,
         scope: R2Scope.partnerApplication,
@@ -287,29 +333,25 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
     }
   }
 
-  /// A re-pick replaces the file, so the previous object is removed instead of
-  /// lingering in the bucket as an orphan.
-  Future<void> _replacePhoto(int i, Uint8List bytes) async {
-    final old = _facilityPhotoKeys[i];
+  /// A re-pick only swaps the bytes held in memory. Nothing reaches the bucket
+  /// before the application is submitted, so a file can never be stored under a
+  /// session the submission does not reuse — and a replaced file leaves no
+  /// orphan behind because no object was ever written.
+  void _replacePhoto(int i, Uint8List bytes) {
     setState(() {
       _facilityPhotos[i] = bytes;
       _facilityPhotoKeys[i] = null;
-      _facilityUpload[i] = _UploadState.uploading;
+      _facilityUpload[i] = _UploadState.idle;
     });
-    if (old != null) await R2Storage.deleteKey(old);
-    await _uploadPhoto(i);
   }
 
-  Future<void> _replaceDoc(String slot, Uint8List bytes, String name) async {
-    final old = _docKeys[slot];
+  void _replaceDoc(String slot, Uint8List bytes, String name) {
     setState(() {
       _docFiles[slot] = bytes;
       _docFileNames[slot] = name;
       _docKeys[slot] = null;
-      _docUpload[slot] = _UploadState.uploading;
+      _docUpload[slot] = _UploadState.idle;
     });
-    if (old != null) await R2Storage.deleteKey(old);
-    await _uploadDoc(slot);
   }
 
   // ── photo picker ──────────────────────────────────────────────────────────
@@ -329,7 +371,7 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
           error: true);
       return;
     }
-    await _replacePhoto(i, bytes);
+    _replacePhoto(i, bytes);
   }
 
   // ── doc picker ────────────────────────────────────────────────────────────
@@ -360,7 +402,7 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
           error: true);
       return;
     }
-    await _replaceDoc(key, bytes, f.name);
+    _replaceDoc(key, bytes, f.name);
   }
 
   // ── submit ────────────────────────────────────────────────────────────────
@@ -384,21 +426,10 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
     setState(() { _isSubmitting = true; _submitError = null; _submitStage = 'Memulai sesi aman…'; });
 
     try {
-      final uid = await GuestSession.ensure();
-      if (uid == null) throw Exception('Gagal memulai sesi upload. Coba lagi.');
-
-      // Every file was uploaded when it was picked. Anything that failed — or
-      // that was uploaded under a session which has since changed, making the
-      // key foreign to this uid — is retried here, one file at a time.
-      if (_uploadUid != null && _uploadUid != uid) {
-        for (var i = 0; i < _facilityPhotoKeys.length; i++) {
-          _facilityPhotoKeys[i] = null;
-        }
-        for (final k in _docKeys.keys) {
-          _docKeys[k] = null;
-        }
-      }
-      _uploadUid = uid;
+      // Nothing has been uploaded yet. The session is pinned here, once, and
+      // every file of this submission is stored under that same uid, so a key
+      // can no longer be foreign to the uid being submitted.
+      await _ensureUploadSession();
 
       final failed = <String>[];
 
@@ -439,8 +470,8 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
 
       if (failed.isNotEmpty) {
         throw Exception(
-            'Gagal upload: ${failed.join(', ')}. File lain sudah tersimpan — '
-            'tap file yang gagal untuk mencoba lagi, lalu submit ulang.');
+            'Gagal upload: ${failed.join(', ')}. Periksa koneksi lalu submit '
+            'ulang — file yang sudah terunggah tidak diulang.');
       }
 
       stage('Mengirim aplikasi…');
@@ -885,8 +916,12 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
           busy
               ? 'Mengunggah $stored / $picked foto…'
               : failed > 0
-                  ? '$stored / $picked foto tersimpan — $failed gagal, tap untuk coba lagi'
-                  : '$stored / 4 ${l.partnerRegPhotosUploaded}',
+                  ? '$stored / $picked foto terunggah — $failed gagal, kirim ulang'
+                  : ok
+                      ? '$stored / 4 ${l.partnerRegPhotosUploaded}'
+                      : picked == 0
+                          ? '0 / 4 ${l.partnerRegPhotosUploaded}'
+                          : '$picked / 4 foto dipilih — diunggah saat kirim',
           style: TextStyle(
               fontSize: 12,
               color: failed > 0
@@ -909,15 +944,8 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
     final bytes = _facilityPhotos[i];
     final state = _facilityUpload[i];
     return GestureDetector(
-      onTap: () {
-        // A stored file is replaced by picking again; a failed one retries the
-        // upload it already holds before asking for a new file.
-        if (bytes != null && state == _UploadState.failed) {
-          _uploadPhoto(i);
-        } else {
-          _pickPhoto(i);
-        }
-      },
+      // Nothing is uploaded until submit, so a tap always means "pick again".
+      onTap: () => _pickPhoto(i),
       child: Container(
         decoration: BoxDecoration(
           color: bytes == null ? t.colorScheme.surfaceContainer : null,
@@ -950,7 +978,11 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
                           width: 10, height: 10,
                           child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white))
                       : Icon(
-                          state == _UploadState.failed ? Icons.refresh : Icons.check,
+                          state == _UploadState.uploaded
+                              ? Icons.check
+                              : state == _UploadState.failed
+                                  ? Icons.refresh
+                                  : Icons.schedule,
                           size: 10, color: Colors.white),
                 )),
                 Positioned(bottom: 0, left: 0, right: 0, child: Container(
@@ -959,7 +991,9 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
                   child: Text(
                     state == _UploadState.failed
                         ? '${_photoLabels[i]} — gagal'
-                        : _photoLabels[i],
+                        : state == _UploadState.uploaded
+                            ? _photoLabels[i]
+                            : '${_photoLabels[i]} — siap dikirim',
                     style: const TextStyle(fontSize: 10, color: Colors.white)),
                 )),
               ])
@@ -1010,12 +1044,14 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
     final uploaded = state == _UploadState.uploaded;
     final failed = state == _UploadState.failed;
     final stateLabel = failed
-        ? 'Gagal upload — tap untuk coba lagi'
+        ? 'Gagal upload — kirim ulang aplikasinya'
         : state == _UploadState.uploading
             ? 'Mengunggah…'
             : uploaded
                 ? 'Tersimpan'
-                : (fn ?? 'PDF / JPG, maks $_maxFileMb MB');
+                : has
+                    ? 'Dipilih — diunggah saat kirim'
+                    : (fn ?? 'PDF / JPG, maks $_maxFileMb MB');
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -1066,13 +1102,7 @@ class _PartnerRegistrationScreenState extends State<PartnerRegistrationScreen>
         ])),
         const SizedBox(width: 10),
         ElevatedButton(
-          onPressed: () {
-            if (has && failed) {
-              _uploadDoc(key);
-            } else {
-              _pickDoc(key);
-            }
-          },
+          onPressed: () => _pickDoc(key),
           style: ElevatedButton.styleFrom(
               backgroundColor: uploaded
                   ? Colors.green.withValues(alpha: 0.1)
