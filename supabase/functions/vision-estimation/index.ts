@@ -476,6 +476,10 @@ CRITICAL: The field name MUST be "panel_name" (not "panel", not "name"). The sev
           estimationResult = await callGoogleGemini(photoUrls, promptWithContext, configData.model_name, rowKey || googleApiKey);
         } else if (provider.includes("groq")) {
           estimationResult = await callOpenAICompatible(photoUrls, promptWithContext, configData.model_name, rowKey || groqApiKey, configData.api_base_url);
+        } else if (provider.includes("nvidia") || provider.includes("nemotron")) {
+          // NVIDIA NIM — OpenAI-compatible, accepts base64 data URLs.
+          if (!rowKey) throw new Error("NVIDIA_API_KEY is not set for this row");
+          estimationResult = await callOpenAICompatible(photoUrls, promptWithContext, configData.model_name, rowKey, configData.api_base_url);
         } else if (provider.includes("openai") || provider.includes("router") || provider.includes("broadandbright") || provider.includes("9router")) {
           // Covers OpenAI, OpenRouter, 9Router-style gateways, and broadandbright
           estimationResult = await callOpenAICompatible(photoUrls, promptWithContext, configData.model_name, rowKey || openaiApiKey, configData.api_base_url);
@@ -780,6 +784,14 @@ async function callOpenAICompatible(photoUrls: string[], prompt: string, modelNa
   // Skip JSON mode for models that might not fully support strict structured format
   if (!isGroq && !isOpenRouterFree) {
     payload.response_format = { type: "json_object" };
+  }
+
+  // Reasoning models spend their completion budget on thinking before they emit
+  // the answer. The NIM default cap is lower than Nemotron's reasoning length,
+  // and a truncated turn comes back with content:null — the JSON parse then
+  // fails and the whole engine looks broken. Give those models room.
+  if (/nemotron|gpt-oss|reasoning/i.test(modelName)) {
+    payload.max_tokens = 4096;
   }
 
   const response = await fetch(apiBaseUrl, {
