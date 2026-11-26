@@ -783,8 +783,8 @@ class _JobCard extends StatelessWidget {
                             profileEmail: job.profileEmail,
                             dense: true,
                           ),
-                          // ─── Body & Paint Detail (6 steps) when the job is in the workshop ───
-                          if (job.status == '6_in_progress' && job.stageProgress.isNotEmpty) ...[
+                          // ─── Body & Paint Detail (6 steps) from payment onwards ───
+                          if (job.status == '4_paid' || job.status == '6_in_progress') ...[
                             const SizedBox(height: 10),
                             RepairStageProgressList(
                               progress: job.stageProgress,

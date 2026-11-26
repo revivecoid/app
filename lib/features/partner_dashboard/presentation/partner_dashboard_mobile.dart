@@ -396,8 +396,8 @@ class _JobList extends StatelessWidget {
                             ]),
                             const SizedBox(height: 12),
 
-                            // ─── Body & Paint Detail (6 steps) when the job is in the workshop ───
-                            if (job.status == '6_in_progress' && job.stageProgress.isNotEmpty) ...[
+                            // ─── Body & Paint Detail (6 steps) from payment onwards ───
+                            if ((job.status == '4_paid' || job.status == '6_in_progress')) ...[
                               RepairStageProgressList(
                                 progress: job.stageProgress,
                                 languageCode: context.l10n.localeName,

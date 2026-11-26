@@ -281,9 +281,14 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
                       });
                     }
 
-                    // Fetch milestone progress for jobs in 6_in_progress
+                    // Fetch milestone progress once the car is paid for and the
+                    // repair may be recorded. 4_paid is included because
+                    // completing `disassembly` is itself what moves the job to
+                    // 6_in_progress — without it the partner has no way to
+                    // record the first step of the sequence.
                     final stageProgress = <String, RepairStageProgress>{};
-                    if (job['status']?.toString() == '6_in_progress') {
+                    if (job['status']?.toString() == '4_paid' ||
+                        job['status']?.toString() == '6_in_progress') {
                       final milestonesRes = await _supabase
                           .from('job_milestones')
                           .select('id, stage_key, status, completed_at')
@@ -455,15 +460,26 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
     );
 
     try {
-      await _supabase.rpc('ops_complete_stage', params: {
+      // ops_complete_stage reports refusal in its payload rather than raising,
+      // so a role the workshop forbids comes back as success:false. Treating
+      // that as a completed write would tick a step that never happened.
+      final result = await _supabase.rpc('ops_complete_stage', params: {
         'p_job_id': jobId,
         'p_stage_key': stageKey,
         'p_file_keys': <String>[],
       });
+      final response = result is Map<String, dynamic> ? result : <String, dynamic>{};
 
       // Refresh after confirmed server write, so the tick and the counter come
       // from job_milestones rather than from local optimism.
       await _fetchIsolatedData();
+
+      if (response['success'] == false) {
+        state = state.copyWith(
+          errorMessage:
+              response['error']?.toString() ?? 'Could not record stage.',
+        );
+      }
     } catch (e) {
       await _fetchIsolatedData();
       final errText = e.toString()
