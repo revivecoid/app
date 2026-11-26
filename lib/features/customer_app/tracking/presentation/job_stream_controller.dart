@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/jobs/repair_stages.dart';
+
 // --- STATE DEFINITIONS ---
 
 class RepairPhoto {
@@ -36,11 +38,21 @@ class JobStreamState {
   final bool isDisconnected;
   final bool isLoading;
 
+  /// The six body & paint steps, keyed by `job_milestones.stage_key`.
+  ///
+  /// This is what turns "Pengerjaan Bodi & Pengecatan" from one opaque step into
+  /// bongkar / ketok-las / dempul / cat / poles / pasang. It arrives over its own
+  /// realtime subscription, so the customer sees each stage land without
+  /// reloading. Empty until the floor records the first one, which is a valid
+  /// state — a car in the queue has no stages yet.
+  final Map<String, RepairStageProgress> stageProgress;
+
   JobStreamState({
     this.currentStatus = '1_intake',
     this.photos = const [],
     this.isDisconnected = false,
     this.isLoading = true,
+    this.stageProgress = const {},
   });
 
   JobStreamState copyWith({
@@ -48,12 +60,14 @@ class JobStreamState {
     List<RepairPhoto>? photos,
     bool? isDisconnected,
     bool? isLoading,
+    Map<String, RepairStageProgress>? stageProgress,
   }) {
     return JobStreamState(
       currentStatus: currentStatus ?? this.currentStatus,
       photos: photos ?? this.photos,
       isDisconnected: isDisconnected ?? this.isDisconnected,
       isLoading: isLoading ?? this.isLoading,
+      stageProgress: stageProgress ?? this.stageProgress,
     );
   }
 }
@@ -70,11 +84,18 @@ final jobStreamProvider = StateNotifierProvider.autoDispose.family<JobStreamCont
 class JobStreamController extends StateNotifier<JobStreamState> {
   final SupabaseClient _supabase;
   final String _jobId;
-  
+
   StreamSubscription? _jobSubscription;
   StreamSubscription? _photoSubscription;
+  StreamSubscription? _milestoneSubscription;
+  StreamSubscription? _milestonePhotoSubscription;
   Timer? _reconnectTimer;
-  
+
+  // The two milestone streams are filtered server-side by job_id, so both hold
+  // only this job's rows. Rebuilt into one map on every change.
+  List<Map<String, dynamic>> _milestoneRows = const [];
+  List<Map<String, dynamic>> _milestonePhotoRows = const [];
+
   // SEC-04/PRIV-01: Bucket revive-photos kini private.
   // URL foto job dihasilkan per-foto via createSignedUrl di job photo loading.
   // Variabel ini dipertahankan untuk kompatibilitas — nilainya diabaikan.
@@ -106,6 +127,33 @@ class JobStreamController extends StateNotifier<JobStreamState> {
   void _cancelStreams() {
     _jobSubscription?.cancel();
     _photoSubscription?.cancel();
+    _milestoneSubscription?.cancel();
+    _milestonePhotoSubscription?.cancel();
+  }
+
+  /// Rebuilds [JobStreamState.stageProgress] from the two milestone streams.
+  ///
+  /// Photo counts are attached from `job_milestone_photos`. They are shown to the
+  /// customer as information only — progress photos are optional, so a completed
+  /// stage with no photo is normal and must not look like a failure.
+  void _rebuildStageProgress() {
+    final byMilestoneId = <String, int>{};
+    for (final row in _milestonePhotoRows) {
+      final mid = row['milestone_id']?.toString();
+      if (mid == null) continue;
+      byMilestoneId[mid] = (byMilestoneId[mid] ?? 0) + 1;
+    }
+
+    final progress = <String, RepairStageProgress>{};
+    for (final row in _milestoneRows) {
+      final key = row['stage_key']?.toString() ?? '';
+      if (!kBodyPaintStageKeys.contains(key)) continue;
+      final parsed = RepairStageProgress.fromRow(row);
+      final count = byMilestoneId[row['id']?.toString()] ?? 0;
+      progress[key] = parsed.withPhotoCount(count);
+    }
+
+    state = state.copyWith(stageProgress: progress);
   }
 
   /// Establishes the explicit Supabase Realtime websocket subscriptions for both the job state and the photo ledger.
@@ -123,7 +171,7 @@ class JobStreamController extends StateNotifier<JobStreamState> {
 
     try {
       _cancelStreams();
-      
+
       // 1. Subscribe to Job Status Mutations
       _jobSubscription = _supabase
           .from('repair_jobs')
@@ -161,7 +209,34 @@ class JobStreamController extends StateNotifier<JobStreamState> {
           }, onError: (error) {
             _handleStreamDisconnect();
           });
-          
+
+      // 3. Subscribe to the repair STAGE milestones — this is the six-step body
+      //    & paint progress the customer monitors. Published to realtime by
+      //    20261126000000_body_paint_stage_tracking.sql.
+      _milestoneSubscription = _supabase
+          .from('job_milestones')
+          .stream(primaryKey: ['id'])
+          .eq('job_id', _jobId)
+          .listen((data) {
+            _milestoneRows = List<Map<String, dynamic>>.from(data);
+            _rebuildStageProgress();
+          }, onError: (error) {
+            _handleStreamDisconnect();
+          });
+
+      // 4. Subscribe to the milestone photo ledger, purely for the "2 foto" note
+      //    beside a completed stage.
+      _milestonePhotoSubscription = _supabase
+          .from('job_milestone_photos')
+          .stream(primaryKey: ['id'])
+          .eq('job_id', _jobId)
+          .listen((data) {
+            _milestonePhotoRows = List<Map<String, dynamic>>.from(data);
+            _rebuildStageProgress();
+          }, onError: (error) {
+            _handleStreamDisconnect();
+          });
+
     } catch (e) {
       _handleStreamDisconnect();
     }

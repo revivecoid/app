@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/repair_stage_progress.dart';
+import '../../../../core/jobs/repair_stages.dart';
 import 'package:re_v/l10n/app_localizations.dart';
 import '../../../../core/jobs/job_status.dart'; // S-08 fix
 import 'partner_dashboard_controller.dart';
@@ -385,16 +387,35 @@ class _JobList extends StatelessWidget {
             ),
             // Card body
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${job.carMake} ${job.carModel}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 4),
-                Row(children: [
-                  Text('• ${job.customerName}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
-                ]),
-                const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(child: SizedBox(
+                          padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text('${job.carMake} ${job.carModel}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
+                            const SizedBox(height: 4),
+                            Row(children: [
+                              Text('• ${job.customerName}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                            ]),
+                            const SizedBox(height: 12),
+
+                            // ─── Body & Paint Detail (6 steps) when the job is in the workshop ───
+                            if (job.status == '6_in_progress' && job.stageProgress.isNotEmpty) ...[
+                              RepairStageProgressList(
+                                progress: job.stageProgress,
+                                languageCode: context.l10n.localeName,
+                                actionableKeys: kBodyPaintStageKeys.toSet(), // All stages actionable for partner
+                                onTapStage: (stage) {
+                                  // This triggers ops_complete_stage via the partner's session
+                                  // but partner should only advance job status via advanceJobStage.
+                                  // For now, the widget is informational. Tap could navigate to a
+                                  // detail screen with photo upload per stage.
+                                },
+                                dense: true,
+                                showCounter: true,
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+
+                            Row(children: [
+                              Expanded(child: SizedBox(
                     height: 34,
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(

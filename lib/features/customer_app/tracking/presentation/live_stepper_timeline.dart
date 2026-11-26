@@ -8,6 +8,8 @@ import '../../../../core/widgets/signed_image.dart';
 import 'package:re_v/l10n/app_localizations.dart';
 import '../../../../core/jobs/job_status.dart';
 import 'job_stream_controller.dart';
+import '../../../../core/widgets/repair_stage_progress.dart';
+import '../../../../core/jobs/repair_stages.dart';
 import '../../../../core/l10n/app_localizations_extension.dart';
 
 // ─── Status → step index mapping ───────────────────────────────────────────
@@ -241,7 +243,7 @@ class _LiveStepperTimelineState extends ConsumerState<LiveStepperTimeline> {
 }
 
 // ─── Body ───────────────────────────────────────────────────────────────────
-class _TrackerBody extends StatelessWidget {
+class _TrackerBody extends ConsumerWidget {
   final String jobId;
   final String status;
   final List<RepairPhoto> photos;
@@ -262,103 +264,129 @@ class _TrackerBody extends StatelessWidget {
 
   int get currentStepIndex => _statusSteps.indexOf(status).clamp(0, _statusSteps.length - 1);
 
+  /// True when the job has reached or passed the workshop phase (6_in_progress).
+    /// The body & paint detail shows as a read-only preview from step 1 (intake) onwards,
+    /// and as live progress from job_milestones once the job is in the workshop.
+    bool get workshopPhaseReached =>
+        currentStepIndex >= _statusSteps.indexOf('1_intake');  // 0 - show from the start
+
   @override
-  Widget build(BuildContext context) {
-    final progressPhotos = photos.where((p) =>
-        // C-40 fix: partner writes 'in_progress' context; also include 'progress', 'finished', 'inspected'
-        !['payment', 'intake', 'booking'].contains(p.context)).toList();
+    Widget build(BuildContext context, WidgetRef ref) {
+      final progressPhotos = photos.where((p) =>
+          // C-40 fix: partner writes 'in_progress' context; also include 'progress', 'finished', 'inspected'
+          !['payment', 'intake', 'booking'].contains(p.context)).toList();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ─── Status Banner ───
-          _StatusBanner(status: status, mutedColor: mutedColor),
-          const SizedBox(height: 16),
+      final sp = ref.watch(jobStreamProvider(jobId));
+      final stageProgress = sp.stageProgress;
 
-          // ─── Handover confirmation + rating ───
-          // Finding 12: the order used to close with nobody confirming that
-          // the car was actually handed over, and the workshop could never be
-          // rated. Both are the customer's to give, so they are asked here.
-          if (status == '8_awaiting_delivery' || status == '9_done') ...[
-            _HandoverCard(
-                jobId: jobId,
-                alreadyConfirmed: status == '9_done',
-                cardColor: cardColor,
-                textColor: textColor,
-                mutedColor: mutedColor,
-                isDark: isDark),
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ─── Status Banner ───
+            _StatusBanner(status: status, mutedColor: mutedColor),
             const SizedBox(height: 16),
-          ],
 
-          // ─── Timeline ───
-          _card(
-            cardColor: cardColor,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(context.l10n.trackingStatus, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
-                const SizedBox(height: 4),
-                Text(
-                  'Step ${currentStepIndex + 1} of ${_statusSteps.length}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.fireRed, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                ...List.generate(_statusSteps.length, (i) {
-                  final stepStatus = i < currentStepIndex
-                      ? _StepState.completed
-                      : i == currentStepIndex
-                          ? _StepState.active
-                          : _StepState.pending;
-                  return _TimelineStep(
-                    label: _stepLabel(context.l10n, i),
-                    description: _stepDesc(context.l10n, i),
-                    state: stepStatus,
-                    isLast: i == _statusSteps.length - 1,
-                    textColor: textColor,
-                    mutedColor: mutedColor,
-                    isDark: isDark,
-                  );
-                }),
-              ],
+            // ─── Handover confirmation + rating ───
+            // Finding 12: the order used to close with nobody confirming that
+            // the car was actually handed over, and the workshop could never be
+            // rated. Both are the customer's to give, so they are asked here.
+            if (status == '8_awaiting_delivery' || status == '9_done') ...[
+              _HandoverCard(
+                  jobId: jobId,
+                  alreadyConfirmed: status == '9_done',
+                  cardColor: cardColor,
+                  textColor: textColor,
+                  mutedColor: mutedColor,
+                  isDark: isDark),
+              const SizedBox(height: 16),
+            ],
+
+            // ─── Body & Paint Detail (6 steps) ───
+                        // Shown when job has reached or passed the workshop phase.
+                        // Before 6_in_progress: read-only preview so the customer knows what's coming.
+                        // At/after 6_in_progress: live progress from job_milestones.
+                        if (workshopPhaseReached) ...[
+                          _card(
+                            cardColor: cardColor,
+                            child: RepairStageProgressList(
+                              progress: stageProgress,
+                              languageCode: context.l10n.localeName,
+                              // Customer always read-only
+                              showCounter: true,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+            // ─── Timeline (high-level) ───
+            _card(
+              cardColor: cardColor,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(context.l10n.trackingStatus, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Step ${currentStepIndex + 1} of ${_statusSteps.length}',
+                    style: const TextStyle(fontSize: 12, color: AppColors.fireRed, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  ...List.generate(_statusSteps.length, (i) {
+                    final stepStatus = i < currentStepIndex
+                        ? _StepState.completed
+                        : i == currentStepIndex
+                            ? _StepState.active
+                            : _StepState.pending;
+                    return _TimelineStep(
+                      label: _stepLabel(context.l10n, i),
+                      description: _stepDesc(context.l10n, i),
+                      state: stepStatus,
+                      isLast: i == _statusSteps.length - 1,
+                      textColor: textColor,
+                      mutedColor: mutedColor,
+                      isDark: isDark,
+                    );
+                  }),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // ─── Live Photo Stream ───
-          _card(
-            cardColor: cardColor,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.camera_alt, color: AppColors.fireRed, size: 18),
-                    const SizedBox(width: 8),
-                    Text(context.l10n.trackingWorkshop, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (progressPhotos.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: isDark ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.10) : Theme.of(context).colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.image_search, size: 36, color: mutedColor),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Awaiting photo updates from the workshop floor…',
-                          style: TextStyle(color: mutedColor, fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+            // ─── Live Photo Stream ───
+            _card(
+              cardColor: cardColor,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.camera_alt, color: AppColors.fireRed, size: 18),
+                      const SizedBox(width: 8),
+                      Text(context.l10n.trackingWorkshop, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (progressPhotos.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: isDark ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.10) : Theme.of(context).colorScheme.surfaceContainer,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.image_search, size: 36, color: mutedColor),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Awaiting photo updates from the workshop floor…',
+                            style: TextStyle(color: mutedColor, fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                     ),
                   )
                 else

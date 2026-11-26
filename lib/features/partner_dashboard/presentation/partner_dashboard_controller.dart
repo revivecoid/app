@@ -1,3 +1,4 @@
+import '../../../../core/jobs/repair_stages.dart';
 import '../../../../core/services/r2_storage.dart';
 import 'package:re_v/core/utils/error_mapper.dart';
 import 'dart:async';
@@ -21,6 +22,10 @@ class PartnerJobNode {
   final String status;
   final DateTime admittedAt;
   final String? latestPhotoUrl;
+
+  /// The six body & paint stages for this job, when it reaches 6_in_progress.
+  /// Empty for earlier states (booked/admitted/inspected/paid).
+  final Map<String, RepairStageProgress> stageProgress;
 
   /// The number the customer booked with, snapshotted on the job. This is what
   /// the workshop rings to arrange or chase a pickup — preferred over the
@@ -61,13 +66,14 @@ class PartnerJobNode {
     required this.status,
     required this.admittedAt,
     this.latestPhotoUrl,
-    this.hasProgressPhoto = false,
-    this.hasIntakePhoto = false,
+    this.stageProgress = const {},
     this.contactPhone,
     this.profilePhone,
     this.profileEmail,
     this.initialEstimationCost,
     this.estimationResult,
+    this.hasProgressPhoto = false,
+    this.hasIntakePhoto = false,
   });
 
   /// Initial per-panel figures, in the order the vision assessment reported
@@ -87,29 +93,31 @@ class PartnerJobNode {
   }
 
   PartnerJobNode copyWith({
-    String? status,
-    String? latestPhotoUrl,
-    bool? hasProgressPhoto,
-    bool? hasIntakePhoto,
-  }) {
-    return PartnerJobNode(
-      id: id,
-      customerName: customerName,
-      carMake: carMake,
-      carModel: carModel,
-      licensePlate: licensePlate,
-      status: status ?? this.status,
-      admittedAt: admittedAt,
-      latestPhotoUrl: latestPhotoUrl ?? this.latestPhotoUrl,
-      hasProgressPhoto: hasProgressPhoto ?? this.hasProgressPhoto,
-      hasIntakePhoto: hasIntakePhoto ?? this.hasIntakePhoto,
-      contactPhone: contactPhone,
-      profilePhone: profilePhone,
-      profileEmail: profileEmail,
-      initialEstimationCost: initialEstimationCost,
-      estimationResult: estimationResult,
-    );
-  }
+      String? status,
+      String? latestPhotoUrl,
+      Map<String, RepairStageProgress>? stageProgress,
+      bool? hasProgressPhoto,
+      bool? hasIntakePhoto,
+    }) {
+      return PartnerJobNode(
+        id: id,
+        customerName: customerName,
+        carMake: carMake,
+        carModel: carModel,
+        licensePlate: licensePlate,
+        status: status ?? this.status,
+        admittedAt: admittedAt,
+        latestPhotoUrl: latestPhotoUrl ?? this.latestPhotoUrl,
+        stageProgress: stageProgress ?? this.stageProgress,
+        hasProgressPhoto: hasProgressPhoto ?? this.hasProgressPhoto,
+        hasIntakePhoto: hasIntakePhoto ?? this.hasIntakePhoto,
+        contactPhone: contactPhone,
+        profilePhone: profilePhone,
+        profileEmail: profileEmail,
+        initialEstimationCost: initialEstimationCost,
+        estimationResult: estimationResult,
+      );
+    }
 }
 
 class PartnerDashboardState {
@@ -242,66 +250,99 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
       ]);
 
 
-      final List<PartnerJobNode> jobs = (response as List).map((job) {
-        final profile = job['profiles'] as Map<String, dynamic>? ?? {};
-        final vehicle = job['vehicles'] as Map<String, dynamic>? ?? {};
-        
-        String? latestPhotoUrl;
-        var hasProgressPhoto = false;
-        var hasIntakePhoto = false;
-        final photos = job['repair_photos'] as List?;
-        if (photos != null && photos.isNotEmpty) {
-          photos.sort((a, b) => DateTime.parse(b['uploaded_at'].toString()).compareTo(DateTime.parse(a['uploaded_at'].toString())));
-          // SEC-04: Bucket private — signed URL diperlukan.
-          // TODO: Ganti dengan await signedPhotoUrl(photos.first['r2_file_key'].toString())
-          // Sementara: simpan file_key, biarkan UI request signed URL on-demand.
-          latestPhotoUrl = photos.first['r2_file_key'].toString();
-          // A photo taken while the car was on the ramp or being worked on.
-          // Intake and inspection shots do not count as proof of the work.
-          hasProgressPhoto = photos.any((p) {
-            final ctx = p['step_context']?.toString() ?? '';
-            return ctx == 'in_progress' || ctx == 'progress' || ctx == 'finished';
-          });
-          // The condition photo is the one the workshop takes when the car
-          // arrives. The customer's own damage photos do not count.
-          hasIntakePhoto = photos.any((p) {
-            final ctx = p['step_context']?.toString() ?? '';
-            return ctx == 'booked' ||
-                ctx == 'admitted' ||
-                ctx == 'intake' ||
-                ctx == 'vehicle_intake';
-          });
-        }
+      final List<PartnerJobNode> jobs = await Future.wait((response as List).map((job) async {
+                    final profile = job['profiles'] as Map<String, dynamic>? ?? {};
+                    final vehicle = job['vehicles'] as Map<String, dynamic>? ?? {};
 
-        return PartnerJobNode(
-          id: job['id'].toString(),
-          customerName: profile['full_name']?.toString() ?? 'Unknown',
-          carMake: vehicle['make']?.toString() ?? 'Unknown',
-          carModel: vehicle['model']?.toString() ?? 'Unknown',
-          licensePlate: vehicle['license_plate']?.toString() ?? 'No Plate',
-          status: job['status'].toString(),
-          admittedAt: DateTime.tryParse(job['status_changed_at']?.toString() ?? '') ??
-                      DateTime.tryParse(job['created_at']?.toString() ?? '') ??
-                      DateTime.now(), // C-82 fix: use status_changed_at (time of last transition), fallback to created_at
-          latestPhotoUrl: latestPhotoUrl,
-          hasProgressPhoto: hasProgressPhoto,
-          hasIntakePhoto: hasIntakePhoto,
-          contactPhone: job['contact_phone']?.toString(),
-          profilePhone: profile['phone']?.toString(),
-          profileEmail: profile['email']?.toString(),
-          initialEstimationCost:
-              (job['initial_estimation_cost'] as num?)?.toDouble(),
-          // PostgREST returns jsonb already decoded when the column is a scalar
-          // projection; guard the cast so an unexpected shape degrades to
-          // "no pre-fill" rather than throwing inside the map and losing the
-          // whole job list.
-          estimationResult: job['estimation_result'] is Map
-              ? Map<String, dynamic>.from(job['estimation_result'] as Map)
-              : null,
-        );
-      }).toList();
+                    String? latestPhotoUrl;
+                    var hasProgressPhoto = false;
+                    var hasIntakePhoto = false;
+                    final photos = job['repair_photos'] as List?;
+                    if (photos != null && photos.isNotEmpty) {
+                      photos.sort((a, b) => DateTime.parse(b['uploaded_at'].toString()).compareTo(DateTime.parse(a['uploaded_at'].toString())));
+                      // SEC-04: Bucket private — signed URL diperlukan.
+                      // TODO: Ganti dengan await signedPhotoUrl(photos.first['r2_file_key'].toString())
+                      // Sementara: simpan file_key, biarkan UI request signed URL on-demand.
+                      latestPhotoUrl = photos.first['r2_file_key'].toString();
+                      // A photo taken while the car was on the ramp or being worked on.
+                      // Intake and inspection shots do not count as proof of the work.
+                      hasProgressPhoto = photos.any((p) {
+                        final ctx = p['step_context']?.toString() ?? '';
+                        return ctx == 'in_progress' || ctx == 'progress' || ctx == 'finished';
+                      });
+                      // The condition photo is the one the workshop takes when the car
+                      // arrives. The customer's own damage photos do not count.
+                      hasIntakePhoto = photos.any((p) {
+                        final ctx = p['step_context']?.toString() ?? '';
+                        return ctx == 'booked' ||
+                            ctx == 'admitted' ||
+                            ctx == 'intake' ||
+                            ctx == 'vehicle_intake';
+                      });
+                    }
 
-      state = state.copyWith(activeJobs: jobs, isLoading: false);
+                    // Fetch milestone progress for jobs in 6_in_progress
+                    final stageProgress = <String, RepairStageProgress>{};
+                    if (job['status']?.toString() == '6_in_progress') {
+                      final milestonesRes = await _supabase
+                          .from('job_milestones')
+                          .select('id, stage_key, status, completed_at')
+                          .eq('job_id', job['id'])
+                          .inFilter('stage_key', kBodyPaintStageKeys);
+
+                      // Attach photo counts
+                      final byMilestoneId = <String, int>{};
+                      if (milestonesRes.isNotEmpty) {
+                        final milestoneIds = milestonesRes.map((r) => r['id'] as String).toList();
+                        final photosRes = await _supabase
+                            .from('job_milestone_photos')
+                            .select('milestone_id')
+                            .inFilter('milestone_id', milestoneIds);
+                        for (final p in List<Map<String, dynamic>>.from(photosRes)) {
+                          final mid = p['milestone_id']?.toString() ?? '';
+                          if (mid.isNotEmpty) byMilestoneId[mid] = (byMilestoneId[mid] ?? 0) + 1;
+                        }
+                      }
+
+                      for (final row in milestonesRes) {
+                        final key = row['stage_key']?.toString() ?? '';
+                        if (!kBodyPaintStageKeys.contains(key)) continue;
+                        final parsed = RepairStageProgress.fromRow(row);
+                        final count = byMilestoneId[row['id']?.toString()] ?? 0;
+                        stageProgress[key] = parsed.withPhotoCount(count);
+                      }
+                    }
+
+                    return PartnerJobNode(
+                      id: job['id'].toString(),
+                      customerName: profile['full_name']?.toString() ?? 'Unknown',
+                      carMake: vehicle['make']?.toString() ?? 'Unknown',
+                      carModel: vehicle['model']?.toString() ?? 'Unknown',
+                      licensePlate: vehicle['license_plate']?.toString() ?? 'No Plate',
+                      status: job['status'].toString(),
+                      admittedAt: DateTime.tryParse(job['status_changed_at']?.toString() ?? '') ??
+                                  DateTime.tryParse(job['created_at']?.toString() ?? '') ??
+                                  DateTime.now(), // C-82 fix: use status_changed_at (time of last transition), fallback to created_at
+                      latestPhotoUrl: latestPhotoUrl,
+                      stageProgress: stageProgress,
+                      hasProgressPhoto: hasProgressPhoto,
+                      hasIntakePhoto: hasIntakePhoto,
+                      contactPhone: job['contact_phone']?.toString(),
+                      profilePhone: profile['phone']?.toString(),
+                      profileEmail: profile['email']?.toString(),
+                      initialEstimationCost:
+                          (job['initial_estimation_cost'] as num?)?.toDouble(),
+                      // PostgREST returns jsonb already decoded when the column is a scalar
+                      // projection; guard the cast so an unexpected shape degrades to
+                      // "no pre-fill" rather than throwing inside the map and losing the
+                      // whole job list.
+                      estimationResult: job['estimation_result'] is Map
+                          ? Map<String, dynamic>.from(job['estimation_result'] as Map)
+                          : null,
+                    );
+                  }));
+
+            state = state.copyWith(activeJobs: jobs, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: mapRawErrorToUserMessage(e));
     }

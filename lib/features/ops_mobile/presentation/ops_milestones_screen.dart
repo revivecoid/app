@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/utils/session_health.dart';
 import '../ops_access.dart';
 import 'ops_stage_photo_screen.dart';
+import '../../../../core/jobs/repair_stages.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 

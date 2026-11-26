@@ -6,122 +6,17 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/utils/image_compressor.dart';
+import '../../../core/jobs/repair_stages.dart';
 import '../ops_access.dart';
 
-// ─── Stage metadata ───────────────────────────────────────────────────────────
+// The stage registry lives in `core/jobs/repair_stages.dart` because three
+// surfaces render the same production sequence now: this ops app, the partner
+// dashboard, and the customer tracker. Re-exported so every existing
+// `import 'ops_stage_photo_screen.dart'` call site still resolves
+// `kOpsStages`, `OpsStageDefinition` and `stageByKey`.
+export '../../../core/jobs/repair_stages.dart'
+    show OpsStageDefinition, kOpsStages, kBodyPaintStageKeys, stageByKey;
 
-/// Canonical definition of every ops repair stage.
-/// [stageKey]      — DB key, used in job_milestones.stage_key and notifications.
-/// [label]         — Human-readable stage name.
-/// [instruction]   — Shown to the operator inside the photo screen.
-/// [minPhotos]     — Minimum photos required before submission.
-/// [advancesStatus]— If non-null, calls advance_job_status after milestone insert.
-/// [allowedRoles]  — Which roles can complete this stage.
-class OpsStageDefinition {
-  final String stageKey;
-  final String label;
-  final String instruction;
-  final int minPhotos;
-  final String? advancesStatus;
-  final List<String> allowedRoles;
-  const OpsStageDefinition({
-    required this.stageKey,
-    required this.label,
-    required this.instruction,
-    required this.minPhotos,
-    this.advancesStatus,
-    required this.allowedRoles,
-  });
-}
-
-const kOpsStages = <OpsStageDefinition>[
-  OpsStageDefinition(
-    stageKey: 'vehicle_intake',
-    label: 'Vehicle Intake',
-    instruction:
-        'Document all 4 sides of the vehicle plus any pre-existing damage before handing over the keys. '
-        'Min 2 photos required.',
-    minPhotos: 2,
-    advancesStatus: '5_admitted',
-    allowedRoles: ['partner_staff', 'partner_driver', 'partner_mechanic', 'master_admin'],
-  ),
-  OpsStageDefinition(
-    stageKey: 'disassembly',
-    label: 'Disassembly',
-    instruction:
-        'Photograph each damaged panel after removal. Include before/after shots of the disassembled area.',
-    minPhotos: 1,
-    advancesStatus: '6_in_progress',
-    allowedRoles: ['partner_staff', 'partner_mechanic', 'master_admin'],
-  ),
-  OpsStageDefinition(
-    stageKey: 'welding',
-    label: 'Welding / Panel Beating',
-    instruction:
-        'Photograph the repaired structural panels after welding or panel beating. Show all weld points.',
-    minPhotos: 1,
-    advancesStatus: null, // Sub-stage within 6_in_progress; no status change
-    allowedRoles: ['partner_staff', 'partner_mechanic', 'master_admin'],
-  ),
-  OpsStageDefinition(
-    stageKey: 'body_filler',
-    label: 'Body Filler (Dempul)',
-    instruction:
-        'Photograph panels after body filler application. Capture coverage and surface smoothness.',
-    minPhotos: 1,
-    advancesStatus: null,
-    allowedRoles: ['partner_staff', 'partner_mechanic', 'master_admin'],
-  ),
-  OpsStageDefinition(
-    stageKey: 'painting',
-    label: 'Painting',
-    instruction:
-        'Photograph panels in the paint booth after base coat and clear coat application.',
-    minPhotos: 1,
-    advancesStatus: null,
-    allowedRoles: ['partner_staff', 'partner_mechanic', 'master_admin'],
-  ),
-  OpsStageDefinition(
-    stageKey: 'polishing',
-    label: 'Polishing & Detailing',
-    instruction:
-        'Photograph the finished polished panels. Include full-vehicle shot from each side.',
-    minPhotos: 2,
-    advancesStatus: null,
-    allowedRoles: ['partner_staff', 'partner_mechanic', 'master_admin'],
-  ),
-  OpsStageDefinition(
-    stageKey: 'qc_finished',
-    label: 'Quality Control',
-    instruction:
-        'QC sign-off photos. Photograph all repaired areas and complete vehicle — 4 sides minimum.',
-    minPhotos: 2,
-    advancesStatus: '7_finished',
-    allowedRoles: ['partner_staff', 'partner_mechanic', 'master_admin'],
-  ),
-  OpsStageDefinition(
-    stageKey: 'delivery',
-    label: 'Delivery / Pickup',
-    instruction:
-        'Photograph the vehicle being handed to the customer. Include handover proof with customer present if possible.',
-    minPhotos: 1,
-    advancesStatus: '9_done',
-    // Staff are included deliberately: they are the ones who hand the car back to
-    // the customer, so excluding them produced a stage the UI offered under
-    // all_access and the RPC then refused. `ops_complete_delivery` admits
-    // partner_staff too — this list gates the UI, that RPC gates the server, and
-    // the two must agree or the button is a dead end.
-    allowedRoles: ['partner_staff', 'partner_driver', 'partner_mechanic', 'master_admin'],
-  ),
-];
-
-OpsStageDefinition? stageByKey(String key) {
-  try {
-    return kOpsStages.firstWhere((s) => s.stageKey == key);
-  } catch (_) {
-    return null;
-  }
-}
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 

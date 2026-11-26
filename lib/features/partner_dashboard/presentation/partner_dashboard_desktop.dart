@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/widgets/signed_image.dart';
+import '../../../../core/widgets/repair_stage_progress.dart';
+import '../../../../core/jobs/repair_stages.dart';
 import 'package:re_v/l10n/app_localizations.dart';
 import '../../../../core/widgets/customer_contact_line.dart';
 import '../../../../core/jobs/job_status.dart'; // S-08 fix
@@ -760,29 +762,43 @@ class _JobCard extends StatelessWidget {
           ),
           // Card body
           Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('${job.carMake} ${job.carModel}',
-                    style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold, fontSize: 15)),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text('• ${job.customerName}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
-                  ],
-                ),
-                // The workshop needs the customer's number to arrange a pickup or
-                // chase a delivery, and it never appeared here before.
-                const SizedBox(height: 4),
-                CustomerContactLine(
-                  jobContactPhone: job.contactPhone,
-                  profilePhone: job.profilePhone,
-                  profileEmail: job.profileEmail,
-                  dense: true,
-                ),
-                if (job.latestPhotoUrl != null) ...[
-                  const SizedBox(height: 12),
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('${job.carMake} ${job.carModel}',
+                              style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text('• ${job.customerName}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                            ],
+                          ),
+                          // The workshop needs the customer's number to arrange a pickup or
+                          // chase a delivery, and it never appeared here before.
+                          const SizedBox(height: 4),
+                          CustomerContactLine(
+                            jobContactPhone: job.contactPhone,
+                            profilePhone: job.profilePhone,
+                            profileEmail: job.profileEmail,
+                            dense: true,
+                          ),
+                          // ─── Body & Paint Detail (6 steps) when the job is in the workshop ───
+                          if (job.status == '6_in_progress' && job.stageProgress.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            RepairStageProgressList(
+                              progress: job.stageProgress,
+                              languageCode: context.l10n.localeName,
+                              actionableKeys: kBodyPaintStageKeys.toSet(),
+                              onTapStage: (stage) {
+                                // Tap for detail — partner can navigate to photo upload per stage
+                              },
+                              dense: true,
+                              showCounter: true,
+                            ),
+                          ],
+                          if (job.latestPhotoUrl != null) ...[
+                            const SizedBox(height: 12),
                   SignedImage(
                     fileKey: job.latestPhotoUrl,
                     width: double.infinity,
