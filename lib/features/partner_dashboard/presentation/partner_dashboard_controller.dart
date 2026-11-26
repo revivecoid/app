@@ -438,6 +438,50 @@ class PartnerDashboardController extends StateNotifier<PartnerDashboardState> {
     }
   }
 
+  /// Marks one of the six body & paint steps complete for a job.
+  ///
+  /// Progress photos are optional by design, so this passes an empty file list
+  /// and the RPC records the step on its own. The stage that starts the repair
+  /// (`disassembly`) also moves the job to `6_in_progress` server-side, which is
+  /// why there is no separate status transition here.
+  Future<void> completeBodyPaintStage(String jobId, String stageKey) async {
+    if (!kBodyPaintStageKeys.contains(stageKey)) return;
+    // Same double-tap guard as advanceJobStage: the RPC is idempotent but two
+    // rapid taps would otherwise fire two round-trips and two refreshes.
+    if (state.inFlightJobIds.contains(jobId)) return;
+    state = state.copyWith(
+      inFlightJobIds: {...state.inFlightJobIds, jobId},
+      errorMessage: null,
+    );
+
+    try {
+      await _supabase.rpc('ops_complete_stage', params: {
+        'p_job_id': jobId,
+        'p_stage_key': stageKey,
+        'p_file_keys': <String>[],
+      });
+
+      // Refresh after confirmed server write, so the tick and the counter come
+      // from job_milestones rather than from local optimism.
+      await _fetchIsolatedData();
+    } catch (e) {
+      await _fetchIsolatedData();
+      final errText = e.toString()
+          .replaceAll('PostgrestException', '')
+          .replaceAll('Exception:', '')
+          .trim();
+      state = state.copyWith(
+        errorMessage: 'Could not record stage: $errText',
+      );
+    } finally {
+      if (state.inFlightJobIds.contains(jobId)) {
+        state = state.copyWith(
+          inFlightJobIds: state.inFlightJobIds.difference({jobId}),
+        );
+      }
+    }
+  }
+
   /// Executes the Mobile Client-Side Compression & Streaming Pipeline
   Future<void> captureAndUploadProgressPhoto(String jobId, String currentContext) async {
     try {

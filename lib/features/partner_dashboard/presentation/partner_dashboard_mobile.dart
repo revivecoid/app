@@ -401,13 +401,9 @@ class _JobList extends StatelessWidget {
                               RepairStageProgressList(
                                 progress: job.stageProgress,
                                 languageCode: context.l10n.localeName,
-                                actionableKeys: kBodyPaintStageKeys.toSet(), // All stages actionable for partner
-                                onTapStage: (stage) {
-                                  // This triggers ops_complete_stage via the partner's session
-                                  // but partner should only advance job status via advanceJobStage.
-                                  // For now, the widget is informational. Tap could navigate to a
-                                  // detail screen with photo upload per stage.
-                                },
+                                actionableKeys: kBodyPaintStageKeys.toSet(),
+                                onTapStage: (stage) =>
+                                    controller.completeBodyPaintStage(job.id, stage.stageKey),
                                 dense: true,
                                 showCounter: true,
                               ),

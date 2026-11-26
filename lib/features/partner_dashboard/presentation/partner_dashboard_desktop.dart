@@ -790,9 +790,8 @@ class _JobCard extends StatelessWidget {
                               progress: job.stageProgress,
                               languageCode: context.l10n.localeName,
                               actionableKeys: kBodyPaintStageKeys.toSet(),
-                              onTapStage: (stage) {
-                                // Tap for detail — partner can navigate to photo upload per stage
-                              },
+                              onTapStage: (stage) =>
+                                  controller.completeBodyPaintStage(job.id, stage.stageKey),
                               dense: true,
                               showCounter: true,
                             ),
