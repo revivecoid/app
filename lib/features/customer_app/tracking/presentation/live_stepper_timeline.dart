@@ -60,6 +60,21 @@ String _stepDesc(AppL l, int i) {
   }
 }
 
+/// Description for the "Pengerjaan Bodi & Pengecatan" row.
+///
+/// The localised description says the work "is underway", which is false while
+/// the job is still at intake or awaiting payment. Until the job actually
+/// reaches the workshop the row lists the six stages instead, so the customer
+/// reads what will happen rather than a claim that it already is.
+String _bodyPaintDesc(AppL l, {required bool inWorkshop}) {
+  if (inWorkshop) return l.trackingDescActive;
+  return l.localeName == 'en'
+      ? 'Six stages: disassembly, panel beating & welding, body filler, '
+          'painting, polishing, reassembly. Tap to see the detail.'
+      : 'Enam tahap: bongkar, ketok/las, dempul, cat, poles, pasang. '
+          'Ketuk untuk melihat detail.';
+}
+
 // ─── Main Screen ────────────────────────────────────────────────────────────
 class LiveStepperTimeline extends ConsumerStatefulWidget {
   final String jobId;
@@ -243,7 +258,7 @@ class _LiveStepperTimelineState extends ConsumerState<LiveStepperTimeline> {
 }
 
 // ─── Body ───────────────────────────────────────────────────────────────────
-class _TrackerBody extends ConsumerWidget {
+class _TrackerBody extends ConsumerStatefulWidget {
   final String jobId;
   final String status;
   final List<RepairPhoto> photos;
@@ -262,22 +277,66 @@ class _TrackerBody extends ConsumerWidget {
     required this.isDark,
   });
 
-  int get currentStepIndex => _statusSteps.indexOf(status).clamp(0, _statusSteps.length - 1);
+  @override
+  ConsumerState<_TrackerBody> createState() => _TrackerBodyState();
+}
 
-  /// True when the job has reached or passed the workshop phase (6_in_progress).
-    /// The body & paint detail shows as a read-only preview from step 1 (intake) onwards,
-    /// and as live progress from job_milestones once the job is in the workshop.
-    bool get workshopPhaseReached =>
-        currentStepIndex >= _statusSteps.indexOf('1_intake');  // 0 - show from the start
+class _TrackerBodyState extends ConsumerState<_TrackerBody> {
+  /// The six body & paint steps live INSIDE the "Pengerjaan Bodi & Pengecatan"
+  /// timeline row. Collapsed by default; tapping the row expands them.
+  bool _bodyPaintExpanded = false;
+
+  /// Status seen on the previous build, so the row can open itself the moment
+  /// the car actually enters the workshop without fighting a manual collapse.
+  String? _lastStatus;
+
+  bool get _isInWorkshop =>
+      _statusSteps.indexOf(widget.status) >=
+      _statusSteps.indexOf('6_in_progress');
 
   @override
-    Widget build(BuildContext context, WidgetRef ref) {
-      final progressPhotos = photos.where((p) =>
-          // C-40 fix: partner writes 'in_progress' context; also include 'progress', 'finished', 'inspected'
-          !['payment', 'intake', 'booking'].contains(p.context)).toList();
+  void initState() {
+    super.initState();
+    _lastStatus = widget.status;
+    // A job already in the workshop opens the sub-steps: the customer opened
+    // this screen to see how far the car has got, not to tap twice for it.
+    _bodyPaintExpanded = _isInWorkshop;
+  }
 
-      final sp = ref.watch(jobStreamProvider(jobId));
-      final stageProgress = sp.stageProgress;
+  @override
+  void didUpdateWidget(covariant _TrackerBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_lastStatus != widget.status) {
+      final wasInWorkshop = _statusSteps.indexOf(_lastStatus ?? '') >=
+          _statusSteps.indexOf('6_in_progress');
+      if (!wasInWorkshop && _isInWorkshop) {
+        _bodyPaintExpanded = true;
+      }
+      _lastStatus = widget.status;
+    }
+  }
+
+  int get currentStepIndex =>
+      _statusSteps.indexOf(widget.status).clamp(0, _statusSteps.length - 1);
+
+  @override
+  Widget build(BuildContext context) {
+    final jobId = widget.jobId;
+    final status = widget.status;
+    final photos = widget.photos;
+    final cardColor = widget.cardColor;
+    final textColor = widget.textColor;
+    final mutedColor = widget.mutedColor;
+    final isDark = widget.isDark;
+    final progressPhotos = photos.where((p) =>
+        // C-40 fix: partner writes 'in_progress' context; also include 'progress', 'finished', 'inspected'
+        !['payment', 'intake', 'booking'].contains(p.context)).toList();
+
+    final sp = ref.watch(jobStreamProvider(jobId));
+    final stageProgress = sp.stageProgress;
+    final bodyPaintIndex = _statusSteps.indexOf('6_in_progress');
+    final completedSubSteps =
+        kBodyPaintStageKeys.where((k) => stageProgress[k]?.isComplete ?? false).length;
 
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -303,24 +362,7 @@ class _TrackerBody extends ConsumerWidget {
               const SizedBox(height: 16),
             ],
 
-            // ─── Body & Paint Detail (6 steps) ───
-                        // Shown when job has reached or passed the workshop phase.
-                        // Before 6_in_progress: read-only preview so the customer knows what's coming.
-                        // At/after 6_in_progress: live progress from job_milestones.
-                        if (workshopPhaseReached) ...[
-                          _card(
-                            cardColor: cardColor,
-                            child: RepairStageProgressList(
-                              progress: stageProgress,
-                              languageCode: context.l10n.localeName,
-                              // Customer always read-only
-                              showCounter: true,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-
-            // ─── Timeline (high-level) ───
+            // ─── Timeline (high-level, with expandable body & paint sub-steps) ───
             _card(
               cardColor: cardColor,
               child: Column(
@@ -339,14 +381,43 @@ class _TrackerBody extends ConsumerWidget {
                         : i == currentStepIndex
                             ? _StepState.active
                             : _StepState.pending;
+                    // "Pengerjaan Bodi & Pengecatan" is the one row that carries
+                    // sub-steps. It is tappable from the very first status: the
+                    // customer should be able to read what the six steps are
+                    // before the car is even in the workshop.
+                    final isBodyPaint = i == bodyPaintIndex;
                     return _TimelineStep(
                       label: _stepLabel(context.l10n, i),
-                      description: _stepDesc(context.l10n, i),
+                      description: isBodyPaint
+                          ? _bodyPaintDesc(context.l10n,
+                              inWorkshop: currentStepIndex >= bodyPaintIndex)
+                          : _stepDesc(context.l10n, i),
                       state: stepStatus,
                       isLast: i == _statusSteps.length - 1,
                       textColor: textColor,
                       mutedColor: mutedColor,
                       isDark: isDark,
+                      expandable: isBodyPaint,
+                      expanded: isBodyPaint && _bodyPaintExpanded,
+                      onToggleExpand: isBodyPaint
+                          ? () => setState(
+                                () => _bodyPaintExpanded = !_bodyPaintExpanded,
+                              )
+                          : null,
+                      // Progress caption shown on the collapsed row so the
+                      // customer sees "2/6" without opening it.
+                      trailingHint: isBodyPaint
+                          ? '$completedSubSteps/${kBodyPaintStageKeys.length}'
+                          : null,
+                      expansion: isBodyPaint
+                          ? RepairStageProgressList(
+                              progress: stageProgress,
+                              languageCode: context.l10n.localeName,
+                              // Customer is always read-only here.
+                              showCounter: false,
+                              dense: true,
+                            )
+                          : null,
                     );
                   }),
                 ],
@@ -932,6 +1003,18 @@ class _TimelineStep extends StatelessWidget {
   final Color mutedColor;
   final bool isDark;
 
+  /// When true the row is tappable and shows a chevron, so the customer knows
+  /// there is more underneath it.
+  final bool expandable;
+  final bool expanded;
+  final VoidCallback? onToggleExpand;
+
+  /// Small right-aligned caption next to the label (e.g. "2/6").
+  final String? trailingHint;
+
+  /// Content revealed under the description when [expanded].
+  final Widget? expansion;
+
   const _TimelineStep({
     required this.label,
     required this.description,
@@ -940,6 +1023,11 @@ class _TimelineStep extends StatelessWidget {
     required this.textColor,
     required this.mutedColor,
     required this.isDark,
+    this.expandable = false,
+    this.expanded = false,
+    this.onToggleExpand,
+    this.trailingHint,
+    this.expansion,
   });
 
   @override
@@ -954,6 +1042,71 @@ class _TimelineStep extends StatelessWidget {
         : isActive
             ? AppColors.fireRed
             : cs.primary;
+
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: isActive ? AppColors.fireRed : textColor,
+                ),
+              ),
+            ),
+            if (trailingHint != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  trailingHint!,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: mutedColor,
+                  ),
+                ),
+              ),
+            ],
+            if (isActive && !expandable) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: AppColors.fireRed, borderRadius: BorderRadius.circular(8)),
+                child: Text('ACTIVE', style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold)),
+              ),
+            ],
+            if (expandable) ...[
+              const SizedBox(width: 4),
+              AnimatedRotation(
+                turns: expanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 180),
+                child: Icon(
+                  Icons.expand_more,
+                  size: 18,
+                  color: isActive ? AppColors.fireRed : mutedColor,
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 3),
+        Text(description, style: TextStyle(fontSize: 11, color: isActive ? AppColors.fireRed.withValues(alpha: 0.85) : mutedColor)),
+        if (expandable && expanded && expansion != null) ...[
+          const SizedBox(height: 10),
+          expansion!,
+        ],
+      ],
+    );
 
     return IntrinsicHeight(
       child: Row(
@@ -996,34 +1149,18 @@ class _TimelineStep extends StatelessWidget {
                         border: Border.all(color: AppColors.fireRed.withValues(alpha: 0.25)),
                       )
                     : null,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            label,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: isActive ? AppColors.fireRed : textColor,
-                            ),
-                          ),
+                child: expandable
+                    // The whole row is the tap target, not just the chevron —
+                    // a 18px icon is not a comfortable hit area on a phone.
+                    ? InkWell(
+                        onTap: onToggleExpand,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: isActive ? EdgeInsets.zero : const EdgeInsets.symmetric(vertical: 2),
+                          child: content,
                         ),
-                        if (isActive)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: AppColors.fireRed, borderRadius: BorderRadius.circular(8)),
-                            child: Text('ACTIVE', style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold)),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(description, style: TextStyle(fontSize: 11, color: isActive ? AppColors.fireRed.withValues(alpha: 0.85) : mutedColor)),
-                  ],
-                ),
+                      )
+                    : content,
               ),
             ),
           ),
