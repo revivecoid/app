@@ -34,6 +34,12 @@ class RepairStageProgressList extends StatelessWidget {
   /// Show the "3 dari 6 tahap selesai" line above the steps.
   final bool showCounter;
 
+  /// Whether the first unfinished stage should be highlighted as "being worked
+  /// on". A job that has not reached the workshop yet has no stage in progress,
+  /// so the customer view turns this off until `6_in_progress` — otherwise the
+  /// list claims Bongkar is underway while the car is still awaiting payment.
+  final bool highlightCurrent;
+
   const RepairStageProgressList({
     super.key,
     required this.progress,
@@ -42,6 +48,7 @@ class RepairStageProgressList extends StatelessWidget {
     this.onTapStage,
     this.dense = false,
     this.showCounter = true,
+    this.highlightCurrent = true,
   });
 
   @override
@@ -49,7 +56,7 @@ class RepairStageProgressList extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final done = bodyPaintCompletedCount(progress);
     final total = kBodyPaintStageKeys.length;
-    final next = nextBodyPaintStage(progress);
+    final next = highlightCurrent ? nextBodyPaintStage(progress) : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

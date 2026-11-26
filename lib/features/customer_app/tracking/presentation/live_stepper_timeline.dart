@@ -416,6 +416,9 @@ class _TrackerBodyState extends ConsumerState<_TrackerBody> {
                               // Customer is always read-only here.
                               showCounter: false,
                               dense: true,
+                              // No stage is "in progress" before the car is
+                              // admitted to the body & paint bay.
+                              highlightCurrent: currentStepIndex >= bodyPaintIndex,
                             )
                           : null,
                     );
